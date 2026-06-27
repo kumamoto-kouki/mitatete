@@ -89,7 +89,7 @@
   - _Boundary: GDriveClient_
 
 - [ ] 5. 統合: StorageManager — ローカルとGDriveの調整
-- [ ] 5.1 StorageManager を実装し、LocalFileSystem と GDriveClient を調整する
+- [x] 5.1 StorageManager を実装し、LocalFileSystem と GDriveClient を調整する
   - 保存要求を受け取り、ローカルへの書き込みを先行して行う
   - 承認済みの場合のみ GDriveClient に非同期でアップロードを委譲する
   - ローカル保存失敗と GDrive 失敗を独立したエラーとして扱い、一方の失敗が他方に影響しないことを保証する
@@ -140,3 +140,4 @@
 - 4.1: `GDriveClient<H: HttpExecutor>` を HTTP シームで実装（本番=`ReqwestExecutor`、テスト=`MockHttpExecutor` #[cfg(test)]）。`ensure_mitatete_folder`（list→無ければcreate）/`upload(access_token, remote_path, content, mime)`（Bearer 認証・multipart）。3.3 不変条件: GDriveClient は executor のみ保持し API キー/secret を引数に取らない。
 - **4.1 繰越事項(重要)**: GDrive のサブフォルダ（`mitatete/history/`・`mitatete/diary/`）は未対応で、現状ファイルは `mitatete/` 直下に保存される。design 3.2 の `mitatete/history/YYYY-MM-DD.json` 構造は **5.1(StorageManager) もしくは後続タスクで対応する**こと。
 - 4.2: `upload` に最大3回・指数バックオフのリトライを実装（`MAX_UPLOAD_ATTEMPTS=3`、`delay=backoff_base_ms * 2^(attempt-1)`）。4xx は即失敗（リトライしない方針）、5xx/エラーはリトライ、全失敗で `GDriveUpload`。backoff はフィールド注入式で、`with_backoff_base(Duration::ZERO)` によりテストは高速。リトライ回数は mock の recorded_requests().len() で検証。
+- 5.1: `StorageManager<S,X,H>` が LocalFileSystem + OAuthManager + GDriveClient を統合。save_history/settings/diary は「ローカル先行保存→`get_auth_status` で分岐→Authorized 時のみ GDrive 委譲」。結果は `SaveResult { LocalOnly, LocalAndGDrive, LocalOnlyWithGDriveWarning(String) }` で表現し、GDrive 失敗はローカル成功を覆さない（5.4 エラー独立性）。トークンは `oauth.store.load()`（TokenStore シーム）経由のみ。レビュー round1 の指摘（doc重複・冒頭コメント陳腐化）は round2 で修正済み。未承認時は GDrive を呼ばない（1.7、テストで recorded_requests==0 を検証）。

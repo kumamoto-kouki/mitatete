@@ -2,7 +2,8 @@
 //
 // LocalFileSystem: `~/.mitatete/` 以下のディレクトリ初期化・ファイル読み書き
 // OAuthManager: OAuth 2.0 フローの開始・完了・トークン保存・リフレッシュ・削除
-// GDriveClient, StorageManager は後続タスクで実装する。
+// GDriveClient: Google Drive へのファイルアップロード
+// StorageManager: ローカル優先保存 + GDrive 同期のオーケストレーション
 //
 // セキュリティ制約:
 //   - ファイルパスはこのモジュール内でのみ構築する（パストラバーサル防止）
@@ -1292,6 +1293,195 @@ impl<H: HttpExecutor> GDriveClient<H> {
         Err(last_error.unwrap_or_else(|| {
             StorageError::GDriveUpload("upload failed after all attempts".to_string())
         }))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// StorageManager
+// ---------------------------------------------------------------------------
+
+/// ローカル保存と GDrive 同期を調整するオーケストレーター。
+///
+/// # 保存フロー（save_history / save_settings / save_diary）
+/// 1. `local` (LocalFileSystem) にまず書き込む。失敗 → `Err(StorageError::LocalWrite(...))` を即返す。
+/// 2. `oauth.get_auth_status()` を確認する。
+///    - `Unauthorized` → `Ok(SaveResult::LocalOnly)` を返す（GDrive 呼び出しなし）。
+///    - `Authorized` → トークンを取得して `gdrive.upload(...)` に委譲する。
+/// 3. GDrive 失敗は `Ok(SaveResult::LocalOnlyWithGDriveWarning(...))` で返す（ローカル保存は成功扱い）。
+///
+/// # エラー独立性（要件 5.4）
+/// ローカル保存とGDrive保存は独立して扱い、GDrive失敗はローカル保存成否に影響しない。
+///
+/// # セキュリティ不変条件
+/// アクセストークンは `oauth` (OAuthManager/TokenStore) 経由でのみ取得する。
+/// ファイルシステムや GDrive には書き出さない。
+pub struct StorageManager<S: TokenStore, X: TokenExchanger, H: HttpExecutor> {
+    local: LocalFileSystem,
+    oauth: OAuthManager<S, X>,
+    gdrive: GDriveClient<H>,
+}
+
+/// StorageManager の保存操作の結果。
+///
+/// ローカル保存は常に成功。GDrive の状態を区別する。
+#[derive(Debug)]
+pub enum SaveResult {
+    /// ローカルのみ（未承認または承認済みで GDrive も成功）
+    LocalOnly,
+    /// ローカル保存成功 + GDrive アップロード成功
+    LocalAndGDrive,
+    /// ローカル保存成功 + GDrive アップロード失敗（警告付き）
+    LocalOnlyWithGDriveWarning(String),
+}
+
+impl<S: TokenStore, X: TokenExchanger, H: HttpExecutor> StorageManager<S, X, H> {
+    /// StorageManager を生成する。
+    pub fn new(local: LocalFileSystem, oauth: OAuthManager<S, X>, gdrive: GDriveClient<H>) -> Self {
+        Self {
+            local,
+            oauth,
+            gdrive,
+        }
+    }
+
+    /// 対話履歴を保存する。
+    ///
+    /// ローカルへの書き込みを先行し、承認済みの場合のみ GDrive にアップロードする。
+    /// GDrive 失敗はローカル保存の成否に影響しない（要件 5.4）。
+    ///
+    /// # 引数
+    /// - `date`: `YYYY-MM-DD` 形式の日付文字列
+    /// - `data`: 保存する JSON データ
+    ///
+    /// # 戻り値
+    /// - `Ok(SaveResult::LocalOnly)`: 未承認（ローカル保存のみ成功）
+    /// - `Ok(SaveResult::LocalAndGDrive)`: 承認済み + GDrive 成功
+    /// - `Ok(SaveResult::LocalOnlyWithGDriveWarning(msg))`: 承認済み + GDrive 失敗（ローカルは成功）
+    /// - `Err(StorageError::LocalWrite(...))`: ローカル書き込み失敗（GDrive 呼び出しなし）
+    pub async fn save_history(
+        &self,
+        date: &str,
+        data: &serde_json::Value,
+    ) -> Result<SaveResult, StorageError> {
+        // Step 1: ローカルに先行して書き込む（要件 1.7, 5.1）
+        self.local.save_history(date, data).await?;
+
+        // Step 2: 承認状態を確認する
+        match self.oauth.get_auth_status().await? {
+            AuthStatus::Unauthorized => {
+                // 未承認: ローカル保存のみ（GDrive 呼び出しなし）（要件 1.7）
+                Ok(SaveResult::LocalOnly)
+            }
+            AuthStatus::Authorized => {
+                // 承認済み: アクセストークンを取得して GDrive にアップロードする
+                // セキュリティ不変条件: トークンは TokenStore 経由でのみ取得する
+                let access_token = self
+                    .oauth
+                    .store
+                    .load()
+                    .map_err(|e| StorageError::OAuthFailed(format!("token load error: {e}")))?
+                    .map(|t| t.access_token)
+                    .ok_or(StorageError::Unauthorized)?;
+
+                let remote_path = format!("history/{date}.json");
+                let content = serde_json::to_vec(data)
+                    .map_err(|e| StorageError::LocalRead(format!("serialize error: {e}")))?;
+
+                // Step 3: GDrive アップロード（失敗してもローカル保存は成功扱い）（要件 5.4）
+                match self
+                    .gdrive
+                    .upload(&access_token, &remote_path, &content, "application/json")
+                    .await
+                {
+                    Ok(()) => Ok(SaveResult::LocalAndGDrive),
+                    Err(e) => Ok(SaveResult::LocalOnlyWithGDriveWarning(e.to_string())),
+                }
+            }
+        }
+    }
+
+    /// キャラクター設定・原則設定を保存する。
+    ///
+    /// ローカルへの書き込みを先行し、承認済みの場合のみ GDrive にアップロードする。
+    /// GDrive 失敗はローカル保存の成否に影響しない（要件 5.4）。
+    pub async fn save_settings(
+        &self,
+        data: &serde_json::Value,
+    ) -> Result<SaveResult, StorageError> {
+        // Step 1: ローカルに先行して書き込む
+        self.local.save_settings(data).await?;
+
+        // Step 2: 承認状態を確認する
+        match self.oauth.get_auth_status().await? {
+            AuthStatus::Unauthorized => Ok(SaveResult::LocalOnly),
+            AuthStatus::Authorized => {
+                let access_token = self
+                    .oauth
+                    .store
+                    .load()
+                    .map_err(|e| StorageError::OAuthFailed(format!("token load error: {e}")))?
+                    .map(|t| t.access_token)
+                    .ok_or(StorageError::Unauthorized)?;
+
+                let content = serde_json::to_vec(data)
+                    .map_err(|e| StorageError::LocalRead(format!("serialize error: {e}")))?;
+
+                // Step 3: GDrive アップロード（失敗してもローカル保存は成功扱い）（要件 5.4）
+                match self
+                    .gdrive
+                    .upload(&access_token, "settings.json", &content, "application/json")
+                    .await
+                {
+                    Ok(()) => Ok(SaveResult::LocalAndGDrive),
+                    Err(e) => Ok(SaveResult::LocalOnlyWithGDriveWarning(e.to_string())),
+                }
+            }
+        }
+    }
+
+    /// AI観察日記を保存する。
+    ///
+    /// ローカルへの書き込みを先行し、承認済みの場合のみ GDrive にアップロードする。
+    /// GDrive 失敗はローカル保存の成否に影響しない（要件 5.4）。
+    pub async fn save_diary(&self, date: &str, content: &str) -> Result<SaveResult, StorageError> {
+        // Step 1: ローカルに先行して書き込む
+        self.local.save_diary(date, content).await?;
+
+        // Step 2: 承認状態を確認する
+        match self.oauth.get_auth_status().await? {
+            AuthStatus::Unauthorized => Ok(SaveResult::LocalOnly),
+            AuthStatus::Authorized => {
+                let access_token = self
+                    .oauth
+                    .store
+                    .load()
+                    .map_err(|e| StorageError::OAuthFailed(format!("token load error: {e}")))?
+                    .map(|t| t.access_token)
+                    .ok_or(StorageError::Unauthorized)?;
+
+                let remote_path = format!("diary/{date}.md");
+
+                // Step 3: GDrive アップロード（失敗してもローカル保存は成功扱い）（要件 5.4）
+                match self
+                    .gdrive
+                    .upload(
+                        &access_token,
+                        &remote_path,
+                        content.as_bytes(),
+                        "text/markdown",
+                    )
+                    .await
+                {
+                    Ok(()) => Ok(SaveResult::LocalAndGDrive),
+                    Err(e) => Ok(SaveResult::LocalOnlyWithGDriveWarning(e.to_string())),
+                }
+            }
+        }
+    }
+
+    /// 現在の承認状態を返す。
+    pub async fn get_auth_status(&self) -> Result<AuthStatus, StorageError> {
+        self.oauth.get_auth_status().await
     }
 }
 
@@ -2906,5 +3096,253 @@ mod tests {
             "must issue exactly 2 requests (1 ensure_folder GET + 1 upload POST, NO retry for 4xx), got: {}",
             reqs.len()
         );
+    }
+
+    // =========================================================================
+    // Task 5.1: StorageManager テスト
+    // =========================================================================
+
+    /// StorageManager のテスト用ヘルパー。
+    /// LocalFileSystem (temp_base), InMemoryTokenStore + FakeTokenExchanger で OAuthManager,
+    /// MockHttpExecutor で GDriveClient を構築する。
+    fn make_storage_manager_unauthorized(
+        base: std::path::PathBuf,
+    ) -> (
+        StorageManager<InMemoryTokenStore, FakeTokenExchanger, MockHttpExecutor>,
+        std::path::PathBuf,
+    ) {
+        let local = LocalFileSystem::with_base(base.clone());
+        let store = InMemoryTokenStore::new(); // トークンなし → Unauthorized
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let oauth = OAuthManager::new(
+            "test-client-id".to_string(),
+            "http://localhost/callback".to_string(),
+            store,
+            exchanger,
+        );
+        // モックには空のキューを渡す（Unauthorized 時は GDrive 呼び出しがないため）
+        let mock = MockHttpExecutor::new(vec![]);
+        let gdrive = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+        let sm = StorageManager::new(local, oauth, gdrive);
+        (sm, base)
+    }
+
+    fn make_storage_manager_authorized(
+        base: std::path::PathBuf,
+        gdrive_responses: Vec<GDriveResponse>,
+    ) -> (
+        StorageManager<InMemoryTokenStore, FakeTokenExchanger, MockHttpExecutor>,
+        std::path::PathBuf,
+    ) {
+        let local = LocalFileSystem::with_base(base.clone());
+        let store = InMemoryTokenStore::new();
+        // Authorized 状態にする: 有効なトークンを事前に保存
+        store.save(&canned_token()).expect("pre-save token");
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let oauth = OAuthManager::new(
+            "test-client-id".to_string(),
+            "http://localhost/callback".to_string(),
+            store,
+            exchanger,
+        );
+        let mock = MockHttpExecutor::new(gdrive_responses);
+        let gdrive = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+        let sm = StorageManager::new(local, oauth, gdrive);
+        (sm, base)
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.1a: 未承認時は GDrive を呼ばずローカルに保存して Ok を返す（要件 1.7）
+    // -------------------------------------------------------------------------
+
+    /// 未承認状態で save_history を呼ぶと:
+    /// - ローカルファイルが作成される
+    /// - MockHttpExecutor にリクエストが記録されない（GDrive 呼び出しなし）
+    /// - Ok(SaveResult::LocalOnly) が返る
+    #[tokio::test]
+    async fn test_storage_manager_save_history_unauthorized_local_only_no_gdrive_call() {
+        let base = temp_base();
+        let (sm, base) = make_storage_manager_unauthorized(base);
+
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = sm.save_history("2026-06-27", &data).await;
+
+        // Ok(LocalOnly) が返ること
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "unauthorized save_history must return Ok(LocalOnly), got: {result:?}"
+        );
+
+        // ローカルファイルが作成されていること（要件 1.7: ローカル保存を継続）
+        assert!(
+            base.join("history").join("2026-06-27.json").is_file(),
+            "local file must be written even when unauthorized"
+        );
+
+        // GDrive 呼び出しがゼロであること（要件 1.7: クラウド同期は行わない）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "must NOT call GDrive when unauthorized (req 1.7), got {} requests",
+            reqs.len()
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.1b: 承認済み + GDrive 成功 → ローカル保存 + GDrive アップロード（要件 3.1）
+    // -------------------------------------------------------------------------
+
+    /// 承認済み状態で save_history を呼ぶと:
+    /// - ローカルファイルが作成される
+    /// - GDrive アップロードリクエストが発行される（ensure_folder + upload の 2+ requests）
+    /// - Ok(SaveResult::LocalAndGDrive) が返る
+    #[tokio::test]
+    async fn test_storage_manager_save_history_authorized_gdrive_success() {
+        let base = temp_base();
+        // GDrive モック: ensure_mitatete_folder (list: 既存フォルダ) + upload 成功
+        let gdrive_responses = vec![
+            GDriveResponse {
+                status: 200,
+                body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+            },
+            GDriveResponse {
+                status: 200,
+                body: r#"{"id": "file-001"}"#.to_string(),
+            },
+        ];
+        let (sm, base) = make_storage_manager_authorized(base, gdrive_responses);
+
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = sm.save_history("2026-06-27", &data).await;
+
+        // Ok(LocalAndGDrive) が返ること
+        assert!(
+            matches!(result, Ok(SaveResult::LocalAndGDrive)),
+            "authorized save_history with GDrive success must return Ok(LocalAndGDrive), got: {result:?}"
+        );
+
+        // ローカルファイルが作成されていること（要件 3.1: ローカル保存と並行して）
+        assert!(
+            base.join("history").join("2026-06-27.json").is_file(),
+            "local file must be written when authorized"
+        );
+
+        // GDrive アップロードリクエストが発行されていること（要件 3.1）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert!(
+            reqs.len() >= 2,
+            "must issue at least 2 GDrive requests (ensure_folder + upload) when authorized, got: {}",
+            reqs.len()
+        );
+        // 最後のリクエストが POST upload であること
+        let upload_req = reqs.last().expect("must have at least one request");
+        assert_eq!(
+            upload_req.method, "POST",
+            "last GDrive request must be POST upload"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.1c: 承認済み + GDrive 失敗 → ローカル保存は成功、全体 Ok（要件 5.4）
+    // -------------------------------------------------------------------------
+
+    /// 承認済み状態で GDrive がすべてのリトライで失敗する場合:
+    /// - ローカルファイルは依然として存在する（ディスクに書き込まれている）
+    /// - 全体の結果は Ok(SaveResult::LocalOnlyWithGDriveWarning(...)) が返る
+    /// - エラーではない（ローカル保存が成功扱い）
+    #[tokio::test]
+    async fn test_storage_manager_save_history_authorized_gdrive_failure_local_persists() {
+        let base = temp_base();
+        // GDrive モック: ensure_mitatete_folder (list: 既存フォルダ) + upload が3回すべて500失敗
+        let gdrive_responses = vec![
+            GDriveResponse {
+                status: 200,
+                body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+            },
+            GDriveResponse {
+                status: 500,
+                body: r#"{"error": {"message": "internal server error"}}"#.to_string(),
+            },
+            GDriveResponse {
+                status: 500,
+                body: r#"{"error": {"message": "internal server error"}}"#.to_string(),
+            },
+            GDriveResponse {
+                status: 500,
+                body: r#"{"error": {"message": "internal server error"}}"#.to_string(),
+            },
+        ];
+        let (sm, base) = make_storage_manager_authorized(base, gdrive_responses);
+
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = sm.save_history("2026-06-27", &data).await;
+
+        // Ok(LocalOnlyWithGDriveWarning) が返ること（GDrive 失敗でも全体は Ok）（要件 5.4）
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnlyWithGDriveWarning(_))),
+            "GDrive failure must return Ok(LocalOnlyWithGDriveWarning), NOT Err, got: {result:?}"
+        );
+
+        // ローカルファイルが依然として存在していること（要件 5.4: ローカル保存は維持）
+        assert!(
+            base.join("history").join("2026-06-27.json").is_file(),
+            "local file must persist on disk despite GDrive failure (req 5.4)"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.1d: 追加カバレッジ — save_settings, save_diary も同パターンで動作する
+    // -------------------------------------------------------------------------
+
+    /// 未承認状態で save_settings → ローカル保存のみ、GDrive 呼び出しなし。
+    #[tokio::test]
+    async fn test_storage_manager_save_settings_unauthorized_local_only() {
+        let base = temp_base();
+        let (sm, base) = make_storage_manager_unauthorized(base);
+
+        let data = serde_json::json!({"active_character": "default"});
+        let result = sm.save_settings(&data).await;
+
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "unauthorized save_settings must return Ok(LocalOnly), got: {result:?}"
+        );
+        assert!(
+            base.join("settings.json").is_file(),
+            "settings.json must be written locally"
+        );
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(reqs.len(), 0, "must NOT call GDrive when unauthorized");
+
+        cleanup(&base);
+    }
+
+    /// 未承認状態で save_diary → ローカル保存のみ、GDrive 呼び出しなし。
+    #[tokio::test]
+    async fn test_storage_manager_save_diary_unauthorized_local_only() {
+        let base = temp_base();
+        let (sm, base) = make_storage_manager_unauthorized(base);
+
+        let result = sm.save_diary("2026-06-27", "# 日記\n本文").await;
+
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "unauthorized save_diary must return Ok(LocalOnly), got: {result:?}"
+        );
+        assert!(
+            base.join("diary").join("2026-06-27.md").is_file(),
+            "diary file must be written locally"
+        );
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(reqs.len(), 0, "must NOT call GDrive when unauthorized");
+
+        cleanup(&base);
     }
 }
