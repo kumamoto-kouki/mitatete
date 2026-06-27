@@ -3,7 +3,7 @@
 ## タスク一覧
 
 - [ ] 1. 基盤: ローカルファイルシステム初期化と依存クレートのセットアップ
-- [ ] 1.1 Cargo.toml に必要な依存クレートを追加する
+- [x] 1.1 Cargo.toml に必要な依存クレートを追加する
   - `tokio`（非同期ランタイム）、`serde` / `serde_json`（JSON）、`reqwest`（HTTP クライアント）、OAuth・GDrive 用クレートを追加する
   - `Cargo.toml` でビルドが通ることを確認する
   - _Requirements: 1.6_

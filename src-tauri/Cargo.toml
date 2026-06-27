@@ -21,3 +21,17 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["macos-private-api"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# 非同期ランタイム（ファイル I/O・HTTP クライアント用）
+tokio = { version = "1", features = ["rt-multi-thread", "fs", "io-util", "time", "macros"] }
+
+# HTTP クライアント（Google Drive API 呼び出し用）
+# rustls-tls: OpenSSL などのネイティブ依存を避けクロスプラットフォームを保証する
+reqwest = { version = "0.13", features = ["rustls", "json"], default-features = false }
+
+# OAuth 2.0 フロー（Google 認証用）
+oauth2 = "5.0"
+
+# OS キーチェーン（OAuth トークンのセキュア保存用）
+# デフォルト features（v1 + プラットフォーム別ストア）でクロスプラットフォームをカバー
+keyring = "4"
