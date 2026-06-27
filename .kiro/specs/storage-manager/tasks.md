@@ -26,7 +26,7 @@
   - _Requirements: 1.2, 1.6, 5.1_
   - _Boundary: LocalFileSystem_
 
-- [ ] 2.2 (P) キャラクター設定・原則設定の保存・読み込みを実装する
+- [x] 2.2 (P) キャラクター設定・原則設定の保存・読み込みを実装する
   - `~/.mitatete/settings.json` への書き込みと読み込みを実装する
   - ファイルパスは LocalFileSystem 内部で固定し、外部から受け取らない
   - 存在しない場合はデフォルト値を返すか空を返す（エラーにしない）
@@ -129,3 +129,4 @@
 - LocalFileSystem のパス構築は内部固定（外部から任意パスを受け取らない＝パストラバーサル防止）。`init_dirs(&Path)` はテスト用に pub だが、本番入口 `init_storage_dirs()` は外部パスを受け取らない。
 - 2.1: `LocalFileSystem { base }` struct を導入（`with_base()`=テスト用 / `new()`=home解決）。read/write は tokio::fs、エラーは明示 map_err で `LocalWrite`/`LocalRead`（`From<io::Error>`=InitDir に依存しない）。日付は `validate_date` でバイト単位検証（長さ10・位置4,7が`-`・他は数字）＝パストラバーサル防止。後続 2.2〜2.4 はこの struct にメソッド追加する形で拡張すること。
 - 2.1 残課題(軽微): `test_save_history_rejects_path_traversal` 内に常に真の assertion(`!escaped.exists() || true`)があるが、直後の `base.join("history")` 非作成 assert で実害なし。将来テスト整理時に簡素化。
+- 2.2: `save_settings`/`read_settings` を `base/settings.json` に固定（パス引数なし）。read_settings は NotFound を `Ok({})` に縮退し、既存ファイルの read/parse 失敗のみ `LocalRead`（read_history との挙動差）。

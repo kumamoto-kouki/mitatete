@@ -124,6 +124,44 @@ impl LocalFileSystem {
         Ok(())
     }
 
+    /// キャラクター設定・原則設定を `base/settings.json` に書き込む。
+    ///
+    /// - ファイルパスはこのメソッド内で固定する（外部から受け取らない）
+    /// - `base/` ディレクトリが存在しない場合は自動作成する
+    pub async fn save_settings(&self, data: &serde_json::Value) -> Result<(), StorageError> {
+        tokio::fs::create_dir_all(&self.base)
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", self.base.display())))?;
+
+        let path = self.base.join("settings.json");
+        let bytes = serde_json::to_vec(data)
+            .map_err(|e| StorageError::LocalWrite(format!("serialize error: {e}")))?;
+        tokio::fs::write(&path, &bytes)
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", path.display())))?;
+        Ok(())
+    }
+
+    /// `base/settings.json` からキャラクター設定・原則設定を読み込む。
+    ///
+    /// - ファイルパスはこのメソッド内で固定する（外部から受け取らない）
+    /// - ファイルが存在しない場合はエラーにならず、空のオブジェクト `{}` を返す
+    /// - 既存ファイルの読み込みや JSON パース失敗の場合は `StorageError::LocalRead` を返す
+    pub async fn read_settings(&self) -> Result<serde_json::Value, StorageError> {
+        let path = self.base.join("settings.json");
+        match tokio::fs::read(&path).await {
+            Ok(bytes) => {
+                let value = serde_json::from_slice(&bytes)
+                    .map_err(|e| StorageError::LocalRead(format!("deserialize error: {e}")))?;
+                Ok(value)
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                Ok(serde_json::Value::Object(serde_json::Map::new()))
+            }
+            Err(e) => Err(StorageError::LocalRead(format!("{}: {e}", path.display()))),
+        }
+    }
+
     /// `base/history/{date}.json` から対話履歴を読み込む。
     ///
     /// - `date` は `YYYY-MM-DD` 形式のみ受け付ける（検証失敗で `StorageError::LocalRead`）
@@ -437,6 +475,98 @@ mod tests {
         assert!(
             base.join("history").is_dir(),
             "history/ dir should be created by save_history"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.2: LocalFileSystem::save_settings / read_settings
+    // -------------------------------------------------------------------------
+
+    /// save_settings → read_settings でラウンドトリップが成立する。
+    #[tokio::test]
+    async fn test_settings_round_trip() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let data = serde_json::json!({
+            "active_character": "default",
+            "principles": {
+                "kindness": 0.8,
+                "honesty": 1.0
+            }
+        });
+
+        fs.save_settings(&data)
+            .await
+            .expect("save_settings should succeed");
+
+        let loaded = fs
+            .read_settings()
+            .await
+            .expect("read_settings should succeed");
+
+        assert_eq!(data, loaded, "round-trip value must match");
+
+        // ファイルが正しい場所に作られていること
+        assert!(
+            base.join("settings.json").is_file(),
+            "settings file should exist at base/settings.json"
+        );
+
+        cleanup(&base);
+    }
+
+    /// settings.json が存在しない場合、read_settings はエラーにならず空オブジェクトを返す。
+    #[tokio::test]
+    async fn test_read_settings_absent_file_returns_empty_default() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        // settings.json を作らずに読み込む
+        let result = fs.read_settings().await;
+
+        assert!(
+            result.is_ok(),
+            "read_settings on absent file must return Ok, got: {result:?}"
+        );
+
+        let value = result.unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({}),
+            "absent settings.json must return empty object {{}}, got: {value:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// save_settings を 2 回呼ぶと最新の値で上書きされる。
+    #[tokio::test]
+    async fn test_save_settings_overwrite_keeps_latest() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let first = serde_json::json!({ "active_character": "miku" });
+        let second = serde_json::json!({ "active_character": "hana", "principles": {} });
+
+        fs.save_settings(&first)
+            .await
+            .expect("first save_settings should succeed");
+
+        fs.save_settings(&second)
+            .await
+            .expect("second save_settings should succeed");
+
+        let loaded = fs
+            .read_settings()
+            .await
+            .expect("read_settings after overwrite should succeed");
+
+        assert_eq!(
+            loaded, second,
+            "read_settings must return the latest saved value"
         );
 
         cleanup(&base);
