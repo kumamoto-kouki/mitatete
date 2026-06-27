@@ -180,6 +180,140 @@ impl LocalFileSystem {
             .map_err(|e| StorageError::LocalRead(format!("deserialize error: {e}")))?;
         Ok(value)
     }
+
+    // -------------------------------------------------------------------------
+    // Task 2.3: カスタムキャラクター定義
+    // -------------------------------------------------------------------------
+
+    /// キャラクター名のサニタイズ・バリデーション。
+    ///
+    /// 以下の条件を満たす場合のみ `Ok(())` を返す:
+    /// - 空でない、空白のみでもない
+    /// - パス区切り文字 (`/`, `\`) を含まない
+    /// - `..` を含まない（単独でも部分文字列としても）
+    /// - NUL バイトを含まない
+    /// - 先頭がドット (`.`) でない
+    /// - 絶対パスでない（先頭が `/` や `\` でない）
+    ///
+    /// 不正な場合は `StorageError::LocalWrite` を返す。
+    fn validate_character_name(name: &str) -> Result<(), StorageError> {
+        // 空・空白のみは拒否
+        if name.trim().is_empty() {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid character name (empty or whitespace-only): {name:?}"
+            )));
+        }
+        // NUL バイトを拒否
+        if name.contains('\0') {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid character name (contains NUL byte): {name:?}"
+            )));
+        }
+        // パス区切り文字を拒否
+        if name.contains('/') || name.contains('\\') {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid character name (contains path separator): {name:?}"
+            )));
+        }
+        // `..` を含む（部分文字列としても）を拒否
+        if name.contains("..") {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid character name (contains '..'): {name:?}"
+            )));
+        }
+        // 先頭がドットは拒否（隠しファイル・相対パス的な名前）
+        if name.starts_with('.') {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid character name (starts with '.'): {name:?}"
+            )));
+        }
+        // 絶対パス的な名前を拒否（`/` や `\` は上で弾いているが念のため）
+        // 上記チェックで既にカバー済みだが、明示的に確認
+        Ok(())
+    }
+
+    /// カスタムキャラクター定義を `base/characters/<name>.json` に書き込む。
+    ///
+    /// - `name` はサニタイズ検証を通過した場合のみ使用する
+    /// - `characters/` ディレクトリが存在しない場合は自動作成する
+    pub async fn save_character(
+        &self,
+        name: &str,
+        data: &serde_json::Value,
+    ) -> Result<(), StorageError> {
+        Self::validate_character_name(name)?;
+
+        let characters_dir = self.base.join(SUBDIR_CHARACTERS);
+        tokio::fs::create_dir_all(&characters_dir)
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", characters_dir.display())))?;
+
+        let path = characters_dir.join(format!("{name}.json"));
+        let bytes = serde_json::to_vec(data)
+            .map_err(|e| StorageError::LocalWrite(format!("serialize error: {e}")))?;
+        tokio::fs::write(&path, &bytes)
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", path.display())))?;
+        Ok(())
+    }
+
+    /// `base/characters/<name>.json` からカスタムキャラクター定義を読み込む。
+    ///
+    /// - `name` はサニタイズ検証を通過した場合のみ使用する
+    /// - ファイルが存在しない場合は `StorageError::LocalRead` を返す
+    pub async fn read_character(&self, name: &str) -> Result<serde_json::Value, StorageError> {
+        // validate_character_name は LocalWrite を返すが、read 側は LocalRead に変換する
+        Self::validate_character_name(name).map_err(|e| match e {
+            StorageError::LocalWrite(msg) => StorageError::LocalRead(msg),
+            other => other,
+        })?;
+
+        let path = self
+            .base
+            .join(SUBDIR_CHARACTERS)
+            .join(format!("{name}.json"));
+        let bytes = tokio::fs::read(&path)
+            .await
+            .map_err(|e| StorageError::LocalRead(format!("{}: {e}", path.display())))?;
+        let value = serde_json::from_slice(&bytes)
+            .map_err(|e| StorageError::LocalRead(format!("deserialize error: {e}")))?;
+        Ok(value)
+    }
+
+    /// `base/characters/` 以下の `.json` ファイルのファイル名（拡張子なし）を一覧返却する。
+    ///
+    /// - ディレクトリが存在しない場合は空の `Vec` を返す（エラーにしない）
+    pub async fn list_characters(&self) -> Result<Vec<String>, StorageError> {
+        let characters_dir = self.base.join(SUBDIR_CHARACTERS);
+
+        let mut read_dir = match tokio::fs::read_dir(&characters_dir).await {
+            Ok(rd) => rd,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                // ディレクトリが存在しない場合は空の Vec を返す
+                return Ok(Vec::new());
+            }
+            Err(e) => {
+                return Err(StorageError::LocalRead(format!(
+                    "{}: {e}",
+                    characters_dir.display()
+                )));
+            }
+        };
+
+        let mut names = Vec::new();
+        while let Some(entry) = read_dir
+            .next_entry()
+            .await
+            .map_err(|e| StorageError::LocalRead(format!("read_dir entry: {e}")))?
+        {
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
+            if let Some(stem) = file_name_str.strip_suffix(".json") {
+                names.push(stem.to_string());
+            }
+        }
+        Ok(names)
+    }
 }
 
 /// `base` ディレクトリ以下に Mitatete の標準ディレクトリ構造を初期化する。
@@ -567,6 +701,224 @@ mod tests {
         assert_eq!(
             loaded, second,
             "read_settings must return the latest saved value"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.3: validate_character_name (純粋関数 — 同期テスト)
+    // -------------------------------------------------------------------------
+
+    /// validate_character_name のテーブル駆動ユニットテスト。
+    /// 不正な名前はすべて Err、正常な名前は Ok を返す。
+    #[test]
+    fn test_validate_character_name_table() {
+        // --- 不正な名前 ---
+        let bad_names: &[&str] = &[
+            "../x",                     // 先頭が ..
+            "../../etc",                // 複数の ..
+            "a/b",                      // スラッシュを含む
+            "a\\b",                     // バックスラッシュを含む
+            "",                         // 空文字
+            "   ",                      // 空白のみ
+            "..",                       // .. 単独
+            ".hidden",                  // 先頭がドット
+            "/abs/path",                // 絶対パス（Unix 風）
+            "foo\x00bar",               // NUL バイト
+            "path/traversal/../secret", // スラッシュ + ..
+        ];
+        for name in bad_names {
+            assert!(
+                LocalFileSystem::validate_character_name(name).is_err(),
+                "expected Err for bad name {name:?}, got Ok"
+            );
+        }
+
+        // --- 正常な名前 ---
+        let good_names: &[&str] = &[
+            "alice",
+            "my-char_1",
+            "キャラクター", // Unicode は許容する
+            "char123",
+            "A",
+        ];
+        for name in good_names {
+            assert!(
+                LocalFileSystem::validate_character_name(name).is_ok(),
+                "expected Ok for good name {name:?}, got Err"
+            );
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.3: save_character / read_character ラウンドトリップ
+    // -------------------------------------------------------------------------
+
+    /// save_character → read_character でラウンドトリップが成立する。
+    #[tokio::test]
+    async fn test_character_round_trip() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let data = serde_json::json!({
+            "name": "alice",
+            "personality": "friendly",
+            "voice": "soft"
+        });
+
+        fs.save_character("alice", &data)
+            .await
+            .expect("save_character should succeed");
+
+        let loaded = fs
+            .read_character("alice")
+            .await
+            .expect("read_character should succeed");
+
+        assert_eq!(data, loaded, "round-trip value must match");
+
+        // ファイルが正しい場所に作られていること
+        assert!(
+            base.join("characters").join("alice.json").is_file(),
+            "character file should exist at base/characters/alice.json"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.3: パストラバーサル防止
+    // -------------------------------------------------------------------------
+
+    /// save_character に `../../etc/passwd` を渡すと Err になり、
+    /// base/characters 外にファイルが作られないことを確認する。
+    #[tokio::test]
+    async fn test_save_character_rejects_path_traversal_dotdot_slash() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let data = serde_json::json!({});
+        let result = fs.save_character("../../etc/passwd", &data).await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "path traversal must be rejected with StorageError::LocalWrite, got: {result:?}"
+        );
+
+        // base の外にファイルが生成されていないこと
+        // (テスト実行環境の /etc/passwd は元から存在しうるので、
+        //  テスト用 base の外に新規ファイルが作られていないことで確認)
+        assert!(
+            !base.join("../../etc/passwd.json").exists(),
+            "no file should be created via path traversal"
+        );
+
+        cleanup(&base);
+    }
+
+    /// save_character に `"a/b"` を渡すと Err になる。
+    #[tokio::test]
+    async fn test_save_character_rejects_slash_in_name() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.save_character("a/b", &serde_json::json!({})).await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "name with slash must be rejected, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// read_character にパストラバーサルを試みる名前を渡すと Err になる。
+    #[tokio::test]
+    async fn test_read_character_rejects_path_traversal() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.read_character("../../etc/passwd").await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalRead(_))),
+            "path traversal must be rejected with StorageError::LocalRead, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.3: list_characters
+    // -------------------------------------------------------------------------
+
+    /// キャラクターを 2 件保存後、list_characters が両方の名前を返す。
+    #[tokio::test]
+    async fn test_list_characters_returns_saved_names() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        fs.save_character("alice", &serde_json::json!({"id": "alice"}))
+            .await
+            .expect("save alice should succeed");
+        fs.save_character("bob", &serde_json::json!({"id": "bob"}))
+            .await
+            .expect("save bob should succeed");
+
+        let mut names = fs
+            .list_characters()
+            .await
+            .expect("list_characters should succeed");
+
+        names.sort();
+        assert_eq!(
+            names,
+            vec!["alice".to_string(), "bob".to_string()],
+            "list_characters must return both saved names"
+        );
+
+        cleanup(&base);
+    }
+
+    /// characters ディレクトリが存在しない場合、list_characters は空の Vec を返す。
+    #[tokio::test]
+    async fn test_list_characters_empty_when_dir_missing() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        // characters/ を作らずに呼び出す
+        let names = fs
+            .list_characters()
+            .await
+            .expect("list_characters on missing dir must return Ok, not Err");
+
+        assert!(
+            names.is_empty(),
+            "list_characters must return empty Vec when characters/ dir doesn't exist, got: {names:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// characters ディレクトリが存在するが空の場合、list_characters は空の Vec を返す。
+    #[tokio::test]
+    async fn test_list_characters_empty_when_dir_exists_but_empty() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        // characters/ ディレクトリだけ作っておく
+        std::fs::create_dir_all(base.join("characters"))
+            .expect("creating characters dir should succeed");
+
+        let names = fs
+            .list_characters()
+            .await
+            .expect("list_characters on empty dir must return Ok");
+
+        assert!(
+            names.is_empty(),
+            "list_characters must return empty Vec for empty dir, got: {names:?}"
         );
 
         cleanup(&base);

@@ -34,7 +34,7 @@
   - _Requirements: 1.3, 1.6, 5.1_
   - _Boundary: LocalFileSystem_
 
-- [ ] 2.3 (P) カスタムキャラクター定義の保存・読み込みを実装する
+- [x] 2.3 (P) カスタムキャラクター定義の保存・読み込みを実装する
   - `~/.mitatete/characters/<name>.json` への書き込みと読み込み、一覧取得を実装する
   - キャラクター名のファイル名サニタイズを行い、パストラバーサルを防止する
   - ユニットテストでサニタイズが機能することを確認できる
@@ -130,3 +130,4 @@
 - 2.1: `LocalFileSystem { base }` struct を導入（`with_base()`=テスト用 / `new()`=home解決）。read/write は tokio::fs、エラーは明示 map_err で `LocalWrite`/`LocalRead`（`From<io::Error>`=InitDir に依存しない）。日付は `validate_date` でバイト単位検証（長さ10・位置4,7が`-`・他は数字）＝パストラバーサル防止。後続 2.2〜2.4 はこの struct にメソッド追加する形で拡張すること。
 - 2.1 残課題(軽微): `test_save_history_rejects_path_traversal` 内に常に真の assertion(`!escaped.exists() || true`)があるが、直後の `base.join("history")` 非作成 assert で実害なし。将来テスト整理時に簡素化。
 - 2.2: `save_settings`/`read_settings` を `base/settings.json` に固定（パス引数なし）。read_settings は NotFound を `Ok({})` に縮退し、既存ファイルの read/parse 失敗のみ `LocalRead`（read_history との挙動差）。
+- 2.3: `save_character`/`read_character`/`list_characters` を `base/characters/<name>.json` に実装。`validate_character_name` で empty/空白・NUL・`/`・`\`・`..`(部分一致)・先頭`.` を拒否（保守的、`foo..bar` も弾く）。list は `.json` の file stem を返し、ディレクトリ不在時は空 Vec。
