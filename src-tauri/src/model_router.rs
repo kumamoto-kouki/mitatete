@@ -195,6 +195,7 @@ pub trait HttpClient: Send + Sync {
 }
 
 /// 本番実装: reqwest による実ネットワーク呼び出し。
+#[derive(Clone)]
 pub struct ReqwestHttpClient;
 
 impl HttpClient for ReqwestHttpClient {
@@ -469,6 +470,166 @@ impl<H: HttpClient> ModelProvider for GeminiClient<H> {
     }
 }
 
+// ─── ModelRouter（選択・ルーティング・リトライ） ─────────────────────────────
+
+use crate::key_manager::KeyStore;
+use std::sync::Mutex;
+
+/// アクティブなモデル選択（provider + モデルID）。
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ModelSelection {
+    pub provider: Provider,
+    pub model: String,
+}
+
+/// チャットの既定 max_tokens（非ストリーミング）。
+pub const DEFAULT_MAX_TOKENS: u32 = 4096;
+/// リトライ最大回数（retryable エラー時、要件5.3）。
+const MAX_RETRIES: u32 = 2;
+
+/// モデルルーター。アクティブ選択を保持し、汎用生成 `generate` を提供する。
+///
+/// `generate(system_prompt, messages)` は呼び出し元が system プロンプトを供給する汎用エントリで、
+/// チャット（send_message が CharacterSchema からプロンプト構築）と diary-engine（観察日記プロンプト）
+/// の双方が再利用する。モデル選択・切替はユーザー操作起点のみ（自動変更しない、要件1.3）。
+pub struct ModelRouter<H: HttpClient + Clone, K: KeyStore> {
+    active: Mutex<ModelSelection>,
+    http: H,
+    keys: K,
+}
+
+impl<H: HttpClient + Clone, K: KeyStore> ModelRouter<H, K> {
+    pub fn new(http: H, keys: K, initial: ModelSelection) -> Self {
+        Self {
+            active: Mutex::new(initial),
+            http,
+            keys,
+        }
+    }
+
+    /// アクティブモデルを切り替える（ユーザー操作起点のみ、要件1.1, 1.3）。
+    pub fn set_active(&self, selection: ModelSelection) {
+        *self.active.lock().unwrap() = selection;
+    }
+
+    /// 現在のアクティブモデルを返す。
+    pub fn get_active(&self) -> ModelSelection {
+        self.active.lock().unwrap().clone()
+    }
+
+    async fn dispatch(
+        &self,
+        provider: Provider,
+        api_key: &str,
+        req: &ChatRequest,
+    ) -> Result<ChatResponse, ModelError> {
+        match provider {
+            Provider::Claude => {
+                ClaudeClient::new(self.http.clone())
+                    .send(api_key, req)
+                    .await
+            }
+            Provider::Openai => {
+                OpenAIClient::new(self.http.clone())
+                    .send(api_key, req)
+                    .await
+            }
+            Provider::Gemini => {
+                GeminiClient::new(self.http.clone())
+                    .send(api_key, req)
+                    .await
+            }
+        }
+    }
+
+    /// 汎用生成。アクティブ provider のキーを取得し、構築済みプロンプトで送信する。
+    ///
+    /// - キー未設定なら `ApiKeyMissing` を返し送信しない（要件3.4）。
+    /// - retryable（429/5xx/ネットワーク）のみ指数バックオフで再試行（上限 `MAX_RETRIES`、要件5.3）。
+    pub async fn generate(
+        &self,
+        system_prompt: &str,
+        messages: Vec<ChatMessage>,
+        max_tokens: u32,
+    ) -> Result<ChatResponse, ModelError> {
+        // ロックは clone してすぐ解放する（await をまたがない）。
+        let selection = self.get_active();
+        let api_key = self
+            .keys
+            .get(selection.provider)?
+            .ok_or(ModelError::ApiKeyMissing(selection.provider))?;
+        let req = ChatRequest {
+            model: selection.model,
+            system_prompt: system_prompt.to_string(),
+            messages,
+            max_tokens,
+        };
+
+        let mut attempt: u32 = 0;
+        loop {
+            match self.dispatch(selection.provider, &api_key, &req).await {
+                Ok(res) => return Ok(res),
+                Err(e) if e.is_retryable() && attempt < MAX_RETRIES => {
+                    attempt += 1;
+                    let backoff = std::time::Duration::from_millis(50 * 2u64.pow(attempt));
+                    tokio::time::sleep(backoff).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
+// ─── Tauri コマンド ─────────────────────────────────────────────────────────
+
+/// 本番のモデルルーター型。
+pub type AppModelRouter = ModelRouter<ReqwestHttpClient, crate::key_manager::KeyringKeyStore>;
+
+/// チャットメッセージを送信し、応答テキストを返す（要件4.1, 4.2）。
+///
+/// `schema_json` は CharacterSchema（原則値を内包）、`history_json` は過去ターン
+/// （`Vec<ChatMessage>`）。原則8を含むシステムプロンプトを構築し、汎用 `generate` を呼ぶ。
+/// 履歴保存（成功時のみ）は呼び出し元（main.ts）が `save_history` で行う（要件6.1, 6.2）。
+#[tauri::command]
+pub async fn send_message(
+    router: tauri::State<'_, AppModelRouter>,
+    schema_json: String,
+    history_json: String,
+    message: String,
+) -> Result<String, ModelError> {
+    let character: PromptCharacter =
+        serde_json::from_str(&schema_json).map_err(|e| ModelError::Decode(e.to_string()))?;
+    let mut messages: Vec<ChatMessage> =
+        serde_json::from_str(&history_json).map_err(|e| ModelError::Decode(e.to_string()))?;
+    let system_prompt = build_system_prompt(&character);
+    messages.push(ChatMessage {
+        role: Role::User,
+        content: message,
+    });
+    let res = router
+        .generate(&system_prompt, messages, DEFAULT_MAX_TOKENS)
+        .await?;
+    Ok(res.text)
+}
+
+/// アクティブモデルを切り替える（ユーザー操作、要件1.1）。
+#[tauri::command]
+pub async fn set_active_model(
+    router: tauri::State<'_, AppModelRouter>,
+    selection: ModelSelection,
+) -> Result<(), ModelError> {
+    router.set_active(selection);
+    Ok(())
+}
+
+/// 現在のアクティブモデルを返す。
+#[tauri::command]
+pub async fn get_active_model(
+    router: tauri::State<'_, AppModelRouter>,
+) -> Result<ModelSelection, ModelError> {
+    Ok(router.get_active())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -714,5 +875,108 @@ mod tests {
             "あなたは「ミタ」です。"
         );
         assert_eq!(payload["contents"][0]["role"], "model"); // assistant→model
+    }
+
+    // ─── ModelRouter（生成・リトライ・選択） ──────────────────────────────────
+
+    use std::collections::VecDeque;
+    use std::sync::Arc;
+
+    /// キューから順に HttpResponse を返す Clone 可能モック（リトライ検証用）。
+    #[derive(Clone)]
+    struct SeqHttp {
+        queue: Arc<Mutex<VecDeque<(u16, String)>>>,
+        calls: Arc<Mutex<u32>>,
+    }
+    impl SeqHttp {
+        fn new(resps: &[(u16, &str)]) -> Self {
+            Self {
+                queue: Arc::new(Mutex::new(
+                    resps.iter().map(|(s, b)| (*s, b.to_string())).collect(),
+                )),
+                calls: Arc::new(Mutex::new(0)),
+            }
+        }
+    }
+    impl HttpClient for SeqHttp {
+        async fn send(&self, _req: HttpRequest) -> Result<HttpResponse, ModelError> {
+            *self.calls.lock().unwrap() += 1;
+            let (status, body) = self
+                .queue
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or((200, "{}".to_string()));
+            Ok(HttpResponse { status, body })
+        }
+    }
+
+    /// 固定キー（Some/None）を返す Clone 可能 KeyStore。
+    #[derive(Clone)]
+    struct FixedKeys {
+        key: Option<String>,
+    }
+    impl KeyStore for FixedKeys {
+        fn set(&self, _p: Provider, _k: &str) -> Result<(), ModelError> {
+            Ok(())
+        }
+        fn get(&self, _p: Provider) -> Result<Option<String>, ModelError> {
+            Ok(self.key.clone())
+        }
+    }
+
+    const CLAUDE_OK: &str =
+        r#"{"model":"claude-opus-4-8","content":[{"type":"text","text":"はい"}]}"#;
+
+    fn make_router(http: SeqHttp, key: Option<&str>) -> ModelRouter<SeqHttp, FixedKeys> {
+        ModelRouter::new(
+            http,
+            FixedKeys {
+                key: key.map(|s| s.to_string()),
+            },
+            ModelSelection {
+                provider: Provider::Claude,
+                model: DEFAULT_CLAUDE_MODEL.to_string(),
+            },
+        )
+    }
+
+    #[tokio::test]
+    async fn generate_returns_api_key_missing_without_sending() {
+        let http = SeqHttp::new(&[]);
+        let r = make_router(http.clone(), None);
+        let err = r.generate("sys", vec![], 100).await.unwrap_err();
+        assert!(matches!(err, ModelError::ApiKeyMissing(Provider::Claude)));
+        assert_eq!(*http.calls.lock().unwrap(), 0); // 送信していない
+    }
+
+    #[tokio::test]
+    async fn generate_retries_on_retryable_then_succeeds() {
+        let http = SeqHttp::new(&[(503, "busy"), (200, CLAUDE_OK)]);
+        let r = make_router(http.clone(), Some("k"));
+        let res = r.generate("sys", vec![], 100).await.unwrap();
+        assert_eq!(res.text, "はい");
+        assert_eq!(*http.calls.lock().unwrap(), 2); // 503 → 再試行 → 200
+    }
+
+    #[tokio::test]
+    async fn generate_does_not_retry_non_retryable() {
+        let http = SeqHttp::new(&[(401, "unauthorized")]);
+        let r = make_router(http.clone(), Some("k"));
+        let err = r.generate("sys", vec![], 100).await.unwrap_err();
+        assert!(matches!(err, ModelError::Http { status: 401, .. }));
+        assert_eq!(*http.calls.lock().unwrap(), 1); // 再試行しない
+    }
+
+    #[tokio::test]
+    async fn set_active_then_get_active_reflects_user_selection() {
+        let r = make_router(SeqHttp::new(&[]), Some("k"));
+        r.set_active(ModelSelection {
+            provider: Provider::Gemini,
+            model: "gemini-x".into(),
+        });
+        let active = r.get_active();
+        assert_eq!(active.provider, Provider::Gemini);
+        assert_eq!(active.model, "gemini-x");
     }
 }
