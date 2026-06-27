@@ -3,7 +3,7 @@
 ## タスク一覧
 
 - [ ] 1. 基盤：データ型定義とバリデーション
-- [ ] 1.1 CharacterSchema 型定義とバリデーターの実装
+- [x] 1.1 CharacterSchema 型定義とバリデーターの実装
   - `CharacterSchema` および `VisualConfig` の型定義を `character-validator.ts` に記述する（TypeScript の `interface` を使用）
   - `aiDisclosure` の固定文言（「私はAIアシスタントです。人間ではありません。」）を定数として定義し、いかなる入力でも上書きできないよう強制付与するロジックを実装する
   - `name`・`tone` の非空チェックを実装し、違反時は例外をスローする
