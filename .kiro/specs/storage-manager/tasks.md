@@ -109,17 +109,17 @@
   - _Depends: 5.1, 3.1, 3.2, 3.3_
 
 - [ ] 7. 検証: エラーハンドリングとエッジケース
-- [ ] 7.1 ローカル書き込み失敗時のエラー返却を検証する
+- [x] 7.1 ローカル書き込み失敗時のエラー返却を検証する
   - ディスク容量不足・権限エラーなどのシミュレーションでエラーが正しくフロントエンドに返ることを確認する
   - _Requirements: 5.1_
   - _Boundary: LocalFileSystem, StorageManager_
 
-- [ ] 7.2 (P) 未承認状態での GDrive アップロードが呼ばれないことを検証する
+- [x] 7.2 (P) 未承認状態での GDrive アップロードが呼ばれないことを検証する
   - `AuthStatus::Unauthorized` のとき StorageManager が GDriveClient を呼ばないことをモックで確認する
   - _Requirements: 1.7, 3.1_
   - _Boundary: StorageManager_
 
-- [ ] 7.3 (P) 承認取り消し後のローカル保存継続を検証する
+- [x] 7.3 (P) 承認取り消し後のローカル保存継続を検証する
   - `revoke_auth()` 後に `save_history()` を呼び出し、`~/.mitatete/history/` にファイルが書き込まれることを確認する
   - _Requirements: 4.4_
   - _Boundary: OAuthManager, LocalFileSystem_
@@ -142,3 +142,6 @@
 - 4.2: `upload` に最大3回・指数バックオフのリトライを実装（`MAX_UPLOAD_ATTEMPTS=3`、`delay=backoff_base_ms * 2^(attempt-1)`）。4xx は即失敗（リトライしない方針）、5xx/エラーはリトライ、全失敗で `GDriveUpload`。backoff はフィールド注入式で、`with_backoff_base(Duration::ZERO)` によりテストは高速。リトライ回数は mock の recorded_requests().len() で検証。
 - 5.1: `StorageManager<S,X,H>` が LocalFileSystem + OAuthManager + GDriveClient を統合。save_history/settings/diary は「ローカル先行保存→`get_auth_status` で分岐→Authorized 時のみ GDrive 委譲」。結果は `SaveResult { LocalOnly, LocalAndGDrive, LocalOnlyWithGDriveWarning(String) }` で表現し、GDrive 失敗はローカル成功を覆さない（5.4 エラー独立性）。トークンは `oauth.store.load()`（TokenStore シーム）経由のみ。レビュー round1 の指摘（doc重複・冒頭コメント陳腐化）は round2 で修正済み。未承認時は GDrive を呼ばない（1.7、テストで recorded_requests==0 を検証）。
 - 6.1: 9つの `#[tauri::command]`（save_history/read_history/save_settings/read_settings/save_character/save_diary/get_auth_status/start_oauth/revoke_auth）を storage.rs に定義、lib.rs の `generate_handler!` に登録し `app.manage(AppStorage)` で配線。`StorageError`/`SaveResult` に Serialize 付与（6.2 構造化返却）。`AppStorage = StorageManager<KeyringTokenStore, GoogleTokenExchanger, ReqwestExecutor>`。Google OAuth 資格情報は `MITATETE_GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI` env から読む（ハードコードなし、未設定だと OAuth は機能しないがローカルコマンドは動作）。検証は cargo check + 既存49テストで担保（tauri command は harness 無しでは単体テスト不可）。**環境注意**: 完全な `cargo build`（tauri バイナリ）は webkit2gtk/gtk が必要で WSL2 env では未導入の可能性。
+- 7.1: ローカル書き込み失敗の検証。base の親をファイルにして `create_dir_all` の実 OS エラー(ENOTDIR)を誘発し `LocalWrite` を確認。StorageManager 経由でもローカル失敗時は GDrive 非呼び出し（mock 0件）を検証。
+- 7.2: 未承認時の GDrive 非呼び出しを save_settings/save_diary でも明示検証（test_7_2_*、mock 0件）。save_history は 5.1 で既出。
+- 7.3: complete_auth→revoke_auth→save の経路で、revoke 後もローカルファイルがディスク上に作成され（オンディスク検証）、GDrive が呼ばれない（0件）ことを検証（4.4）。production コード変更なし、全56テスト pass。

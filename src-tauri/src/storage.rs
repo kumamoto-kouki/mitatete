@@ -3479,4 +3479,313 @@ mod tests {
 
         cleanup(&base);
     }
+
+    // =========================================================================
+    // Task 7.1: ローカル書き込み失敗時のエラー返却検証（要件 5.1）
+    // =========================================================================
+
+    /// LocalFileSystem レベル: ベースパスの親がファイルのとき save_history が
+    /// StorageError::LocalWrite(_) を返すことを確認する（要件 5.1）。
+    ///
+    /// 手法: temp ファイルをパス P として作成し、LocalFileSystem::with_base(P/"sub") を
+    /// 構築する。write を試みると P がファイルなので create_dir_all が ENOTDIR で失敗し、
+    /// LocalWrite エラーが返る。
+    #[tokio::test]
+    async fn test_local_filesystem_save_history_write_failure_returns_local_write_error() {
+        let blocker = temp_base();
+        // blocker 自体をファイルとして作成する（親ディレクトリを作って中にファイルを置く）
+        std::fs::create_dir_all(blocker.parent().unwrap()).expect("parent dir must be creatable");
+        std::fs::write(&blocker, b"i am a file, not a dir")
+            .expect("creating blocker file must succeed");
+
+        // blocker はファイルなので blocker/sub への create_dir_all は失敗する
+        let fs = LocalFileSystem::with_base(blocker.join("sub"));
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = fs.save_history("2026-06-27", &data).await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "save_history must return StorageError::LocalWrite when write fails, got: {result:?}"
+        );
+
+        // blocker ファイルを削除してクリーンアップ
+        let _ = std::fs::remove_file(&blocker);
+    }
+
+    /// LocalFileSystem レベル: save_settings も書き込み失敗時に LocalWrite を返す（要件 5.1）。
+    #[tokio::test]
+    async fn test_local_filesystem_save_settings_write_failure_returns_local_write_error() {
+        let blocker = temp_base();
+        std::fs::create_dir_all(blocker.parent().unwrap()).expect("parent dir must be creatable");
+        std::fs::write(&blocker, b"i am a file, not a dir")
+            .expect("creating blocker file must succeed");
+
+        // blocker はファイルなので blocker/sub への create_dir_all は失敗する
+        let fs = LocalFileSystem::with_base(blocker.join("sub"));
+        let data = serde_json::json!({"active_character": "default"});
+        let result = fs.save_settings(&data).await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "save_settings must return StorageError::LocalWrite when write fails, got: {result:?}"
+        );
+
+        let _ = std::fs::remove_file(&blocker);
+    }
+
+    /// StorageManager レベル: ローカル書き込みが失敗するとき save_history が
+    /// Err(StorageError::LocalWrite(_)) を返し、GDrive は呼ばれない（要件 5.1）。
+    ///
+    /// 承認済み状態で構築しても、ローカル書き込みが先に失敗した場合は
+    /// GDrive 呼び出し前にエラーが返るため MockHttpExecutor に記録がゼロになる。
+    #[tokio::test]
+    async fn test_storage_manager_save_history_local_write_failure_returns_local_write_err_no_gdrive_call(
+    ) {
+        // ベースパスの親をファイルにして書き込みを確実に失敗させる
+        let blocker = temp_base();
+        std::fs::create_dir_all(blocker.parent().unwrap()).expect("parent dir must be creatable");
+        std::fs::write(&blocker, b"i am a file, not a dir")
+            .expect("creating blocker file must succeed");
+
+        let broken_base = blocker.join("sub");
+
+        let local = LocalFileSystem::with_base(broken_base);
+        let store = InMemoryTokenStore::new();
+        // 承認済み状態にしておく（それでも LocalWrite 失敗で GDrive は呼ばれない）
+        store.save(&canned_token()).expect("pre-save token");
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let oauth = OAuthManager::new(
+            "test-client-id".to_string(),
+            "http://localhost/callback".to_string(),
+            store,
+            exchanger,
+        );
+        // 承認済み想定でモックを用意するが、実際には呼ばれないはず
+        let mock = MockHttpExecutor::new(vec![]);
+        let gdrive = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+        let sm = StorageManager::new(local, oauth, gdrive);
+
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = sm.save_history("2026-06-27", &data).await;
+
+        // LocalWrite エラーが返ること（要件 5.1）
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "StorageManager must propagate LocalWrite error when local write fails, got: {result:?}"
+        );
+
+        // GDrive が呼ばれていないこと（ローカル失敗で GDrive 前にリターン）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "GDrive must NOT be called when local write fails, got {} requests",
+            reqs.len()
+        );
+
+        let _ = std::fs::remove_file(&blocker);
+    }
+
+    // =========================================================================
+    // Task 7.2: 未承認状態での GDrive アップロード非呼び出し検証（要件 1.7, 3.1）
+    // =========================================================================
+    //
+    // 注記: 5.1a/5.1d で save_history / save_settings / save_diary の Unauthorized
+    // ケースは既に確認済み。本タスクでは 7.2 を直接名指しするテストを追加し、
+    // save_settings と save_diary について明示的に GDrive 非呼び出しを検証する。
+
+    /// 未承認状態で save_settings を呼ぶとき GDriveClient が一切呼ばれない（要件 1.7, 3.1）。
+    ///
+    /// Task 7.2 の直接検証用テスト。5.1d と同一の振る舞いを確認するが、
+    /// 要件トレーサビリティのために明示的に命名する。
+    #[tokio::test]
+    async fn test_7_2_unauthorized_save_settings_no_gdrive_call() {
+        let base = temp_base();
+        let (sm, base) = make_storage_manager_unauthorized(base);
+
+        let data = serde_json::json!({"active_character": "miku", "principles": {}});
+        let result = sm.save_settings(&data).await;
+
+        // ローカル保存のみ
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "unauthorized save_settings must return Ok(LocalOnly) (req 1.7), got: {result:?}"
+        );
+
+        // GDrive リクエストがゼロ（AuthStatus::Unauthorized → GDrive 呼び出しなし）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "GDrive must NOT be called when unauthorized (req 3.1), got {} requests",
+            reqs.len()
+        );
+
+        cleanup(&base);
+    }
+
+    /// 未承認状態で save_diary を呼ぶとき GDriveClient が一切呼ばれない（要件 1.7, 3.1）。
+    ///
+    /// Task 7.2 の直接検証用テスト。save_diary 経路での未承認 GDrive 非呼び出しを確認する。
+    #[tokio::test]
+    async fn test_7_2_unauthorized_save_diary_no_gdrive_call() {
+        let base = temp_base();
+        let (sm, base) = make_storage_manager_unauthorized(base);
+
+        let result = sm.save_diary("2026-06-27", "# Test\n内容").await;
+
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "unauthorized save_diary must return Ok(LocalOnly) (req 1.7), got: {result:?}"
+        );
+
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "GDrive must NOT be called when unauthorized (req 3.1), got {} requests",
+            reqs.len()
+        );
+
+        cleanup(&base);
+    }
+
+    // =========================================================================
+    // Task 7.3: 承認取り消し後のローカル保存継続検証（要件 4.4）
+    // =========================================================================
+
+    /// complete_auth → revoke_auth → save_history のシーケンスで:
+    /// - ローカルファイルが temp base に書き込まれること（要件 4.4: ローカル保存継続）
+    /// - revoke 後は AuthStatus::Unauthorized に戻るため GDrive が呼ばれないこと（要件 4.1）
+    /// - MockHttpExecutor のリクエスト数がゼロ（revoke 後の GDrive 非呼び出し）
+    #[tokio::test]
+    async fn test_7_3_local_save_continues_after_revoke_auth_no_gdrive_call() {
+        let base = temp_base();
+
+        // StorageManager を承認済み状態で構築する。
+        // complete_auth を呼ぶために StorageManager の oauth フィールドに直接アクセスする代わりに、
+        // make_storage_manager_authorized を使って事前にトークンを保存する。
+        // その後 revoke_auth() でトークンを削除し Unauthorized に戻す。
+
+        // GDrive モック: revoke 後は呼ばれないはずなのでキューは空
+        let (sm, base) = make_storage_manager_authorized(base, vec![]);
+
+        // 事前確認: 承認済み状態であること
+        let status_before = sm
+            .get_auth_status()
+            .await
+            .expect("get_auth_status must succeed");
+        assert_eq!(
+            status_before,
+            AuthStatus::Authorized,
+            "StorageManager must start Authorized for this test"
+        );
+
+        // 承認を取り消す（要件 4.3: トークンのみ削除）
+        sm.oauth
+            .revoke_auth()
+            .await
+            .expect("revoke_auth must succeed");
+
+        // 取り消し後の状態確認（要件 4.5: 未承認状態を返す）
+        let status_after = sm
+            .get_auth_status()
+            .await
+            .expect("get_auth_status must succeed");
+        assert_eq!(
+            status_after,
+            AuthStatus::Unauthorized,
+            "StorageManager must be Unauthorized after revoke_auth (req 4.5)"
+        );
+
+        // revoke 後に save_history を呼ぶ（要件 4.4: ローカル保存継続）
+        let data = serde_json::json!({"date": "2026-06-27", "messages": []});
+        let result = sm.save_history("2026-06-27", &data).await;
+
+        // Ok(LocalOnly) が返ること（未承認なのでローカルのみ）
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "save_history after revoke must return Ok(LocalOnly), got: {result:?}"
+        );
+
+        // ローカルファイルが temp base に書き込まれていること（要件 4.4）
+        assert!(
+            base.join("history").join("2026-06-27.json").is_file(),
+            "local file must exist after revoke_auth + save_history (req 4.4): local saving must continue"
+        );
+
+        // GDrive が呼ばれていないこと（revoke 後は Unauthorized → GDrive 呼び出しなし）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "GDrive must NOT be called after revoke_auth (Unauthorized), got {} requests",
+            reqs.len()
+        );
+
+        cleanup(&base);
+    }
+
+    /// complete_auth (FakeTokenExchanger で成功) → revoke_auth → save_diary の検証。
+    /// ローカルファイル作成 + GDrive 非呼び出しを save_diary 経路でも確認する（要件 4.4）。
+    #[tokio::test]
+    async fn test_7_3_local_save_diary_continues_after_revoke_auth_no_gdrive_call() {
+        let base = temp_base();
+
+        // OAuthManager を使って complete_auth → revoke_auth のシーケンスを実行する
+        let store = InMemoryTokenStore::new();
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let oauth = OAuthManager::new(
+            "test-client-id".to_string(),
+            "http://localhost/callback".to_string(),
+            store,
+            exchanger,
+        );
+
+        // complete_auth でトークンを取得・保存して Authorized 状態にする
+        let auth_result = oauth
+            .complete_auth("valid-auth-code")
+            .await
+            .expect("complete_auth must succeed");
+        assert_eq!(
+            auth_result,
+            AuthStatus::Authorized,
+            "complete_auth must return Authorized"
+        );
+
+        // revoke_auth でトークンを削除して Unauthorized に戻す（要件 4.3）
+        oauth.revoke_auth().await.expect("revoke_auth must succeed");
+
+        // LocalFileSystem と GDriveClient（空モック）を組み合わせて StorageManager を構築
+        let local = LocalFileSystem::with_base(base.clone());
+        let mock = MockHttpExecutor::new(vec![]);
+        let gdrive = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+        let sm = StorageManager::new(local, oauth, gdrive);
+
+        // revoke 後に save_diary を呼ぶ
+        let result = sm.save_diary("2026-06-27", "# 日記\n本文").await;
+
+        // Ok(LocalOnly) が返ること
+        assert!(
+            matches!(result, Ok(SaveResult::LocalOnly)),
+            "save_diary after revoke must return Ok(LocalOnly), got: {result:?}"
+        );
+
+        // ローカルファイルが書き込まれていること（要件 4.4）
+        assert!(
+            base.join("diary").join("2026-06-27.md").is_file(),
+            "diary file must exist after revoke_auth + save_diary (req 4.4)"
+        );
+
+        // GDrive が呼ばれていないこと（revoke 後は Unauthorized）
+        let reqs = sm.gdrive.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            0,
+            "GDrive must NOT be called after revoke_auth, got {} requests",
+            reqs.len()
+        );
+
+        cleanup(&base);
+    }
 }
