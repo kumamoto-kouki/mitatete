@@ -1,0 +1,18 @@
+# Rust / Tauri
+/src-tauri/target/
+**/*.rs.bk
+
+# Node (prettier 等のツール利用時)
+node_modules/
+dist/
+
+# OS / エディタ
+.DS_Store
+*.swp
+
+# 環境変数・シークレット
+.env
+.env.*
+
+# Claude Code ローカル設定（context-mode 等のローカル限定設定。コミットしない）
+.claude/settings.local.json
