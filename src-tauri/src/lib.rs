@@ -1,6 +1,8 @@
 // Mitatete バックエンドのエントリポイント。
 // ウィンドウ（チャットUI / キャラクターウィンドウ）は tauri.conf.json で定義する。
 
+pub mod key_manager;
+pub mod model_router;
 pub mod storage;
 
 use storage::{
