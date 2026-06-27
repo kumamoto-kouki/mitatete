@@ -420,16 +420,63 @@ impl<S: TokenStore, X: TokenExchanger> OAuthManager<S, X> {
         Ok(AuthStatus::Authorized)
     }
 
-    /// 現在の承認状態を返す。
+    /// 現在の承認状態を返す（アプリ起動時に呼び出す）。
     ///
-    /// - トークンが store に存在する → `AuthStatus::Authorized`
-    /// - トークンが存在しない → `AuthStatus::Unauthorized`
+    /// 内部で実際の現在時刻（Unix 秒）を取得し、`get_auth_status_at` に委譲する。
     ///
-    /// (トークン有効期限・リフレッシュはタスク 3.2 で実装する)
+    /// # 戻り値の契約
+    /// - `Ok(AuthStatus::Authorized)`: 有効なトークンあり、またはリフレッシュ成功
+    /// - `Ok(AuthStatus::Unauthorized)`: トークンなし、または期限切れ＋リフレッシュ失敗
+    ///   （リフレッシュ失敗の場合は先にトークンを削除してから `Unauthorized` を返す）
+    /// - `Err(StorageError)`: ストアへのアクセス失敗など想定外のエラー（リフレッシュ失敗は含まない）
     pub async fn get_auth_status(&self) -> Result<AuthStatus, StorageError> {
-        match self.store.load()? {
-            Some(_) => Ok(AuthStatus::Authorized),
-            None => Ok(AuthStatus::Unauthorized),
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        self.get_auth_status_at(now).await
+    }
+
+    /// 起動時トークン確認の内部実装。`now_unix` を注入することでテストが決定論的になる。
+    ///
+    /// # アルゴリズム
+    /// 1. ストアからトークンを読み込む。`None` → `Ok(Unauthorized)`
+    /// 2. トークンが有効（`expires_at > now_unix + EXPIRY_SKEW_SECS`）→ `Ok(Authorized)`
+    /// 3. 期限切れ → リフレッシュを試みる
+    ///    - 成功: 新しいトークンをストアに保存し `Ok(Authorized)` を返す
+    ///    - 失敗: ストアからトークンを削除し `Ok(Unauthorized)` を返す（graceful degradation）
+    ///
+    /// # セキュリティ不変条件
+    /// リフレッシュ後のトークンは `self.store` 経由でのみ保存される。
+    async fn get_auth_status_at(&self, now_unix: i64) -> Result<AuthStatus, StorageError> {
+        // 有効期限判定に使う猶予時間（秒）。
+        // トークンがこの秒数以内に期限切れになる場合も「期限切れ」として扱い、リフレッシュを試みる。
+        const EXPIRY_SKEW_SECS: i64 = 60;
+
+        let token = match self.store.load()? {
+            None => return Ok(AuthStatus::Unauthorized),
+            Some(t) => t,
+        };
+
+        // トークンがまだ有効な場合はそのまま Authorized を返す
+        if token.expires_at > now_unix + EXPIRY_SKEW_SECS {
+            return Ok(AuthStatus::Authorized);
+        }
+
+        // 期限切れ → リフレッシュを試みる
+        match self.exchanger.refresh(&token.refresh_token).await {
+            Ok(new_token) => {
+                // リフレッシュ成功: 新しいトークンをキーチェーン（TokenStore）にのみ保存する
+                self.store.save(&new_token)?;
+                Ok(AuthStatus::Authorized)
+            }
+            Err(_) => {
+                // リフレッシュ失敗: トークンを削除して Unauthorized へ移行（graceful degradation）
+                // 設計書 2.4「失敗した場合は未承認状態に移行」に準拠
+                // ストア削除の失敗は無視し、Unauthorized を返すことを優先する
+                let _ = self.store.delete();
+                Ok(AuthStatus::Unauthorized)
+            }
         }
     }
 }
@@ -1505,28 +1552,60 @@ mod tests {
     }
 
     struct FakeTokenExchanger {
-        result: FakeExchangeResult,
+        exchange_result: FakeExchangeResult,
+        /// refresh() 呼び出し時の結果。None の場合は exchange_result と同じ挙動にする。
+        refresh_result: Option<FakeExchangeResult>,
     }
 
     impl FakeTokenExchanger {
         fn success(token: StoredToken) -> Self {
             Self {
-                result: FakeExchangeResult::Success(token),
+                exchange_result: FakeExchangeResult::Success(token),
+                refresh_result: None,
             }
         }
 
         fn failure(msg: &str) -> Self {
             Self {
-                result: FakeExchangeResult::Failure(msg.to_string()),
+                exchange_result: FakeExchangeResult::Failure(msg.to_string()),
+                refresh_result: None,
+            }
+        }
+
+        /// exchange_code は成功するが refresh は成功するフェイクを作成する。
+        fn with_refresh_success(exchange_token: StoredToken, refresh_token: StoredToken) -> Self {
+            Self {
+                exchange_result: FakeExchangeResult::Success(exchange_token),
+                refresh_result: Some(FakeExchangeResult::Success(refresh_token)),
+            }
+        }
+
+        /// exchange_code は成功するが refresh は失敗するフェイクを作成する。
+        fn with_refresh_failure(exchange_token: StoredToken) -> Self {
+            Self {
+                exchange_result: FakeExchangeResult::Success(exchange_token),
+                refresh_result: Some(FakeExchangeResult::Failure("refresh failed".to_string())),
             }
         }
     }
 
     impl TokenExchanger for FakeTokenExchanger {
         async fn exchange_code(&self, _code: &str) -> Result<StoredToken, StorageError> {
-            match &self.result {
+            match &self.exchange_result {
                 FakeExchangeResult::Success(token) => Ok(token.clone()),
                 FakeExchangeResult::Failure(msg) => Err(StorageError::OAuthFailed(msg.clone())),
+            }
+        }
+
+        async fn refresh(&self, _refresh_token: &str) -> Result<StoredToken, StorageError> {
+            match &self.refresh_result {
+                Some(FakeExchangeResult::Success(token)) => Ok(token.clone()),
+                Some(FakeExchangeResult::Failure(_)) => Err(StorageError::TokenRefreshFailed),
+                // refresh_result が設定されていない場合は exchange_result を流用する
+                None => match &self.exchange_result {
+                    FakeExchangeResult::Success(token) => Ok(token.clone()),
+                    FakeExchangeResult::Failure(_) => Err(StorageError::TokenRefreshFailed),
+                },
             }
         }
     }
@@ -1675,6 +1754,134 @@ mod tests {
         assert!(
             url.contains("access_type=offline"),
             "authorization_url must contain access_type=offline for refresh token, got: {url}"
+        );
+    }
+
+    // =========================================================================
+    // Task 3.2: get_auth_status_at — 起動時トークン確認とリフレッシュ処理
+    // =========================================================================
+
+    /// トークンなし → Unauthorized を返す。
+    #[tokio::test]
+    async fn test_get_auth_status_at_no_token_returns_unauthorized() {
+        let store = InMemoryTokenStore::new(); // 空
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let now = 1_000_000_000_i64; // 任意の固定時刻
+        let result = manager.get_auth_status_at(now).await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Unauthorized)),
+            "no token in store must return Ok(Unauthorized), got: {result:?}"
+        );
+    }
+
+    /// 有効期限内のトークンあり → Authorized を返し、トークンは変化しない。
+    #[tokio::test]
+    async fn test_get_auth_status_at_valid_token_returns_authorized_unchanged() {
+        let store = InMemoryTokenStore::new();
+        let now = 1_000_000_000_i64;
+        // expires_at が now + 3600 なので十分有効
+        let token = StoredToken {
+            access_token: "valid-access".to_string(),
+            refresh_token: "valid-refresh".to_string(),
+            expires_at: now + 3600,
+        };
+        store.save(&token).expect("pre-save must succeed");
+
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.get_auth_status_at(now).await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Authorized)),
+            "valid (non-expired) token must return Ok(Authorized), got: {result:?}"
+        );
+
+        // トークンが変化していないこと（リフレッシュは呼ばれていない）
+        let stored = manager.store.get_stored().expect("token must still exist");
+        assert_eq!(
+            stored.access_token, "valid-access",
+            "access_token must be unchanged when token is still valid"
+        );
+    }
+
+    /// 期限切れトークン + リフレッシュ成功 → Authorized を返し、ストアに新しいトークンが保存される。
+    #[tokio::test]
+    async fn test_get_auth_status_at_expired_token_refresh_success_returns_authorized_with_new_token(
+    ) {
+        let store = InMemoryTokenStore::new();
+        let now = 1_000_000_000_i64;
+        // expires_at が now より前なので期限切れ
+        let expired_token = StoredToken {
+            access_token: "old-access".to_string(),
+            refresh_token: "old-refresh".to_string(),
+            expires_at: now - 1,
+        };
+        store.save(&expired_token).expect("pre-save must succeed");
+
+        // リフレッシュ成功時に返す新しいトークン
+        let refreshed_token = StoredToken {
+            access_token: "new-access".to_string(),
+            refresh_token: "old-refresh".to_string(), // Google は同じ refresh_token を返す場合がある
+            expires_at: now + 3600,
+        };
+        let exchanger =
+            FakeTokenExchanger::with_refresh_success(canned_token(), refreshed_token.clone());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.get_auth_status_at(now).await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Authorized)),
+            "expired token + refresh success must return Ok(Authorized), got: {result:?}"
+        );
+
+        // ストアに新しいトークンが保存されていること
+        let stored = manager
+            .store
+            .get_stored()
+            .expect("refreshed token must be saved");
+        assert_eq!(
+            stored.access_token, "new-access",
+            "store must hold the refreshed access_token after successful refresh"
+        );
+        assert_eq!(
+            stored.expires_at, refreshed_token.expires_at,
+            "store must hold the refreshed expires_at"
+        );
+    }
+
+    /// 期限切れトークン + リフレッシュ失敗 → Unauthorized を返し、トークンがストアから削除される。
+    #[tokio::test]
+    async fn test_get_auth_status_at_expired_token_refresh_failure_returns_unauthorized_and_deletes_token(
+    ) {
+        let store = InMemoryTokenStore::new();
+        let now = 1_000_000_000_i64;
+        let expired_token = StoredToken {
+            access_token: "old-access".to_string(),
+            refresh_token: "old-refresh".to_string(),
+            expires_at: now - 1,
+        };
+        store.save(&expired_token).expect("pre-save must succeed");
+
+        let exchanger = FakeTokenExchanger::with_refresh_failure(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.get_auth_status_at(now).await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Unauthorized)),
+            "expired token + refresh failure must return Ok(Unauthorized), got: {result:?}"
+        );
+
+        // トークンがストアから削除されていること（graceful degradation, 設計書 2.4）
+        let stored = manager.store.get_stored();
+        assert!(
+            stored.is_none(),
+            "token must be deleted from store after refresh failure, but store has: {stored:?}"
         );
     }
 }

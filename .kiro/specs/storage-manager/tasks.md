@@ -57,7 +57,7 @@
   - _Requirements: 2.1, 2.2, 2.5_
   - _Boundary: OAuthManager_
 
-- [ ] 3.2 起動時の OAuth トークン確認とリフレッシュ処理を実装する
+- [x] 3.2 起動時の OAuth トークン確認とリフレッシュ処理を実装する
   - アプリ起動時にキーチェーンからトークンを読み込み、有効期限を確認する
   - 期限切れの場合はリフレッシュトークンで更新を試み、成功したら `Authorized`、失敗したらトークンを削除して `Unauthorized` を返す
   - `get_auth_status()` がアプリ起動時に正確な状態を返すことをテストで確認できる
@@ -125,6 +125,7 @@
   - _Boundary: OAuthManager, LocalFileSystem_
 
 ## Implementation Notes
+
 - 1.2: `StorageError` に design の enum 外の `InitDir(String)` variant を追加（初期化エラー用）。design のエラー型は例示であり許容範囲だが、後続タスク（2.x〜）でエラー型を拡張する際はこの variant の存在を前提にすること。
 - LocalFileSystem のパス構築は内部固定（外部から任意パスを受け取らない＝パストラバーサル防止）。`init_dirs(&Path)` はテスト用に pub だが、本番入口 `init_storage_dirs()` は外部パスを受け取らない。
 - 2.1: `LocalFileSystem { base }` struct を導入（`with_base()`=テスト用 / `new()`=home解決）。read/write は tokio::fs、エラーは明示 map_err で `LocalWrite`/`LocalRead`（`From<io::Error>`=InitDir に依存しない）。日付は `validate_date` でバイト単位検証（長さ10・位置4,7が`-`・他は数字）＝パストラバーサル防止。後続 2.2〜2.4 はこの struct にメソッド追加する形で拡張すること。
@@ -134,3 +135,4 @@
 - 2.4: `save_diary`/`read_diary` を `base/diary/<date>.md` に実装。Markdown を `content.as_bytes()` で逐語書き込み、read は `String::from_utf8` で完全一致復元。日付検証は既存 `validate_date` を再利用（重複バリデータなし）。
 - 共通(レビュー所見): reviewer は RED-phase を「git commit で失敗状態を記録していない」と WEAK 判定しがちだが、kiro-impl 仕様上 RED は status report の RED_PHASE_OUTPUT で足り、専用コミットは不要。advisory として扱い、status report に実測の失敗出力を必ず載せること。
 - 3.1: OAuthManager を `TokenStore`/`TokenExchanger` の2 trait で抽象化（本番=`KeyringTokenStore`+`GoogleTokenExchanger`、テスト=`InMemoryTokenStore`+`FakeTokenExchanger`、後者は #[cfg(test)] 限定）。`StoredToken` は keyring の単一エントリ(JSON)にのみ保存し、FS/GDrive には一切書かない（2.5 不変条件、レビューで検証済み）。`StorageError` に `OAuthFailed`/`TokenRefreshFailed`/`Unauthorized`(+将来用 `GDriveUpload`) を追加。3.2 のリフレッシュ・3.3 の revoke はこの構造に追加する。
+- 3.2: `OAuthManager::get_auth_status_at(now_unix)` の時刻シーム（`EXPIRY_SKEW_SECS=60`）で起動時の有効期限判定を実装。期限切れ→`TokenExchanger::refresh`（trait拡張、Google=grant_type=refresh_token、Fake=成功/失敗切替）。成功は新トークンを `store.save` のみ、失敗は `store.delete` して `Ok(Unauthorized)`（graceful degradation, 2.4）。keyring専用不変条件を維持。`get_auth_status()` は実 now を渡す薄ラッパ。
