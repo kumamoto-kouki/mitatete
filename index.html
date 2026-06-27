@@ -14,6 +14,9 @@
         <p class="chat__disclosure">これはAIアシスタントとの対話です。</p>
       </header>
 
+      <!-- モデル選択・API キー設定パネル（model-ui.ts が描画） -->
+      <aside id="model-panel" class="model-ui" aria-label="モデル設定"></aside>
+
       <!-- プリセットキャラクター選択パネル（character-ui.ts が描画） -->
       <aside
         id="character-panel"
@@ -47,6 +50,7 @@
     </main>
 
     <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/model-ui.ts"></script>
     <script type="module" src="/src/principles.ts"></script>
     <script type="module" src="/src/character-ui.ts"></script>
     <script type="module" src="/src/character-editor.ts"></script>

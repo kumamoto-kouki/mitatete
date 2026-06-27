@@ -141,6 +141,50 @@ body {
   color: var(--muted);
 }
 
+/* ===== モデル選択・API キー設定 ===== */
+.model-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e6e0d8;
+}
+
+.model-ui__select,
+.model-ui__model,
+.model-ui__key-input {
+  padding: 6px 8px;
+  border: 1px solid #d8d0c6;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.model-ui__keys {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.model-ui__key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.model-ui__key-input {
+  flex: 1;
+}
+
+.model-ui__key-status {
+  min-width: 56px;
+  color: var(--muted);
+}
+
+.msg--error {
+  color: #b00020;
+}
+
 /* ===== カスタムキャラクター作成フォーム ===== */
 .character-editor {
   padding: 8px 16px;
