@@ -99,7 +99,7 @@
   - _Depends: 2.1, 2.2, 2.3, 2.4, 4.1_
 
 - [ ] 6. 統合: Tauriコマンドの定義と main.rs への登録
-- [ ] 6.1 全ストレージ操作を Tauri コマンドとして公開する
+- [x] 6.1 全ストレージ操作を Tauri コマンドとして公開する
   - `save_history`・`read_history`・`save_settings`・`read_settings`・`save_character`・`save_diary` の Tauri コマンドを定義する
   - `get_auth_status`・`start_oauth`・`revoke_auth` の Tauri コマンドを定義する
   - 全コマンドを `main.rs` の `tauri::Builder` に登録する
@@ -141,3 +141,4 @@
 - **4.1 繰越事項(重要)**: GDrive のサブフォルダ（`mitatete/history/`・`mitatete/diary/`）は未対応で、現状ファイルは `mitatete/` 直下に保存される。design 3.2 の `mitatete/history/YYYY-MM-DD.json` 構造は **5.1(StorageManager) もしくは後続タスクで対応する**こと。
 - 4.2: `upload` に最大3回・指数バックオフのリトライを実装（`MAX_UPLOAD_ATTEMPTS=3`、`delay=backoff_base_ms * 2^(attempt-1)`）。4xx は即失敗（リトライしない方針）、5xx/エラーはリトライ、全失敗で `GDriveUpload`。backoff はフィールド注入式で、`with_backoff_base(Duration::ZERO)` によりテストは高速。リトライ回数は mock の recorded_requests().len() で検証。
 - 5.1: `StorageManager<S,X,H>` が LocalFileSystem + OAuthManager + GDriveClient を統合。save_history/settings/diary は「ローカル先行保存→`get_auth_status` で分岐→Authorized 時のみ GDrive 委譲」。結果は `SaveResult { LocalOnly, LocalAndGDrive, LocalOnlyWithGDriveWarning(String) }` で表現し、GDrive 失敗はローカル成功を覆さない（5.4 エラー独立性）。トークンは `oauth.store.load()`（TokenStore シーム）経由のみ。レビュー round1 の指摘（doc重複・冒頭コメント陳腐化）は round2 で修正済み。未承認時は GDrive を呼ばない（1.7、テストで recorded_requests==0 を検証）。
+- 6.1: 9つの `#[tauri::command]`（save_history/read_history/save_settings/read_settings/save_character/save_diary/get_auth_status/start_oauth/revoke_auth）を storage.rs に定義、lib.rs の `generate_handler!` に登録し `app.manage(AppStorage)` で配線。`StorageError`/`SaveResult` に Serialize 付与（6.2 構造化返却）。`AppStorage = StorageManager<KeyringTokenStore, GoogleTokenExchanger, ReqwestExecutor>`。Google OAuth 資格情報は `MITATETE_GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI` env から読む（ハードコードなし、未設定だと OAuth は機能しないがローカルコマンドは動作）。検証は cargo check + 既存49テストで担保（tauri command は harness 無しでは単体テスト不可）。**環境注意**: 完全な `cargo build`（tauri バイナリ）は webkit2gtk/gtk が必要で WSL2 env では未導入の可能性。

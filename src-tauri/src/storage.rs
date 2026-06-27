@@ -19,7 +19,12 @@ use std::path::Path;
 // ---------------------------------------------------------------------------
 
 /// storage-manager 全体で使用するエラー型。
-#[derive(Debug)]
+///
+/// Tauri コマンドの Err 型として使用するため `serde::Serialize` を実装する（要件 6.2）。
+/// フロントエンドには `{ "kind": "...", "message": "..." }` 形式で届く。
+/// シークレット（トークン・APIキー等）はこの型のフィールドに含まれない（要件 3.3）。
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "kind", content = "message")]
 pub enum StorageError {
     /// ローカルファイル書き込み失敗
     LocalWrite(String),
@@ -1324,7 +1329,9 @@ pub struct StorageManager<S: TokenStore, X: TokenExchanger, H: HttpExecutor> {
 /// StorageManager の保存操作の結果。
 ///
 /// ローカル保存は常に成功。GDrive の状態を区別する。
-#[derive(Debug)]
+/// Tauri コマンドの Ok 型として使用するため `serde::Serialize` を実装する（要件 6.2）。
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "status", content = "gdrive_error")]
 pub enum SaveResult {
     /// ローカルのみ（未承認または承認済みで GDrive も成功）
     LocalOnly,
@@ -1483,6 +1490,133 @@ impl<S: TokenStore, X: TokenExchanger, H: HttpExecutor> StorageManager<S, X, H> 
     pub async fn get_auth_status(&self) -> Result<AuthStatus, StorageError> {
         self.oauth.get_auth_status().await
     }
+}
+
+// ---------------------------------------------------------------------------
+// Tauri コマンドゲートウェイ（要件 6.1, 6.2, 6.3）
+// ---------------------------------------------------------------------------
+//
+// フロントエンドとの唯一の通信経路。全ファイル I/O・OAuth 操作はこれらのコマンド経由でのみ
+// 呼び出せる。フロントエンドは直接ファイルシステムや Google Drive API にアクセスできない（6.3）。
+//
+// プロダクション型エイリアス:
+//   AppStorage = StorageManager<KeyringTokenStore, GoogleTokenExchanger, ReqwestExecutor>
+//
+// lib.rs の setup() で AppStorage インスタンスを生成し、app.manage() で Tauri のマネージド
+// ステートに登録する。各コマンドは tauri::State<'_, AppStorage> で参照する。
+
+/// プロダクション用の具象型エイリアス。
+///
+/// OAuth クレデンシャルはアプリ登録後に環境変数またはビルド設定から注入する。
+/// 現時点では未登録のため、lib.rs の setup() でプレースホルダ値を使用する（コメント参照）。
+pub type AppStorage = StorageManager<KeyringTokenStore, GoogleTokenExchanger, ReqwestExecutor>;
+
+// ─── ファイル操作コマンド ───────────────────────────────────────────────────
+
+/// 対話履歴を `~/.mitatete/history/{date}.json` に保存する。
+///
+/// 承認済みの場合は Google Drive にも同期する。
+/// GDrive 失敗はローカル保存の成否に影響しない（要件 5.4）。
+#[tauri::command]
+pub async fn save_history(
+    storage: tauri::State<'_, AppStorage>,
+    date: String,
+    data: serde_json::Value,
+) -> Result<SaveResult, StorageError> {
+    storage.save_history(&date, &data).await
+}
+
+/// `~/.mitatete/history/{date}.json` から対話履歴を読み込む。
+#[tauri::command]
+pub async fn read_history(
+    storage: tauri::State<'_, AppStorage>,
+    date: String,
+) -> Result<serde_json::Value, StorageError> {
+    storage.local.read_history(&date).await
+}
+
+/// キャラクター・原則設定を `~/.mitatete/settings.json` に保存する。
+///
+/// 承認済みの場合は Google Drive にも同期する。
+#[tauri::command]
+pub async fn save_settings(
+    storage: tauri::State<'_, AppStorage>,
+    data: serde_json::Value,
+) -> Result<SaveResult, StorageError> {
+    storage.save_settings(&data).await
+}
+
+/// `~/.mitatete/settings.json` からキャラクター・原則設定を読み込む。
+///
+/// ファイルが存在しない場合は空オブジェクト `{}` を返す。
+#[tauri::command]
+pub async fn read_settings(
+    storage: tauri::State<'_, AppStorage>,
+) -> Result<serde_json::Value, StorageError> {
+    storage.local.read_settings().await
+}
+
+/// カスタムキャラクター定義を `~/.mitatete/characters/{name}.json` に保存する。
+///
+/// `name` はサニタイズ検証を通過した場合のみ使用される（パストラバーサル防止）。
+#[tauri::command]
+pub async fn save_character(
+    storage: tauri::State<'_, AppStorage>,
+    name: String,
+    data: serde_json::Value,
+) -> Result<(), StorageError> {
+    storage.local.save_character(&name, &data).await
+}
+
+/// AI観察日記を `~/.mitatete/diary/{date}.md` に保存する。
+///
+/// 承認済みの場合は Google Drive にも同期する。
+#[tauri::command]
+pub async fn save_diary(
+    storage: tauri::State<'_, AppStorage>,
+    date: String,
+    content: String,
+) -> Result<SaveResult, StorageError> {
+    storage.save_diary(&date, &content).await
+}
+
+// ─── OAuth 認証コマンド ─────────────────────────────────────────────────────
+
+/// 現在の Google Drive 承認状態を返す。
+///
+/// アプリ起動時・UI 表示前に呼び出してフロントエンドの認証表示を更新する。
+/// トークンが期限切れの場合は内部でリフレッシュを試み、失敗した場合は
+/// トークンを削除して `Unauthorized` を返す（graceful degradation）。
+#[tauri::command]
+pub async fn get_auth_status(
+    storage: tauri::State<'_, AppStorage>,
+) -> Result<AuthStatus, StorageError> {
+    storage.get_auth_status().await
+}
+
+/// Google Drive OAuth 2.0 フローを開始し、認可 URL を返す。
+///
+/// フロントエンドはこの URL をシステムブラウザで開き、ユーザーが認可操作を行う。
+/// 認可完了後のコールバックは別途実装予定（現フェーズでは URL 返却のみ）。
+///
+/// 注意: 実際の OAuth 認証は `MITATETE_GOOGLE_CLIENT_ID` / `MITATETE_GOOGLE_CLIENT_SECRET`
+/// 環境変数が設定された後に機能する。未設定の場合は空のプレースホルダ値で URL が生成される。
+#[tauri::command]
+pub async fn start_oauth(storage: tauri::State<'_, AppStorage>) -> Result<String, StorageError> {
+    // 認可 URL を生成してフロントエンドに返す。
+    // フロントエンドはこの URL をシステムブラウザで開く（tauri::api::shell::open など）。
+    // コールバックハンドリング（complete_auth）は別途 deep-link または localhost server で実装する。
+    Ok(storage.oauth.authorization_url())
+}
+
+/// Google Drive の承認を取り消す。
+///
+/// OS キーチェーンから OAuth トークンのみを削除する。
+/// Google Drive 上の既存データには一切触れない（要件 4.2）。
+/// ローカルファイル（`~/.mitatete/`）も削除しない（要件 4.4）。
+#[tauri::command]
+pub async fn revoke_auth(storage: tauri::State<'_, AppStorage>) -> Result<(), StorageError> {
+    storage.oauth.revoke_auth().await
 }
 
 // ---------------------------------------------------------------------------
