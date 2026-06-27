@@ -22,7 +22,7 @@ character-layer spec のコア＋検証タスク（3.1 / 4.1 / 4.2 / 5.1 / 6.1 /
 
 ## 繰越事項（follow-up）
 
-- **M2 目視サインオフ**: 実アプリでのウィンドウ表示・セレクター操作・再起動後の復元の**目視確認**は人手で1度行う価値あり（ロジック・ビルド・on-disk は確認済み）。
+- **M2 サインオフ（2026-06-27 確認済み）**: 実機 `pnpm tauri dev` で、アクティブキャラクター（seed した「ミタ太郎」）を起動時に store が復元 → `character:changed` emit → **別 webview のキャラクターウィンドウが受信・描画**する end-to-end を、`updateCharacterDisplay` に一時診断（転送される console.error）を入れてログで実証（`[M2-DIAG] character window displayed: ミタ太郎`）。診断は確認後に撤去。スクリーンショットツールが env に無いため、ピクセル単位の目視は WSLg で人間が確認可（窓は表示済み）。
 - **switcher のプリセット網羅**: 切り替えセレクターは `store.getAll()`（=保存済み）を列挙するため、未選択のプリセットは出ない。プリセットを常に選択肢へ出すなら UI 集約が要る（現状はプリセットパネルで選ぶと switcher に入る）。
 - **フェーズ2（8.1/8.2）**: `VisualConfig` レイヤーエディターと著作権同意フローは未着手。`character-visual-editor.ts` 境界で実装する。
 - **WSLg で Tauri GUI は起動可能**（webkit2gtk-4.1 あり）。storage-manager レポートの「GUI ランタイム未検証」はこの env では解消。GPU は zink/libEGL 警告でソフトレンダにフォールバック。
