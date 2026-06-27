@@ -4,10 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mitatete Character</title>
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
-  <!-- 透明・装飾なしウィンドウ（tauri.conf.json の label="character"）。
-       デスクトップ上にキャラクターを常駐させる。背景は透過。 -->
+  <!-- 透明・装飾なしウィンドウ（tauri.conf.json の label="character"）。背景は透過。 -->
   <body class="character-body">
     <div id="character" class="character" title="クリックでチャットを前面に">
       <!-- ビジュアルは character-layer 実装時に差し替え（プリセット/カスタム） -->
@@ -15,6 +14,6 @@
       <div id="speech" class="character__speech" hidden></div>
     </div>
 
-    <script type="module" src="js/character.js"></script>
+    <script type="module" src="/src/character.ts"></script>
   </body>
 </html>

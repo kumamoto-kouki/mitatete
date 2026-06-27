@@ -49,15 +49,15 @@ graph TB
 
 ## 技術スタック
 
-| レイヤー | 技術 | 備考 |
-|---------|------|------|
-| プラットフォーム | Tauri v2 | クロスプラットフォーム（macOS・Windows・Linux） |
-| バックエンド | Rust | APIキー管理・モデルルーター・ファイルI/O |
-| フロントエンド | HTML / CSS / JavaScript | フレームワークなし（軽量優先） |
-| AIモデル | Claude（Anthropic API）/ GPT（OpenAI API）/ Gemini（Google API） | 切り替え可能 |
-| ストレージ | ローカルファイルシステム（常時）/ Google Drive API（承認時） | |
-| 認証 | OAuth 2.0（Googleドライブ連携） | |
-| セキュアストレージ | Tauri stronghold / keyring | APIキー保存 |
+| レイヤー           | 技術                                                             | 備考                                                                                         |
+| ------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| プラットフォーム   | Tauri v2                                                         | クロスプラットフォーム（macOS・Windows・Linux）                                              |
+| バックエンド       | Rust                                                             | APIキー管理・モデルルーター・ファイルI/O                                                     |
+| フロントエンド     | TypeScript 7（型チェック）+ Vite（ビルド/HMR）                   | vanilla・フレームワークなし。webview は JS 実行のため、ソース(.ts)を JS へビルドして配信する |
+| AIモデル           | Claude（Anthropic API）/ GPT（OpenAI API）/ Gemini（Google API） | 切り替え可能                                                                                 |
+| ストレージ         | ローカルファイルシステム（常時）/ Google Drive API（承認時）     |                                                                                              |
+| 認証               | OAuth 2.0（Googleドライブ連携）                                  |                                                                                              |
+| セキュアストレージ | Tauri stronghold / keyring                                       | APIキー保存                                                                                  |
 
 ## Tauriアプリの構成
 
@@ -65,23 +65,27 @@ graph TB
 mitatete/
 ├── src-tauri/
 │   ├── src/
-│   │   ├── main.rs              # エントリーポイント
+│   │   ├── main.rs              # エントリーポイント（lib.rs の run() を呼ぶ）
+│   │   ├── lib.rs               # tauri::Builder 構築・run()
 │   │   ├── model_router.rs      # AIモデルAPI呼び出し
 │   │   ├── key_manager.rs       # APIキーのセキュア保存
 │   │   └── storage.rs           # ファイル・GDrive保存
-│   ├── tauri.conf.json          # ウィンドウ設定
+│   ├── capabilities/            # Tauri v2 権限
+│   ├── tauri.conf.json          # ウィンドウ・ビルド設定
 │   └── Cargo.toml
-└── src/
-    ├── index.html               # チャットUI
-    ├── character.html           # キャラクターウィンドウ（透明）
-    ├── js/
-    │   ├── chat.js
-    │   ├── character.js         # キャラクター描画・独り言
-    │   ├── principles.js        # 原則エンジン
-    │   └── diary.js             # 日記エンジン
-    ├── css/
-    └── assets/
-        └── presets/             # プリセットキャラクター定義
+├── index.html                  # Vite エントリ（チャットUI / main ウィンドウ）
+├── character.html              # Vite エントリ（キャラクターウィンドウ / 透明）
+├── src/                        # フロントエンド（TypeScript・フレームワークなし）
+│   ├── main.ts                 # チャットUI
+│   ├── character.ts            # キャラクター描画・独り言
+│   ├── principles.ts           # 原則エンジン
+│   ├── diary.ts                # 日記エンジン
+│   └── styles.css
+├── public/presets/             # プリセットキャラクター定義（実行時アセット）
+├── dist/                       # Vite ビルド成果物（frontendDist が参照・gitignore）
+├── vite.config.ts              # 2ページ構成・dev サーバ :1420
+├── tsconfig.json
+└── package.json
 ```
 
 ## キャラクターウィンドウの設計
@@ -117,16 +121,19 @@ Tauriの透明ウィンドウ機能を使い、デスクトップ上にキャラ
 ## ストレージ設計
 
 ### ローカルファイルシステム（常時利用可）
+
 - 対話履歴：`~/.mitatete/history/YYYY-MM-DD.json`
 - 設定：`~/.mitatete/settings.json`
 - キャラクター定義：`~/.mitatete/characters/`
 
 ### Googleドライブ（承認時のみ）
+
 - 対話履歴：`mitatete/history/YYYY-MM-DD.json`
 - 日記：`mitatete/diary/YYYY-MM-DD.md`
 - 設定：`mitatete/settings.json`
 
 ### 承認取り消し時
+
 - 即座に保存停止
 - Googleドライブ上の既存データは一切操作しない
 - ローカルへのOAuthトークンのみ削除
@@ -149,10 +156,10 @@ Tauriの透明ウィンドウ機能を使い、デスクトップ上にキャラ
 ```javascript
 function calcDiaryIntensity(principles) {
   return (
-    principles['余白を持つ'] * 0.4 +
-    principles['距離感を大切にする'] * 0.3 +
-    principles['多様な向き合い方を認める'] * 0.2 +
-    principles['行動で示す'] * 0.1
+    principles["余白を持つ"] * 0.4 +
+    principles["距離感を大切にする"] * 0.3 +
+    principles["多様な向き合い方を認める"] * 0.2 +
+    principles["行動で示す"] * 0.1
   );
 }
 ```

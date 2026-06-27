@@ -17,3 +17,6 @@ dist/
 
 # Claude Code ローカル設定（context-mode 等のローカル限定設定。コミットしない）
 .claude/settings.local.json
+
+# オーケストレーション進捗ログ（ローカル観測専用）
+.orchestration/

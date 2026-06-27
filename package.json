@@ -8,13 +8,17 @@
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",
-    "build": "tauri build"
+    "build": "tauri build",
+    "vite": "vite",
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@tauri-apps/api": "^2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
-    "prettier": "^3.8.5"
+    "prettier": "^3.8.5",
+    "typescript": "7.0.1-rc",
+    "vite": "^8.1.0"
   }
 }
