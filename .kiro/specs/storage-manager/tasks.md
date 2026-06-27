@@ -9,7 +9,7 @@
   - _Requirements: 1.6_
   - _Boundary: src-tauri/Cargo.toml_
 
-- [ ] 1.2 `~/.mitatete/` ディレクトリ構造の初期化処理を実装する
+- [x] 1.2 `~/.mitatete/` ディレクトリ構造の初期化処理を実装する
   - アプリ起動時に `~/.mitatete/history/`・`~/.mitatete/diary/`・`~/.mitatete/characters/` を存在しない場合のみ作成する
   - `main.rs` の起動フックから呼び出せる初期化関数として実装する
   - ディレクトリが既に存在する場合はスキップし、エラーにしない
@@ -123,3 +123,7 @@
   - `revoke_auth()` 後に `save_history()` を呼び出し、`~/.mitatete/history/` にファイルが書き込まれることを確認する
   - _Requirements: 4.4_
   - _Boundary: OAuthManager, LocalFileSystem_
+
+## Implementation Notes
+- 1.2: `StorageError` に design の enum 外の `InitDir(String)` variant を追加（初期化エラー用）。design のエラー型は例示であり許容範囲だが、後続タスク（2.x〜）でエラー型を拡張する際はこの variant の存在を前提にすること。
+- LocalFileSystem のパス構築は内部固定（外部から任意パスを受け取らない＝パストラバーサル防止）。`init_dirs(&Path)` はテスト用に pub だが、本番入口 `init_storage_dirs()` は外部パスを受け取らない。
