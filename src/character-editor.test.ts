@@ -58,6 +58,35 @@ describe("buildCustomCharacter (要件 2.3, 2.4)", () => {
   it("tone が空のとき例外をスローする (要件 2.1)", () => {
     expect(() => buildCustomCharacter({ name: "名前", tone: "" })).toThrow();
   });
+
+  it("template の visualConfig からSVG data URI を visual に導出し、visualConfig を格納する (要件 6.2)", () => {
+    const schema = buildCustomCharacter({
+      name: "テンプレ",
+      tone: "口調。",
+      visualConfig: {
+        mode: "template",
+        templateParams: {
+          bodyType: "human",
+          eyeShape: "round",
+          hairStyle: "short",
+          outfitColor: "#abcdef",
+          skinColor: "#123456",
+        },
+      },
+    });
+    expect(schema.visual.startsWith("data:image/svg+xml")).toBe(true);
+    expect(schema.visualConfig?.mode).toBe("template");
+  });
+
+  it("upload の visualConfig では uploadedImagePath を visual に参照する (要件 6.5)", () => {
+    const schema = buildCustomCharacter({
+      name: "アップロード",
+      tone: "口調。",
+      visualConfig: { mode: "upload", uploadedImagePath: "/local/pic.png" },
+    });
+    expect(schema.visual).toBe("/local/pic.png");
+    expect(schema.visualConfig?.mode).toBe("upload");
+  });
 });
 
 describe("submitCustomCharacter (要件 2.5)", () => {

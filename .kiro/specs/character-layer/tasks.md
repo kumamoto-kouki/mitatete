@@ -71,14 +71,14 @@
   - _Requirements: 5.2, 5.3, 5.4_
 
 - [ ] 8. フェーズ2：ビジュアルエディター（コア完成後に着手）
-- [ ] 8.1 (P) VisualConfig レイヤー構造エディターの実装
+- [x] 8.1 (P) VisualConfig レイヤー構造エディターの実装
   - `character-visual-editor.ts` に体型・目・髪・服の色・肌色のレイヤーを選択できるUIを実装する
   - 選択内容をリアルタイムでSVGプレビューに反映する
   - 設定を `VisualConfig`（mode: 'template'）として `CharacterSchema.visualConfig` に格納し、`character-editor.ts` から呼び出せることを確認する
   - _Requirements: 6.1, 6.2_
   - _Boundary: character-visual-editor.ts_
 
-- [ ] 8.2 (P) 自作画像アップロードと著作権同意フローの実装
+- [x] 8.2 (P) 自作画像アップロードと著作権同意フローの実装
   - PNG/SVGファイルのアップロード受け付け処理を実装する
   - アップロード前に著作権注意文（「既存のアニメ・ゲーム・商標キャラクターに似せた画像のアップロードは著作権侵害になる場合があります」）を表示し、同意確認ダイアログを実装する
   - ユーザーが同意した場合のみアップロードを進め、`VisualConfig`（mode: 'upload', uploadedImagePath）として格納する
@@ -96,3 +96,4 @@
 - 5.1: `src/character-editor.ts` に `buildCustomCharacter`（visual未設定→内蔵 `DEFAULT_AVATAR`(SVG data URI) 適用・validate で aiDisclosure 固定付与・isPreset=false）・`submitCustomCharacter`（save のみ。**アクティブ化はしない**＝design フロー2 と一致、切り替えは6.1）・`initCharacterEditor`（名前/口調/画像file入力・aiDisclosure を読み取り専用テキストで表示=編集不可）を実装。画像は file→data URL 取り込み。著作権同意フロー・VisualConfig(upload) はフェーズ2（8.2）の責務として未実装。index.html に `#character-editor`+スクリプト、styles.css に `.editor*` 追加。テスト8件（計34 pass）。フォーム操作の実画面確認は `pnpm dev` が必要。
 - 6.1: main/character は**別ウィンドウ＝別webview＝別JSコンテキスト**のため、store は跨げない。原則エンジン（同一window）は store を直接 subscribe、character ウィンドウ（別window）は **Tauri イベント `character:changed`** で受信（`core:default` 権限で emit/listen 可）。`principles.ts` に `initPrincipleEngine`/`getCurrentPrinciples`（store購読→principleDefaults更新）、`character-ui.ts` に `switchCharacter`（setActive正規経路）・`connectCrossWindow`（store購読→emit放送）・`renderSwitcher`（getAll()の`<select>`）を追加、`initCharacterUI` で store.init→セレクター描画→store変更で再描画。`character.ts` に `listen("character:changed")`→`updateCharacterDisplay`（visual=img/name=title）を追加。index.html に principles.ts を読込。テストは invoke と emit を併せてモック（principles 2 + ui切替 2、計38 pass）。両ウィンドウ即時更新の通し確認は `pnpm dev`（マルチウィンドウ）が必要。
 - 7.1: 検証中に要件5.2「**最後に使用した**キャラクター復元」が未充足（init が先頭固定）と判明したため、`character-store.ts` に `lastActiveId` 永続化を実装してギャップを閉じた。永続化先は storage-manager の `save_settings`/`read_settings`（`~/.mitatete/settings.json`）を再利用し、キー `lastActiveCharacterId` を read→merge→save（他設定を保持）。setActive で保存、init で読み出し（記録IDが復元集合に無ければ先頭フォールバック）。検証は store ユニットテストで網羅: 再起動復元・記録欠落フォールバック・設定マージ保存・不正JSONスキップ/全破損フォールバック・初回(0件)デフォルト（計43 pass）。`vite build` 成功（index/character 両ページ）。**残: 実機 `pnpm tauri dev` でカスタム作成→再起動→復元の目視確認（M2 サインオフ）は GUI 必須のため人手で実施が必要。**
+- 8.1/8.2: `src/character-visual-editor.ts` を新規実装。8.1=`buildTemplateVisualConfig`/`buildVisualSvg`（体型・目・髪・服色・肌色をレイヤー化したパラメトリックSVG）/`svgToDataUri`/`initVisualEditor`（選択UI＋リアルタイムプレビュー、`VisualConfig(mode:'template')` 収集）。8.2=`requestImageUpload`（PNG/SVG限定→`COPYRIGHT_NOTICE` 同意ゲート→同意で `VisualConfig(mode:'upload', uploadedImagePath)`、拒否/非対応は既存設定維持）。同意取得(`ConsentPrompt`)とパス解決(`PathResolver`)は注入可能（テスト容易・Tauri dialog 実パスへ差し替え余地）。`character-editor.ts` に統合: `CustomCharacterInput.visualConfig` 追加、`buildCustomCharacter` が template→SVG data URI / upload→uploadedImagePath を visual に導出。フォームにエディター＋アップロード(window.confirm 同意)を配線。テスト13件（visual-editor 11 + editor 2、計56 pass）。**繰越: Tauri dialog プラグイン未導入のため uploadedImagePath は現状ファイル名。実ローカルパス取得は dialog 導入後の follow-up。**

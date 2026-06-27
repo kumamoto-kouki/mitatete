@@ -191,6 +191,33 @@ body {
   color: #b00020;
 }
 
+/* レイヤービジュアルエディター（フェーズ2） */
+.visual-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e6e0d8;
+  border-radius: 8px;
+}
+
+.visual-editor__preview {
+  width: 96px;
+  height: 96px;
+  background: #fff;
+  border: 1px solid #e6e0d8;
+  border-radius: 8px;
+}
+
+.visual-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ===== キャラクターウィンドウ（character ウィンドウ・透明背景） ===== */
 .character-body {
   margin: 0;
