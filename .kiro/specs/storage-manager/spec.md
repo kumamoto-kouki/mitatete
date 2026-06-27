@@ -9,7 +9,7 @@ flowchart TD
   START[アプリ起動] --> LOCAL[ローカルファイルシステム<br/>~/.mitatete/ に常時保存]
   START --> CHECK{Googleドライブ<br/>承認済み?}
 
-  CHECK -->|未承認| LOCALONLY[GDrive保存なし<br/>日記はローカルのみ]
+  CHECK -->|未承認| LOCALONLY[ローカルのみ・同期なし<br/>履歴・日記・設定はローカル永続]
   CHECK -->|承認済み| DRIVE[Googleドライブにも同期<br/>履歴・日記・設定]
 
   DRIVE --> REVOKE{承認取り消し?}
@@ -19,12 +19,12 @@ flowchart TD
 
 ## 要件（EARS形式）
 
-- WHEN 拡張機能が起動する THEN システムはGoogleドライブの承認状態を確認する
+- WHEN アプリが起動する THEN システムはGoogleドライブの承認状態を確認する
 - WHEN ユーザーがGoogleドライブを承認する THEN システムはOAuth 2.0フローを起動し、承認完了後にデータ同期を開始する
-- WHEN Googleドライブが未承認の場合 THEN システムはchrome.storage.sessionのみ使用し、拡張終了でデータを消去する
-- WHEN ユーザーが承認を取り消す THEN システムは即座に保存を停止し、Googleドライブ上の既存データは一切操作しない
+- WHEN Googleドライブが未承認の場合 THEN システムはローカルファイルシステム（`~/.mitatete/`）に常時保存し、データは永続化される
+- WHEN ユーザーが承認を取り消す THEN システムは即座に同期を停止し、Googleドライブ上の既存データは一切操作しない
 - WHERE データをGoogleドライブに保存する THEN ユーザーのGoogleドライブ内のmitatete/フォルダに保存する
-- IF 保存処理が失敗した場合 THEN システムはユーザーに通知し、セッションストレージへのフォールバックを試みる
+- IF 保存処理が失敗した場合 THEN システムはユーザーに通知し、ローカルファイルへの再試行（リトライ）を行う
 
 ## 承認状態による機能マッピング
 

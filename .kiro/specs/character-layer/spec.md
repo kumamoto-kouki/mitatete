@@ -112,7 +112,7 @@ interface VisualConfig {
 ## 設計上の注意
 
 - プリセット・カスタムどちらも最終的にCharacterSchemaに変換する（統一インターフェース）
-- キャラクター設定はChrome Storageに保存する（Googleドライブ承認時は同期）
+- キャラクター設定はローカルファイルシステム（`~/.mitatete/`）に保存する。保存はRustバックエンド経由で行う（Googleドライブ承認時は同期）
 - 原則8のaiDisclosureはユーザーが編集できない（固定フィールド）
 
 ## 設計上の制約
