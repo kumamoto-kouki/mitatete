@@ -852,6 +852,85 @@ impl LocalFileSystem {
         }
         Ok(names)
     }
+
+    // -------------------------------------------------------------------------
+    // Task 2.1 (character-layer): delete_character / load_all_characters
+    // -------------------------------------------------------------------------
+
+    /// `base/characters/<name>.json` を削除する（キャラクター削除）。
+    ///
+    /// - `name` はサニタイズ検証を通過した場合のみ使用する（パストラバーサル防止）
+    /// - ファイルが存在しない場合は `Ok(())` を返す（冪等）
+    /// - ローカルのみ削除。GDrive 上のデータには一切触れない（storage-manager 要件4.2）
+    /// - 削除失敗（権限エラー等）は `StorageError::LocalWrite` を返す
+    pub async fn delete_character(&self, name: &str) -> Result<(), StorageError> {
+        Self::validate_character_name(name)?;
+
+        let path = self
+            .base
+            .join(SUBDIR_CHARACTERS)
+            .join(format!("{name}.json"));
+
+        match tokio::fs::remove_file(&path).await {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                // ファイルが存在しない場合は Ok（冪等）
+                Ok(())
+            }
+            Err(e) => Err(StorageError::LocalWrite(format!("{}: {e}", path.display()))),
+        }
+    }
+
+    /// `base/characters/` 配下の全 `.json` ファイルの**内容（JSON 文字列）**を返す。
+    ///
+    /// - ディレクトリが存在しない場合は空の `Vec` を返す（エラーにしない）
+    /// - 個別ファイルの読み込み失敗は**スキップ**する（破損ファイルがあっても残りを返す）
+    ///   理由：アプリ起動時の復元が目的であり、1ファイルの破損でアプリ全体を止めたくない
+    /// - 注: `list_characters` （名前一覧）とは別物。こちらは復元用にフル JSON を返す
+    pub async fn load_all_characters(&self) -> Result<Vec<String>, StorageError> {
+        let characters_dir = self.base.join(SUBDIR_CHARACTERS);
+
+        let mut read_dir = match tokio::fs::read_dir(&characters_dir).await {
+            Ok(rd) => rd,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                // ディレクトリが存在しない場合は空の Vec を返す
+                return Ok(Vec::new());
+            }
+            Err(e) => {
+                return Err(StorageError::LocalRead(format!(
+                    "{}: {e}",
+                    characters_dir.display()
+                )));
+            }
+        };
+
+        let mut results = Vec::new();
+        while let Some(entry) = read_dir
+            .next_entry()
+            .await
+            .map_err(|e| StorageError::LocalRead(format!("read_dir entry: {e}")))?
+        {
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
+            if !file_name_str.ends_with(".json") {
+                continue;
+            }
+
+            let path = entry.path();
+            // 個別ファイルの読み込み失敗はスキップ（破損ファイルがあっても残りを返す）
+            let bytes = match tokio::fs::read(&path).await {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+            let json_str = match String::from_utf8(bytes) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+            results.push(json_str);
+        }
+
+        Ok(results)
+    }
 }
 
 /// `base` ディレクトリ以下に Mitatete の標準ディレクトリ構造を初期化する。
@@ -1568,6 +1647,31 @@ pub async fn save_character(
     storage.local.save_character(&name, &data).await
 }
 
+/// カスタムキャラクター定義を `~/.mitatete/characters/{name}.json` から削除する。
+///
+/// - `name` はサニタイズ検証を通過した場合のみ使用する（パストラバーサル防止）
+/// - ファイルが存在しない場合は `Ok(())` を返す（冪等）
+/// - ローカルのみ削除。GDrive 上のデータには一切触れない（storage-manager 要件4.2）
+#[tauri::command]
+pub async fn delete_character(
+    storage: tauri::State<'_, AppStorage>,
+    name: String,
+) -> Result<(), StorageError> {
+    storage.local.delete_character(&name).await
+}
+
+/// `~/.mitatete/characters/` 配下の全キャラクター定義の JSON 文字列を返す。
+///
+/// - アプリ起動時のキャラクター復元に使用する（要件5.2）
+/// - 空またはディレクトリ不在の場合は空の Vec を返す
+/// - `list_characters`（名前一覧）とは別物。こちらはフル JSON を返す
+#[tauri::command]
+pub async fn load_characters(
+    storage: tauri::State<'_, AppStorage>,
+) -> Result<Vec<String>, StorageError> {
+    storage.local.load_all_characters().await
+}
+
 /// AI観察日記を `~/.mitatete/diary/{date}.md` に保存する。
 ///
 /// 承認済みの場合は Google Drive にも同期する。
@@ -2240,6 +2344,157 @@ mod tests {
         assert!(
             names.is_empty(),
             "list_characters must return empty Vec for empty dir, got: {names:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.1 (character-layer): delete_character
+    // -------------------------------------------------------------------------
+
+    /// save_character → delete_character → read_character がエラーになること（ファイル削除確認）。
+    #[tokio::test]
+    async fn test_delete_character_removes_existing_file() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let data = serde_json::json!({"id": "hero", "name": "Hero"});
+        fs.save_character("hero", &data)
+            .await
+            .expect("save should succeed");
+        assert!(
+            base.join("characters").join("hero.json").is_file(),
+            "hero.json should exist before delete"
+        );
+
+        fs.delete_character("hero")
+            .await
+            .expect("delete_character should succeed");
+
+        // ファイルが消えていること
+        assert!(
+            !base.join("characters").join("hero.json").exists(),
+            "hero.json must be deleted after delete_character"
+        );
+
+        // read_character はエラーになること
+        let result = fs.read_character("hero").await;
+        assert!(
+            matches!(result, Err(StorageError::LocalRead(_))),
+            "read_character after delete must return LocalRead error, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// 存在しない名前を delete_character に渡すと Ok(()) が返る（冪等）。
+    #[tokio::test]
+    async fn test_delete_character_nonexistent_is_ok_idempotent() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.delete_character("nonexistent").await;
+        assert!(
+            result.is_ok(),
+            "delete_character of nonexistent name must return Ok (idempotent), got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// パストラバーサルを試みる名前は delete_character でエラーになる。
+    #[tokio::test]
+    async fn test_delete_character_rejects_path_traversal() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.delete_character("../../etc/passwd").await;
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "path traversal must be rejected with StorageError::LocalWrite, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.1 (character-layer): load_all_characters
+    // -------------------------------------------------------------------------
+
+    /// 2 件保存後、load_all_characters が 2 件の JSON 文字列を返し、
+    /// それぞれの内容がラウンドトリップする。
+    #[tokio::test]
+    async fn test_load_all_characters_returns_full_json_for_saved_characters() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let data_a = serde_json::json!({"id": "alpha", "name": "Alpha"});
+        let data_b = serde_json::json!({"id": "beta", "name": "Beta"});
+
+        fs.save_character("alpha", &data_a)
+            .await
+            .expect("save alpha should succeed");
+        fs.save_character("beta", &data_b)
+            .await
+            .expect("save beta should succeed");
+
+        let jsons = fs
+            .load_all_characters()
+            .await
+            .expect("load_all_characters should succeed");
+
+        assert_eq!(jsons.len(), 2, "must return 2 JSON strings, got: {jsons:?}");
+
+        // JSON 文字列をパースしてデータが復元できること
+        let mut parsed: Vec<serde_json::Value> = jsons
+            .iter()
+            .map(|s| serde_json::from_str(s).expect("each JSON string must be valid"))
+            .collect();
+        parsed.sort_by_key(|v| v["id"].as_str().unwrap_or("").to_string());
+
+        assert_eq!(parsed[0], data_a, "alpha data must round-trip");
+        assert_eq!(parsed[1], data_b, "beta data must round-trip");
+
+        cleanup(&base);
+    }
+
+    /// characters ディレクトリが存在しない場合、load_all_characters は空の Vec を返す。
+    #[tokio::test]
+    async fn test_load_all_characters_empty_when_dir_missing() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs
+            .load_all_characters()
+            .await
+            .expect("load_all_characters on missing dir must return Ok");
+
+        assert!(
+            result.is_empty(),
+            "load_all_characters must return empty Vec when characters/ dir doesn't exist, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// characters ディレクトリが存在するが空の場合、load_all_characters は空の Vec を返す。
+    #[tokio::test]
+    async fn test_load_all_characters_empty_when_dir_exists_but_empty() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        std::fs::create_dir_all(base.join("characters"))
+            .expect("creating characters dir should succeed");
+
+        let result = fs
+            .load_all_characters()
+            .await
+            .expect("load_all_characters on empty dir must return Ok");
+
+        assert!(
+            result.is_empty(),
+            "load_all_characters must return empty Vec for empty dir, got: {result:?}"
         );
 
         cleanup(&base);

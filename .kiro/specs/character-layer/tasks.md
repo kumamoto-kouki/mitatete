@@ -11,7 +11,7 @@
   - _Requirements: 3.1, 3.2, 3.3_
 
 - [ ] 2. バックエンド：Tauriコマンドの実装
-- [ ] 2.1 storage.rs へのキャラクター保存・読み込み・削除コマンド追加
+- [x] 2.1 storage.rs へのキャラクター保存・読み込み・削除コマンド追加
   - `save_character(schema_json: String) -> Result<(), String>` を実装し、`~/.mitatete/characters/{id}.json` へ書き込む
   - `load_characters() -> Result<Vec<String>, String>` を実装し、`~/.mitatete/characters/` 配下の全JSONを読み込んで返す
   - `delete_character(id: String) -> Result<(), String>` を実装し、対象ファイルを削除する
@@ -85,3 +85,7 @@
   - 同意拒否時はアップロードをキャンセルし、既存のビジュアル設定を維持することを確認する
   - _Requirements: 6.3, 6.4, 6.5_
   - _Boundary: character-visual-editor.ts_
+
+## Implementation Notes
+- 1.1: `src/character-validator.ts` に CharacterSchema/VisualConfig 型・`AI_DISCLOSURE` 定数・`validate()`（aiDisclosure 強制付与=上書き不可、name/tone 非空チェック）を実装。フロントのテスト基盤として **vitest** を導入（`pnpm test`=`vitest run`）。
+- 2.1(調整): design の `save_character(schema_json)` は storage-manager 既存の `save_character(name,data)` コマンドを**再利用**して満たす（コマンド名衝突回避。フロントは name=id, data=schema で呼ぶ）。新規追加は `delete_character`（ローカルのみ・サニタイズ・冪等。GDrive削除は storage 要件4.2 で禁止のため行わない）と `load_characters`（全キャラの**フルJSON**を Vec で返す。破損ファイルは起動時復元のためスキップ）。両コマンドを lib.rs に登録。`list_characters`(名前一覧)とは別物。

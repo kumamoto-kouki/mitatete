@@ -53,6 +53,8 @@ pub fn run() {
             storage::save_settings,
             storage::read_settings,
             storage::save_character,
+            storage::delete_character,
+            storage::load_characters,
             storage::save_diary,
             storage::get_auth_status,
             storage::start_oauth,
