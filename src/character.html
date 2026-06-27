@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mitatete Character</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <!-- 透明・装飾なしウィンドウ（tauri.conf.json の label="character"）。
+       デスクトップ上にキャラクターを常駐させる。背景は透過。 -->
+  <body class="character-body">
+    <div id="character" class="character" title="クリックでチャットを前面に">
+      <!-- ビジュアルは character-layer 実装時に差し替え（プリセット/カスタム） -->
+      <div class="character__placeholder">◌</div>
+      <div id="speech" class="character__speech" hidden></div>
+    </div>
+
+    <script type="module" src="js/character.js"></script>
+  </body>
+</html>

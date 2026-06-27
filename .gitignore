@@ -1,5 +1,6 @@
 # Rust / Tauri
-/src-tauri/target/
+target/
+/src-tauri/gen/
 **/*.rs.bk
 
 # Node (prettier 等のツール利用時)

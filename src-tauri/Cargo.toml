@@ -1,0 +1,23 @@
+[package]
+name = "mitatete"
+version = "0.1.0"
+description = "AIモデルを「見立て」によって擬人化し、人間とAIの心理的距離を縮めるTauri製デスクトップアプリ"
+authors = ["kumamoto-kouki"]
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# Tauri v2 慣習: ライブラリクレートに run() を置き、main.rs から呼ぶ
+name = "mitatete_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# macos-private-api: キャラクターウィンドウの透明化（tauri.conf.json の macOSPrivateApi）に必要
+tauri = { version = "2", features = ["macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

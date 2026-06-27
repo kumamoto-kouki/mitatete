@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mitatete</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main id="app" class="chat">
+      <header class="chat__header">
+        <h1 class="chat__title">Mitatete</h1>
+        <!-- 原則8（固定）: AIであることを常時明示する -->
+        <p class="chat__disclosure">これはAIアシスタントとの対話です。</p>
+      </header>
+
+      <section
+        id="messages"
+        class="chat__messages"
+        aria-live="polite"
+      ></section>
+
+      <form id="composer" class="chat__composer">
+        <input
+          id="input"
+          class="chat__input"
+          type="text"
+          placeholder="メッセージを入力…"
+          autocomplete="off"
+        />
+        <button class="chat__send" type="submit">送信</button>
+      </form>
+    </main>
+
+    <script type="module" src="js/chat.js"></script>
+  </body>
+</html>
