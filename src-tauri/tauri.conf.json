@@ -4,10 +4,13 @@
   "version": "0.1.0",
   "identifier": "com.mitatete.app",
   "build": {
-    "frontendDist": "../src"
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm vite",
+    "beforeBuildCommand": "pnpm vite build"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "macOSPrivateApi": true,
     "windows": [
       {
