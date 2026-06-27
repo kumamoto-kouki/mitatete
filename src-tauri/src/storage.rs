@@ -1,11 +1,14 @@
 // storage.rs — Mitatete のデータ永続化コンポーネント
 //
 // LocalFileSystem: `~/.mitatete/` 以下のディレクトリ初期化・ファイル読み書き
-// OAuthManager, GDriveClient, StorageManager は後続タスクで実装する。
+// OAuthManager: OAuth 2.0 フローの開始・完了・トークン保存・リフレッシュ・削除
+// GDriveClient, StorageManager は後続タスクで実装する。
 //
 // セキュリティ制約:
 //   - ファイルパスはこのモジュール内でのみ構築する（パストラバーサル防止）
 //   - LocalFileSystem は外部から任意パスを受け取らない
+//   - OAuthトークンは TokenStore (KeyringTokenStore) 経由で OS キーチェーンにのみ保存する
+//   - トークンをファイルシステムや GDrive に書き出すコードパスは存在しない（絶対不変条件）
 
 use std::io;
 use std::path::Path;
@@ -15,7 +18,6 @@ use std::path::Path;
 // ---------------------------------------------------------------------------
 
 /// storage-manager 全体で使用するエラー型。
-/// 後続タスクで GDrive・OAuth 関連のバリアントを追加する。
 #[derive(Debug)]
 pub enum StorageError {
     /// ローカルファイル書き込み失敗
@@ -24,6 +26,14 @@ pub enum StorageError {
     LocalRead(String),
     /// ディレクトリ初期化失敗
     InitDir(String),
+    /// GDrive アップロード失敗
+    GDriveUpload(String),
+    /// OAuth フロー失敗
+    OAuthFailed(String),
+    /// トークンリフレッシュ失敗
+    TokenRefreshFailed,
+    /// 未承認での GDrive 操作試行
+    Unauthorized,
 }
 
 impl std::fmt::Display for StorageError {
@@ -32,6 +42,10 @@ impl std::fmt::Display for StorageError {
             StorageError::LocalWrite(msg) => write!(f, "Local write error: {msg}"),
             StorageError::LocalRead(msg) => write!(f, "Local read error: {msg}"),
             StorageError::InitDir(msg) => write!(f, "Directory init error: {msg}"),
+            StorageError::GDriveUpload(msg) => write!(f, "GDrive upload error: {msg}"),
+            StorageError::OAuthFailed(msg) => write!(f, "OAuth failed: {msg}"),
+            StorageError::TokenRefreshFailed => write!(f, "Token refresh failed"),
+            StorageError::Unauthorized => write!(f, "Unauthorized: no valid OAuth token"),
         }
     }
 }
@@ -40,6 +54,338 @@ impl From<io::Error> for StorageError {
     fn from(e: io::Error) -> Self {
         StorageError::InitDir(e.to_string())
     }
+}
+
+// ---------------------------------------------------------------------------
+// 承認状態
+// ---------------------------------------------------------------------------
+
+/// Google Drive OAuth 2.0 の承認状態。
+/// Tauri コマンド経由でフロントエンドに返すため Serialize を実装する。
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub enum AuthStatus {
+    /// OAuthトークンなし・期限切れリフレッシュ失敗
+    Unauthorized,
+    /// 有効なOAuthトークンあり
+    Authorized,
+}
+
+// ---------------------------------------------------------------------------
+// StoredToken
+// ---------------------------------------------------------------------------
+
+/// OS キーチェーンに保存するトークン情報。
+/// JSON にシリアライズしてキーチェーンの1エントリに格納する。
+///
+/// # セキュリティ不変条件
+/// このモジュール内の TokenStore (KeyringTokenStore) 以外の場所では StoredToken を
+/// ファイルシステムや GDrive クライアントに渡してはならない。
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct StoredToken {
+    pub access_token: String,
+    pub refresh_token: String,
+    /// Unix エポック秒（i64）でのトークン有効期限
+    pub expires_at: i64,
+}
+
+// ---------------------------------------------------------------------------
+// TokenStore トレイト — トークン永続化の抽象（テスタビリティのためのシーム）
+// ---------------------------------------------------------------------------
+
+/// OAuth トークンの永続化を抽象化するトレイト。
+///
+/// プロダクション実装: `KeyringTokenStore` (OS キーチェーンのみ)
+/// テスト実装: `InMemoryTokenStore` (メモリ内、CI で使用)
+///
+/// # セキュリティ不変条件
+/// save() の実装はトークンを OS キーチェーン以外の場所（ファイル・GDrive）に
+/// 書き出してはならない。
+pub trait TokenStore: Send + Sync {
+    fn save(&self, token: &StoredToken) -> Result<(), StorageError>;
+    fn load(&self) -> Result<Option<StoredToken>, StorageError>;
+    fn delete(&self) -> Result<(), StorageError>;
+}
+
+// ---------------------------------------------------------------------------
+// KeyringTokenStore — プロダクション実装（OS キーチェーン）
+// ---------------------------------------------------------------------------
+
+/// OS キーチェーンにトークンを保存するプロダクション実装。
+///
+/// - service: "mitatete-oauth"
+/// - username: "gdrive-token"
+/// - StoredToken を JSON にシリアライズして 1 エントリに格納する
+///
+/// # セキュリティ不変条件
+/// このクラスが唯一の TokenStore プロダクション実装であり、
+/// トークンがキーチェーン以外に書き出されないことをコードレベルで保証する。
+pub struct KeyringTokenStore {
+    service: String,
+    username: String,
+}
+
+impl KeyringTokenStore {
+    const SERVICE: &'static str = "mitatete-oauth";
+    const USERNAME: &'static str = "gdrive-token";
+
+    pub fn new() -> Self {
+        Self {
+            service: Self::SERVICE.to_string(),
+            username: Self::USERNAME.to_string(),
+        }
+    }
+}
+
+impl TokenStore for KeyringTokenStore {
+    fn save(&self, token: &StoredToken) -> Result<(), StorageError> {
+        let json = serde_json::to_string(token)
+            .map_err(|e| StorageError::OAuthFailed(format!("token serialize error: {e}")))?;
+        let entry = keyring::Entry::new(&self.service, &self.username)
+            .map_err(|e| StorageError::OAuthFailed(format!("keyring entry error: {e}")))?;
+        entry
+            .set_password(&json)
+            .map_err(|e| StorageError::OAuthFailed(format!("keyring save error: {e}")))?;
+        Ok(())
+    }
+
+    fn load(&self) -> Result<Option<StoredToken>, StorageError> {
+        let entry = keyring::Entry::new(&self.service, &self.username)
+            .map_err(|e| StorageError::OAuthFailed(format!("keyring entry error: {e}")))?;
+        match entry.get_password() {
+            Ok(json) => {
+                let token: StoredToken = serde_json::from_str(&json)
+                    .map_err(|e| StorageError::OAuthFailed(format!("token deserialize: {e}")))?;
+                Ok(Some(token))
+            }
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(e) => Err(StorageError::OAuthFailed(format!(
+                "keyring load error: {e}"
+            ))),
+        }
+    }
+
+    fn delete(&self) -> Result<(), StorageError> {
+        let entry = keyring::Entry::new(&self.service, &self.username)
+            .map_err(|e| StorageError::OAuthFailed(format!("keyring entry error: {e}")))?;
+        match entry.delete_credential() {
+            Ok(()) => Ok(()),
+            Err(keyring::Error::NoEntry) => Ok(()), // 既に存在しない場合は成功扱い
+            Err(e) => Err(StorageError::OAuthFailed(format!(
+                "keyring delete error: {e}"
+            ))),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TokenExchanger トレイト — 認可コード→トークン交換の抽象（テスタビリティのためのシーム）
+// ---------------------------------------------------------------------------
+
+/// 認可コードをアクセストークンに交換する HTTP 処理を抽象化するトレイト。
+///
+/// プロダクション実装: `GoogleTokenExchanger` (Google OAuth 2.0 トークンエンドポイント)
+/// テスト実装: `FakeTokenExchanger` (canned レスポンスを返す)
+///
+/// `async fn` in trait は Rust 1.92 で stable。Send 境界の制約がないことを意識的に許容する。
+#[allow(async_fn_in_trait)]
+pub trait TokenExchanger: Send + Sync {
+    async fn exchange_code(&self, code: &str) -> Result<StoredToken, StorageError>;
+}
+
+// ---------------------------------------------------------------------------
+// GoogleTokenExchanger — プロダクション実装（Google OAuth 2.0）
+// ---------------------------------------------------------------------------
+
+/// Google OAuth 2.0 トークンエンドポイントへ認可コードを POST してトークンを取得する。
+pub struct GoogleTokenExchanger {
+    client_id: String,
+    client_secret: String,
+    redirect_uri: String,
+}
+
+impl GoogleTokenExchanger {
+    const TOKEN_ENDPOINT: &'static str = "https://oauth2.googleapis.com/token";
+
+    pub fn new(client_id: String, client_secret: String, redirect_uri: String) -> Self {
+        Self {
+            client_id,
+            client_secret,
+            redirect_uri,
+        }
+    }
+}
+
+impl TokenExchanger for GoogleTokenExchanger {
+    async fn exchange_code(&self, code: &str) -> Result<StoredToken, StorageError> {
+        let client = reqwest::Client::new();
+
+        // application/x-www-form-urlencoded を手動構築する。
+        // reqwest の "form" フィーチャーが未有効なため body + Content-Type で送信する。
+        let form_body = format!(
+            "code={}&client_id={}&client_secret={}&redirect_uri={}&grant_type=authorization_code",
+            url_encode(code),
+            url_encode(&self.client_id),
+            url_encode(&self.client_secret),
+            url_encode(&self.redirect_uri),
+        );
+
+        let response = client
+            .post(Self::TOKEN_ENDPOINT)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form_body)
+            .send()
+            .await
+            .map_err(|e| StorageError::OAuthFailed(format!("HTTP request failed: {e}")))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let err_body = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "(unreadable)".to_string());
+            return Err(StorageError::OAuthFailed(format!(
+                "token endpoint returned {status}: {err_body}"
+            )));
+        }
+
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| StorageError::OAuthFailed(format!("token response parse error: {e}")))?;
+
+        let access_token = body["access_token"]
+            .as_str()
+            .ok_or_else(|| StorageError::OAuthFailed("missing access_token".to_string()))?
+            .to_string();
+        let refresh_token = body["refresh_token"]
+            .as_str()
+            .ok_or_else(|| StorageError::OAuthFailed("missing refresh_token".to_string()))?
+            .to_string();
+        let expires_in = body["expires_in"].as_i64().unwrap_or(3600);
+
+        // 現在時刻 + expires_in 秒でトークン有効期限を計算する
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let expires_at = now + expires_in;
+
+        Ok(StoredToken {
+            access_token,
+            refresh_token,
+            expires_at,
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// OAuthManager — OAuth 2.0 フロー管理
+// ---------------------------------------------------------------------------
+
+/// OAuth 2.0 認証フローを管理するコンポーネント。
+///
+/// TokenStore と TokenExchanger を依存として受け取ることで、
+/// テスト時に OS キーチェーンやネットワークなしでユニットテストが可能。
+///
+/// # セキュリティ不変条件
+/// トークンは必ず `store` (TokenStore) 経由で保存され、
+/// ファイルシステムや GDrive には書き出されない。
+pub struct OAuthManager<S: TokenStore, X: TokenExchanger> {
+    client_id: String,
+    redirect_uri: String,
+    scope: String,
+    store: S,
+    exchanger: X,
+}
+
+impl<S: TokenStore, X: TokenExchanger> OAuthManager<S, X> {
+    const DEFAULT_SCOPE: &'static str = "https://www.googleapis.com/auth/drive.file";
+
+    pub fn new(client_id: String, redirect_uri: String, store: S, exchanger: X) -> Self {
+        Self {
+            client_id,
+            redirect_uri,
+            scope: Self::DEFAULT_SCOPE.to_string(),
+            store,
+            exchanger,
+        }
+    }
+
+    /// Google OAuth 2.0 認可エンドポイントへのリダイレクト URL を生成する。
+    ///
+    /// 生成される URL には以下のパラメータが含まれる:
+    /// - client_id: OAuth クライアント ID
+    /// - redirect_uri: コールバック URI
+    /// - scope: Google Drive file スコープ
+    /// - response_type: "code"
+    /// - access_type: "offline"（リフレッシュトークン取得のため）
+    pub fn authorization_url(&self) -> String {
+        format!(
+            "https://accounts.google.com/o/oauth2/v2/auth\
+             ?client_id={client_id}\
+             &redirect_uri={redirect_uri}\
+             &scope={scope}\
+             &response_type=code\
+             &access_type=offline",
+            client_id = url_encode(&self.client_id),
+            redirect_uri = url_encode(&self.redirect_uri),
+            scope = url_encode(&self.scope),
+        )
+    }
+
+    /// 認可コードを受け取り、トークン交換を行い、トークンをキーチェーンに保存する。
+    ///
+    /// - 成功時: `AuthStatus::Authorized` を返す
+    /// - 交換失敗時: `StorageError::OAuthFailed` を返し、トークンは保存しない
+    ///
+    /// # セキュリティ不変条件
+    /// 取得したトークンは `self.store.save()` 経由でのみ保存される。
+    /// ファイルシステムや GDrive には書き出されない。
+    pub async fn complete_auth(&self, code: &str) -> Result<AuthStatus, StorageError> {
+        // トークン交換を試みる。失敗した場合はここで Err を返し、ストアには保存しない。
+        // セキュリティ不変条件: exchanger から受け取ったトークンは self.store 経由のみで保存する。
+        // ファイルシステムや GDrive には書き出さない。
+        let token = self.exchanger.exchange_code(code).await?;
+
+        // 交換成功 → OS キーチェーン（TokenStore）にのみ保存する
+        self.store.save(&token)?;
+
+        Ok(AuthStatus::Authorized)
+    }
+
+    /// 現在の承認状態を返す。
+    ///
+    /// - トークンが store に存在する → `AuthStatus::Authorized`
+    /// - トークンが存在しない → `AuthStatus::Unauthorized`
+    ///
+    /// (トークン有効期限・リフレッシュはタスク 3.2 で実装する)
+    pub async fn get_auth_status(&self) -> Result<AuthStatus, StorageError> {
+        match self.store.load()? {
+            Some(_) => Ok(AuthStatus::Authorized),
+            None => Ok(AuthStatus::Unauthorized),
+        }
+    }
+}
+
+/// URL パーセントエンコード（最小限実装）。
+/// `oauth2` クレートの URL ビルダーに依存せず、標準ライブラリのみで実装する。
+fn url_encode(s: &str) -> String {
+    let mut encoded = String::with_capacity(s.len());
+    for byte in s.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            b':' => encoded.push_str("%3A"),
+            b'/' => encoded.push_str("%2F"),
+            b'@' => encoded.push_str("%40"),
+            b' ' => encoded.push_str("%20"),
+            other => {
+                encoded.push_str(&format!("%{:02X}", other));
+            }
+        }
+    }
+    encoded
 }
 
 // ---------------------------------------------------------------------------
@@ -1043,5 +1389,225 @@ mod tests {
         );
 
         cleanup(&base);
+    }
+
+    // =========================================================================
+    // Task 3.1: OAuthManager のテスト用セーム実装
+    // =========================================================================
+
+    /// テスト用インメモリ TokenStore 実装。
+    /// OS キーチェーンやファイルシステムを使用しない。
+    struct InMemoryTokenStore {
+        inner: std::sync::Mutex<Option<StoredToken>>,
+    }
+
+    impl InMemoryTokenStore {
+        fn new() -> Self {
+            Self {
+                inner: std::sync::Mutex::new(None),
+            }
+        }
+
+        /// 現在の保存内容を取得するヘルパー（テスト検証用）。
+        fn get_stored(&self) -> Option<StoredToken> {
+            self.inner.lock().unwrap().clone()
+        }
+    }
+
+    impl TokenStore for InMemoryTokenStore {
+        fn save(&self, token: &StoredToken) -> Result<(), StorageError> {
+            *self.inner.lock().unwrap() = Some(token.clone());
+            Ok(())
+        }
+
+        fn load(&self) -> Result<Option<StoredToken>, StorageError> {
+            Ok(self.inner.lock().unwrap().clone())
+        }
+
+        fn delete(&self) -> Result<(), StorageError> {
+            *self.inner.lock().unwrap() = None;
+            Ok(())
+        }
+    }
+
+    /// テスト用フェイク TokenExchanger。
+    /// ネットワーク呼び出しなしで canned StoredToken を返すか、設定されたエラーを返す。
+    enum FakeExchangeResult {
+        Success(StoredToken),
+        Failure(String),
+    }
+
+    struct FakeTokenExchanger {
+        result: FakeExchangeResult,
+    }
+
+    impl FakeTokenExchanger {
+        fn success(token: StoredToken) -> Self {
+            Self {
+                result: FakeExchangeResult::Success(token),
+            }
+        }
+
+        fn failure(msg: &str) -> Self {
+            Self {
+                result: FakeExchangeResult::Failure(msg.to_string()),
+            }
+        }
+    }
+
+    impl TokenExchanger for FakeTokenExchanger {
+        async fn exchange_code(&self, _code: &str) -> Result<StoredToken, StorageError> {
+            match &self.result {
+                FakeExchangeResult::Success(token) => Ok(token.clone()),
+                FakeExchangeResult::Failure(msg) => Err(StorageError::OAuthFailed(msg.clone())),
+            }
+        }
+    }
+
+    /// テスト用の canned StoredToken を生成するヘルパー。
+    fn canned_token() -> StoredToken {
+        StoredToken {
+            access_token: "test-access-token".to_string(),
+            refresh_token: "test-refresh-token".to_string(),
+            expires_at: 9999999999,
+        }
+    }
+
+    /// テスト用の OAuthManager を生成するヘルパー。
+    fn make_oauth_manager(
+        store: InMemoryTokenStore,
+        exchanger: FakeTokenExchanger,
+    ) -> OAuthManager<InMemoryTokenStore, FakeTokenExchanger> {
+        OAuthManager::new(
+            "test-client-id".to_string(),
+            "http://localhost/callback".to_string(),
+            store,
+            exchanger,
+        )
+    }
+
+    // =========================================================================
+    // Task 3.1: OAuthManager ユニットテスト
+    // =========================================================================
+
+    /// complete_auth に有効なコードを渡すと AuthStatus::Authorized が返り、
+    /// トークンがインメモリストアに保存されていること。
+    #[tokio::test]
+    async fn test_complete_auth_success_returns_authorized_and_stores_token() {
+        let store = InMemoryTokenStore::new();
+        let token = canned_token();
+        let exchanger = FakeTokenExchanger::success(token.clone());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.complete_auth("valid-code").await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Authorized)),
+            "complete_auth with valid code must return Ok(AuthStatus::Authorized), got: {result:?}"
+        );
+
+        // トークンがストアに保存されていること
+        let stored = manager.store.get_stored();
+        assert!(
+            stored.is_some(),
+            "token must be saved in store after complete_auth succeeds"
+        );
+        let stored = stored.unwrap();
+        assert_eq!(
+            stored.access_token, token.access_token,
+            "stored access_token must match the token returned by exchanger"
+        );
+        assert_eq!(
+            stored.refresh_token, token.refresh_token,
+            "stored refresh_token must match the token returned by exchanger"
+        );
+    }
+
+    /// complete_auth でトークン交換が失敗した場合、
+    /// OAuthFailed エラーが返り、ストアには何も保存されないこと。
+    #[tokio::test]
+    async fn test_complete_auth_exchange_failure_returns_oauth_failed_and_no_token_stored() {
+        let store = InMemoryTokenStore::new();
+        let exchanger = FakeTokenExchanger::failure("exchange failed");
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.complete_auth("bad-code").await;
+
+        assert!(
+            matches!(result, Err(StorageError::OAuthFailed(_))),
+            "complete_auth with exchange failure must return Err(OAuthFailed), got: {result:?}"
+        );
+
+        // ストアには何も保存されていないこと
+        let stored = manager.store.get_stored();
+        assert!(
+            stored.is_none(),
+            "no token must be stored when complete_auth fails, but store has: {stored:?}"
+        );
+    }
+
+    /// get_auth_status はストアが空のとき Unauthorized を返すこと。
+    #[tokio::test]
+    async fn test_get_auth_status_returns_unauthorized_when_store_empty() {
+        let store = InMemoryTokenStore::new(); // 空
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.get_auth_status().await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Unauthorized)),
+            "get_auth_status on empty store must return Ok(AuthStatus::Unauthorized), got: {result:?}"
+        );
+    }
+
+    /// get_auth_status はトークン保存後に Authorized を返すこと。
+    #[tokio::test]
+    async fn test_get_auth_status_returns_authorized_after_token_saved() {
+        let store = InMemoryTokenStore::new();
+        // 事前にトークンを保存しておく
+        store.save(&canned_token()).expect("pre-save must succeed");
+
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let result = manager.get_auth_status().await;
+
+        assert!(
+            matches!(result, Ok(AuthStatus::Authorized)),
+            "get_auth_status after token saved must return Ok(AuthStatus::Authorized), got: {result:?}"
+        );
+    }
+
+    /// authorization_url に必須パラメータが含まれていること。
+    /// client_id, response_type=code, scope (drive.file) を文字列検索で確認する。
+    #[test]
+    fn test_authorization_url_contains_required_params() {
+        let store = InMemoryTokenStore::new();
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        let url = manager.authorization_url();
+
+        assert!(
+            url.contains("client_id=test-client-id"),
+            "authorization_url must contain client_id=test-client-id, got: {url}"
+        );
+        assert!(
+            url.contains("response_type=code"),
+            "authorization_url must contain response_type=code, got: {url}"
+        );
+        assert!(
+            url.contains("drive.file") || url.contains("drive%2Efile"),
+            "authorization_url must contain drive.file scope (raw or encoded), got: {url}"
+        );
+        assert!(
+            url.contains("accounts.google.com"),
+            "authorization_url must point to accounts.google.com, got: {url}"
+        );
+        assert!(
+            url.contains("access_type=offline"),
+            "authorization_url must contain access_type=offline for refresh token, got: {url}"
+        );
     }
 }

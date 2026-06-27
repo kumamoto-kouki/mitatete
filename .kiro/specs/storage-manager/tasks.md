@@ -49,7 +49,7 @@
   - _Boundary: LocalFileSystem_
 
 - [ ] 3. コア: OAuthManager — OAuth 2.0 認証フロー実装
-- [ ] 3.1 OAuth 2.0 認証フローの開始と完了処理を実装する
+- [x] 3.1 OAuth 2.0 認証フローの開始と完了処理を実装する
   - Google OAuth 2.0 認可エンドポイントへのリダイレクトと、コールバックでの認可コード受け取りを実装する
   - 取得したアクセストークン・リフレッシュトークンを OS キーチェーン（Tauri keyring / stronghold）のみに保存する
   - トークンをファイルシステムや GDrive に書き出さないことをコードレベルで保証する
@@ -133,3 +133,4 @@
 - 2.3: `save_character`/`read_character`/`list_characters` を `base/characters/<name>.json` に実装。`validate_character_name` で empty/空白・NUL・`/`・`\`・`..`(部分一致)・先頭`.` を拒否（保守的、`foo..bar` も弾く）。list は `.json` の file stem を返し、ディレクトリ不在時は空 Vec。
 - 2.4: `save_diary`/`read_diary` を `base/diary/<date>.md` に実装。Markdown を `content.as_bytes()` で逐語書き込み、read は `String::from_utf8` で完全一致復元。日付検証は既存 `validate_date` を再利用（重複バリデータなし）。
 - 共通(レビュー所見): reviewer は RED-phase を「git commit で失敗状態を記録していない」と WEAK 判定しがちだが、kiro-impl 仕様上 RED は status report の RED_PHASE_OUTPUT で足り、専用コミットは不要。advisory として扱い、status report に実測の失敗出力を必ず載せること。
+- 3.1: OAuthManager を `TokenStore`/`TokenExchanger` の2 trait で抽象化（本番=`KeyringTokenStore`+`GoogleTokenExchanger`、テスト=`InMemoryTokenStore`+`FakeTokenExchanger`、後者は #[cfg(test)] 限定）。`StoredToken` は keyring の単一エントリ(JSON)にのみ保存し、FS/GDrive には一切書かない（2.5 不変条件、レビューで検証済み）。`StorageError` に `OAuthFailed`/`TokenRefreshFailed`/`Unauthorized`(+将来用 `GDriveUpload`) を追加。3.2 のリフレッシュ・3.3 の revoke はこの構造に追加する。
