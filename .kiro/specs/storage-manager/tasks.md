@@ -81,7 +81,7 @@
   - _Requirements: 3.1, 3.2, 3.3_
   - _Boundary: GDriveClient_
 
-- [ ] 4.2 GDrive アップロード失敗時のリトライ処理を実装する
+- [x] 4.2 GDrive アップロード失敗時のリトライ処理を実装する
   - 最大3回・指数バックオフのリトライロジックを実装する
   - リトライ上限到達後に `StorageError::GDriveUpload` を返す
   - リトライ処理のユニットテストで指定回数後にエラーが返ることを確認できる
@@ -139,3 +139,4 @@
 - 3.3: `OAuthManager::revoke_auth()` は `self.store.delete()` のみ呼ぶ。GDrive・LocalFileSystem への到達経路が型レベルで存在しない（OAuthManager は GDriveClient/LocalFileSystem フィールドを持たない）ため 4.2/4.4 を構造的に保証。トークン不在時の delete も Ok（idempotent）。所見(軽微): revoke_auth は body が同期だが async 宣言（無害）。
 - 4.1: `GDriveClient<H: HttpExecutor>` を HTTP シームで実装（本番=`ReqwestExecutor`、テスト=`MockHttpExecutor` #[cfg(test)]）。`ensure_mitatete_folder`（list→無ければcreate）/`upload(access_token, remote_path, content, mime)`（Bearer 認証・multipart）。3.3 不変条件: GDriveClient は executor のみ保持し API キー/secret を引数に取らない。
 - **4.1 繰越事項(重要)**: GDrive のサブフォルダ（`mitatete/history/`・`mitatete/diary/`）は未対応で、現状ファイルは `mitatete/` 直下に保存される。design 3.2 の `mitatete/history/YYYY-MM-DD.json` 構造は **5.1(StorageManager) もしくは後続タスクで対応する**こと。
+- 4.2: `upload` に最大3回・指数バックオフのリトライを実装（`MAX_UPLOAD_ATTEMPTS=3`、`delay=backoff_base_ms * 2^(attempt-1)`）。4xx は即失敗（リトライしない方針）、5xx/エラーはリトライ、全失敗で `GDriveUpload`。backoff はフィールド注入式で、`with_backoff_base(Duration::ZERO)` によりテストは高速。リトライ回数は mock の recorded_requests().len() で検証。

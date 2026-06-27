@@ -985,8 +985,33 @@ impl HttpExecutor for ReqwestExecutor {
 /// - アップロードに必要なのは OAuth アクセストークン（呼び出し元の OAuthManager が取得した値）と
 ///   アップロードするデータのみ。
 /// - センシティブデータ（API キーを含む）を Google Drive に書き込まないことは呼び出し元の責務とする。
+/// アップロードリトライポリシー定数（要件 5.3）。
+const MAX_UPLOAD_ATTEMPTS: u32 = 3;
+
+/// Google Drive API v3 を使って `mitatete/` フォルダ以下にファイルをアップロードするクライアント。
+///
+/// # リトライポリシー（要件 5.3, 5.4）
+/// - `upload` は 5xx エラーまたは HTTP エグゼキュータエラー（ネットワーク障害等）に対して
+///   指数バックオフでリトライする（最大 MAX_UPLOAD_ATTEMPTS = 3 回）。
+/// - 4xx エラー（403 Forbidden, 400 Bad Request 等）はクライアント側の問題であるため
+///   リトライしない（リトライしても成功しない）。
+/// - 最終試行が失敗した場合は `StorageError::GDriveUpload` を返す（要件 5.4）。
+///
+/// # バックオフ注入（テスタビリティ）
+/// `backoff_base_ms` フィールドでバックオフの基底時間を制御する。
+/// テスト時は `with_backoff_base(executor, Duration::ZERO)` でバックオフ待機を無効化できる。
+/// プロダクションは `new(executor)` を使用し、デフォルト 1000ms の基底時間を用いる。
+/// バックオフ時間: attempt 0 → 0ms, attempt 1 → base * 2^0 = base, attempt 2 → base * 2^1 = 2*base
+///
+/// # セキュリティ不変条件 (要件 3.3)
+/// - GDriveClient の公開 API は API キー・クライアントシークレットを引数として受け取らない。
+/// - アップロードに必要なのは OAuth アクセストークン（呼び出し元の OAuthManager が取得した値）と
+///   アップロードするデータのみ。
+/// - センシティブデータ（API キーを含む）を Google Drive に書き込まないことは呼び出し元の責務とする。
 pub struct GDriveClient<H: HttpExecutor> {
     executor: H,
+    /// バックオフ基底時間（ミリ秒）。テスト時は 0 に設定して高速実行する。
+    backoff_base_ms: u64,
 }
 
 impl<H: HttpExecutor> GDriveClient<H> {
@@ -1000,13 +1025,36 @@ impl<H: HttpExecutor> GDriveClient<H> {
     /// GDrive のフォルダ MIME タイプ。
     const FOLDER_MIME: &'static str = "application/vnd.google-apps.folder";
 
-    /// `HttpExecutor` を注入してクライアントを生成する。
+    /// デフォルトのバックオフ基底時間（ミリ秒）。プロダクション用。
+    const DEFAULT_BACKOFF_BASE_MS: u64 = 1000;
+
+    /// `HttpExecutor` を注入してクライアントを生成する（プロダクション用）。
+    ///
+    /// バックオフ基底時間はデフォルト 1000ms を使用する。
     ///
     /// # セキュリティ不変条件 (要件 3.3)
     /// コンストラクタは API キー・クライアントシークレットを受け取らない。
     /// OAuth アクセストークンはアップロードメソッドの引数として渡す（呼び出し元が管理する）。
     pub fn new(executor: H) -> Self {
-        Self { executor }
+        Self {
+            executor,
+            backoff_base_ms: Self::DEFAULT_BACKOFF_BASE_MS,
+        }
+    }
+
+    /// テスト用コンストラクタ。バックオフ基底時間を指定できる。
+    ///
+    /// テスト時は `Duration::ZERO` を渡すことでバックオフ待機を無効化し、高速実行できる。
+    ///
+    /// # 使用例（テスト）
+    /// ```ignore
+    /// let client = GDriveClient::with_backoff_base(mock_executor, std::time::Duration::ZERO);
+    /// ```
+    pub fn with_backoff_base(executor: H, base: std::time::Duration) -> Self {
+        Self {
+            executor,
+            backoff_base_ms: base.as_millis() as u64,
+        }
     }
 
     /// GDrive 上で `mitatete` フォルダを確認し、存在しない場合は作成してそのフォルダ ID を返す。
@@ -1119,6 +1167,14 @@ impl<H: HttpExecutor> GDriveClient<H> {
     /// 実装の単純化として、現バージョンでは `remote_path` のファイル名部分のみを使用して
     /// `mitatete/` フォルダ直下にアップロードする（サブフォルダの再帰作成は省略）。
     ///
+    /// # リトライポリシー（要件 5.3, 5.4）
+    /// - 5xx エラーまたは HTTP エグゼキュータエラー（ネットワーク障害等）が発生した場合、
+    ///   指数バックオフで最大 `MAX_UPLOAD_ATTEMPTS` 回（3 回）リトライする。
+    /// - 4xx エラー（403 Forbidden, 400 Bad Request 等）はリトライしない（クライアント側の問題）。
+    /// - 全リトライが失敗した場合は `StorageError::GDriveUpload` を返す（要件 5.4）。
+    /// - バックオフ時間: attempt 1 後 → base * 1, attempt 2 後 → base * 2
+    ///   （`backoff_base_ms` フィールドで制御。テスト時は 0 に設定）
+    ///
     /// # 引数
     /// - `access_token`: OAuth アクセストークン（API キー・シークレットではない、要件 3.3）
     /// - `remote_path`: GDrive 上のパス（例: `history/2026-06-27.json`）
@@ -1140,7 +1196,7 @@ impl<H: HttpExecutor> GDriveClient<H> {
         content: &[u8],
         mime: &str,
     ) -> Result<(), StorageError> {
-        // mitatete/ フォルダを確保する
+        // mitatete/ フォルダを確保する（ensure_mitatete_folder 自体はリトライしない）
         let folder_id = self.ensure_mitatete_folder(access_token).await?;
 
         // remote_path からファイル名を抽出する（サブディレクトリは現バージョンでは無視）
@@ -1194,16 +1250,48 @@ impl<H: HttpExecutor> GDriveClient<H> {
             body,
         };
 
-        let resp = self.executor.execute(upload_req).await?;
+        // リトライループ（要件 5.3: 最大 MAX_UPLOAD_ATTEMPTS 回, 5.4: 上限到達で GDriveUpload エラー）
+        let mut last_error: Option<StorageError> = None;
+        for attempt in 0..MAX_UPLOAD_ATTEMPTS {
+            // attempt > 0 の場合は指数バックオフで待機する
+            // バックオフ時間: attempt 1 → base * 2^0 = base, attempt 2 → base * 2^1 = 2*base
+            if attempt > 0 && self.backoff_base_ms > 0 {
+                let delay_ms = self.backoff_base_ms * (1u64 << (attempt - 1));
+                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            }
 
-        if resp.status < 200 || resp.status >= 300 {
-            return Err(StorageError::GDriveUpload(format!(
-                "upload failed with status {}: {}",
-                resp.status, resp.body
-            )));
+            match self.executor.execute(upload_req.clone()).await {
+                Err(e) => {
+                    // HTTP エグゼキュータエラー（ネットワーク障害等）→ リトライ対象
+                    last_error = Some(e);
+                    continue;
+                }
+                Ok(resp) => {
+                    if resp.status >= 200 && resp.status < 300 {
+                        // 成功
+                        return Ok(());
+                    } else if resp.status >= 400 && resp.status < 500 {
+                        // 4xx: クライアント側エラー → リトライ不要、即座にエラー返却
+                        return Err(StorageError::GDriveUpload(format!(
+                            "upload failed with status {}: {}",
+                            resp.status, resp.body
+                        )));
+                    } else {
+                        // 5xx またはその他: リトライ対象
+                        last_error = Some(StorageError::GDriveUpload(format!(
+                            "upload failed with status {}: {}",
+                            resp.status, resp.body
+                        )));
+                        continue;
+                    }
+                }
+            }
         }
 
-        Ok(())
+        // 全 MAX_UPLOAD_ATTEMPTS 回失敗 → GDriveUpload エラーを返す（要件 5.4）
+        Err(last_error.unwrap_or_else(|| {
+            StorageError::GDriveUpload("upload failed after all attempts".to_string())
+        }))
     }
 }
 
@@ -2587,6 +2675,236 @@ mod tests {
         assert!(
             matches!(result, Err(StorageError::GDriveUpload(_))),
             "upload must return Err(GDriveUpload) on non-2xx response, got: {result:?}"
+        );
+    }
+
+    // =========================================================================
+    // Task 4.2: GDriveClient リトライ処理のユニットテスト（要件 5.2, 5.3, 5.4）
+    //
+    // バックオフ注入方針: with_backoff_base(executor, Duration::ZERO) を使用し、
+    // テスト実行時はバックオフ待機を 0ms にして高速実行する。
+    //
+    // リトライカウント検証方針: MockHttpExecutor.recorded_requests() でアップロード用
+    // POST リクエスト数をカウントする（ensure_mitatete_folder の GET を除いたもの）。
+    // =========================================================================
+
+    /// upload が初回で成功する場合、アップロードリクエストは正確に 1 回のみ発行される（要件 5.3）。
+    ///
+    /// 検証:
+    /// - Ok(()) が返ること
+    /// - POST upload リクエストが 1 回だけ（ensure_mitatete_folder の GET 1 回 + upload POST 1 回 = 計 2 回）
+    #[tokio::test]
+    async fn test_upload_retry_succeeds_on_first_attempt_issues_exactly_one_upload_request() {
+        // ensure_mitatete_folder: 既存フォルダあり（GET 1 回）
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload: 初回成功
+        let upload_ok = GDriveResponse {
+            status: 200,
+            body: r#"{"id": "file-001"}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp, upload_ok]);
+        // バックオフ 0ms（テスト高速化）
+        let client = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+
+        let result = client
+            .upload(
+                "token",
+                "history/2026-06-27.json",
+                b"content",
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "upload must succeed on first attempt, got: {result:?}"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        // GET (ensure_mitatete_folder list) + POST (upload) = 2 total
+        assert_eq!(
+            reqs.len(),
+            2,
+            "must issue exactly 2 requests total (1 ensure_folder GET + 1 upload POST), got: {}",
+            reqs.len()
+        );
+        // アップロードリクエスト（2番目）が POST であること
+        assert_eq!(reqs[1].method, "POST", "upload request must be POST");
+        assert!(
+            reqs[1].url.contains("uploadType=multipart"),
+            "upload request must be multipart upload POST"
+        );
+    }
+
+    /// upload が 2 回失敗（5xx）して 3 回目で成功する場合、
+    /// アップロードリクエストが正確に 3 回発行され Ok(()) が返ること（要件 5.3）。
+    #[tokio::test]
+    async fn test_upload_retry_succeeds_on_third_attempt_after_two_transient_5xx_failures() {
+        // ensure_mitatete_folder: 既存フォルダあり（GET 1 回）
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload 試行 1: 500 Internal Server Error（リトライ対象）
+        let upload_fail_1 = GDriveResponse {
+            status: 500,
+            body: r#"{"error": {"message": "backend error"}}"#.to_string(),
+        };
+        // upload 試行 2: 503 Service Unavailable（リトライ対象）
+        let upload_fail_2 = GDriveResponse {
+            status: 503,
+            body: r#"{"error": {"message": "service unavailable"}}"#.to_string(),
+        };
+        // upload 試行 3: 200 OK（成功）
+        let upload_ok = GDriveResponse {
+            status: 200,
+            body: r#"{"id": "file-001"}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp, upload_fail_1, upload_fail_2, upload_ok]);
+        // バックオフ 0ms（テスト高速化）
+        let client = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+
+        let result = client
+            .upload(
+                "token",
+                "history/2026-06-27.json",
+                b"content",
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "upload must succeed on 3rd attempt after 2 transient failures, got: {result:?}"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        // GET (ensure_mitatete_folder list) + POST×3 (upload 試行 1,2,3) = 4 total
+        assert_eq!(
+            reqs.len(),
+            4,
+            "must issue 4 requests total (1 ensure_folder GET + 3 upload POSTs), got: {}",
+            reqs.len()
+        );
+        // すべてのアップロード試行が POST であること
+        for i in 1..=3 {
+            assert_eq!(
+                reqs[i].method, "POST",
+                "request[{i}] must be POST upload attempt"
+            );
+        }
+    }
+
+    /// upload が 3 回すべて失敗（5xx）する場合、
+    /// アップロードリクエストが正確に 3 回発行され Err(StorageError::GDriveUpload(_)) が返ること
+    /// （要件 5.3: 最大 3 回, 5.4: 上限到達でエラー返却）。
+    #[tokio::test]
+    async fn test_upload_retry_all_3_attempts_fail_returns_gdrive_upload_error() {
+        // ensure_mitatete_folder: 既存フォルダあり（GET 1 回）
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload 試行 1,2,3: すべて 500
+        let upload_fail = GDriveResponse {
+            status: 500,
+            body: r#"{"error": {"message": "internal server error"}}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![
+            list_resp,
+            upload_fail.clone(),
+            upload_fail.clone(),
+            upload_fail,
+        ]);
+        // バックオフ 0ms（テスト高速化）
+        let client = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+
+        let result = client
+            .upload(
+                "token",
+                "history/2026-06-27.json",
+                b"content",
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(StorageError::GDriveUpload(_))),
+            "upload must return Err(GDriveUpload) after all 3 attempts fail, got: {result:?}"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        // GET (ensure_mitatete_folder list) + POST×3 (upload 試行 1,2,3) = 4 total
+        assert_eq!(
+            reqs.len(),
+            4,
+            "must issue exactly 4 requests (1 ensure_folder GET + 3 upload POSTs), got: {}",
+            reqs.len()
+        );
+        // すべてのアップロード試行が POST であること
+        for i in 1..=3 {
+            assert_eq!(
+                reqs[i].method, "POST",
+                "request[{i}] must be POST upload attempt"
+            );
+        }
+    }
+
+    /// upload が 4xx（403 Forbidden）を受け取った場合、
+    /// リトライせずに即座に Err(StorageError::GDriveUpload(_)) が返ること。
+    ///
+    /// 4xx はクライアント側の問題（権限不足・バリデーション失敗等）であり、
+    /// リトライしても成功しないため即座に失敗とする（要件 5.2）。
+    #[tokio::test]
+    async fn test_upload_retry_does_not_retry_on_4xx_client_error() {
+        // ensure_mitatete_folder: 既存フォルダあり（GET 1 回）
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload: 403 Forbidden（リトライ対象外）
+        let upload_forbidden = GDriveResponse {
+            status: 403,
+            body: r#"{"error": {"message": "insufficientPermissions"}}"#.to_string(),
+        };
+        // キューに 500 も積んでおく。もし誤ってリトライされたら使われてしまう
+        let upload_would_succeed_if_retried = GDriveResponse {
+            status: 200,
+            body: r#"{"id": "file-001"}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![
+            list_resp,
+            upload_forbidden,
+            upload_would_succeed_if_retried,
+        ]);
+        // バックオフ 0ms（テスト高速化）
+        let client = GDriveClient::with_backoff_base(mock, std::time::Duration::ZERO);
+
+        let result = client
+            .upload(
+                "token",
+                "history/2026-06-27.json",
+                b"content",
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(StorageError::GDriveUpload(_))),
+            "upload must return Err(GDriveUpload) immediately on 4xx, got: {result:?}"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        // GET (ensure_mitatete_folder list) + POST×1 (upload: 4xx で即座に失敗) = 2 total
+        // リトライされていれば 3 以上になる
+        assert_eq!(
+            reqs.len(),
+            2,
+            "must issue exactly 2 requests (1 ensure_folder GET + 1 upload POST, NO retry for 4xx), got: {}",
+            reqs.len()
         );
     }
 }
