@@ -437,6 +437,32 @@ impl<S: TokenStore, X: TokenExchanger> OAuthManager<S, X> {
         self.get_auth_status_at(now).await
     }
 
+    /// OAuth トークンをキーチェーン（TokenStore）から削除し、承認を取り消す。
+    ///
+    /// # 契約
+    /// - `self.store.delete()` のみを呼び出す。GDrive や LocalFileSystem には一切触れない。
+    /// - トークンが存在しない場合も `Ok(())` を返す（冪等）。
+    /// - 取り消し後に `get_auth_status()` を呼ぶと `Unauthorized` が返る。
+    ///
+    /// # セキュリティ不変条件 (要件 4.2, 4.4)
+    /// - GDrive 上のデータを読み取り・更新・削除しない。
+    /// - `~/.mitatete/` 以下のローカルファイルを削除しない。
+    /// - 操作はトークンストアへの単一の `delete()` 呼び出しのみ。
+    pub async fn revoke_auth(&self) -> Result<(), StorageError> {
+        // 要件 4.3: OAuth トークンのみを削除する。
+        // 要件 4.2: GDrive データへの読み取り・更新・削除を行わない。
+        // 要件 4.4: ローカルファイル（~/.mitatete/）を削除しない。
+        //
+        // この実装は self.store.delete() のみを呼び出す。
+        // OAuthManager は GDriveClient / LocalFileSystem へのフィールドを持たないため、
+        // それらへの呼び出しは型システムによってコンパイル時に排除される。
+        //
+        // トークンが存在しない場合も Ok(()) を返す（冪等）。
+        // KeyringTokenStore::delete() は NoEntry を Ok(()) に変換済みのため、
+        // InMemoryTokenStore も同様に扱うことで一貫したコントラクトとなる。
+        self.store.delete()
+    }
+
     /// 起動時トークン確認の内部実装。`now_unix` を注入することでテストが決定論的になる。
     ///
     /// # アルゴリズム
@@ -1883,5 +1909,112 @@ mod tests {
             stored.is_none(),
             "token must be deleted from store after refresh failure, but store has: {stored:?}"
         );
+    }
+
+    // =========================================================================
+    // Task 3.3: revoke_auth — 承認取り消し処理
+    // =========================================================================
+
+    /// complete_auth で認証後に revoke_auth を呼ぶと:
+    /// - store.load() が None になる（トークンが削除される）
+    /// - get_auth_status() が Unauthorized を返す
+    #[tokio::test]
+    async fn test_revoke_auth_after_complete_auth_removes_token_and_returns_unauthorized() {
+        let store = InMemoryTokenStore::new();
+        let token = canned_token();
+        let exchanger = FakeTokenExchanger::success(token.clone());
+        let manager = make_oauth_manager(store, exchanger);
+
+        // 認証を完了してトークンを保存する
+        let auth_result = manager.complete_auth("valid-code").await;
+        assert!(
+            matches!(auth_result, Ok(AuthStatus::Authorized)),
+            "complete_auth must succeed before revoke test, got: {auth_result:?}"
+        );
+
+        // トークンが保存されていることを確認
+        let stored_before = manager.store.get_stored();
+        assert!(
+            stored_before.is_some(),
+            "token must be present before revoke, got: {stored_before:?}"
+        );
+
+        // 承認取り消し
+        let revoke_result = manager.revoke_auth().await;
+        assert!(
+            revoke_result.is_ok(),
+            "revoke_auth must return Ok, got: {revoke_result:?}"
+        );
+
+        // トークンがストアから削除されていること（要件 4.3）
+        let stored_after = manager.store.get_stored();
+        assert!(
+            stored_after.is_none(),
+            "token must be deleted from store after revoke_auth (req 4.3), but store has: {stored_after:?}"
+        );
+
+        // get_auth_status が Unauthorized を返すこと（要件 4.5）
+        let status = manager.get_auth_status().await;
+        assert!(
+            matches!(status, Ok(AuthStatus::Unauthorized)),
+            "get_auth_status after revoke must return Ok(Unauthorized) (req 4.5), got: {status:?}"
+        );
+    }
+
+    /// トークンが存在しない状態で revoke_auth を呼んでもエラーにならない（冪等）。
+    /// 状態は引き続き Unauthorized のまま（要件 4.1, 4.5）。
+    #[tokio::test]
+    async fn test_revoke_auth_when_no_token_returns_ok_and_stays_unauthorized() {
+        let store = InMemoryTokenStore::new(); // 空（トークンなし）
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        // トークンなしの状態で revoke_auth を呼ぶ
+        let revoke_result = manager.revoke_auth().await;
+        assert!(
+            revoke_result.is_ok(),
+            "revoke_auth on empty store must return Ok (idempotent, req 4.1), got: {revoke_result:?}"
+        );
+
+        // 状態が Unauthorized のままであること（要件 4.5）
+        let status = manager.get_auth_status().await;
+        assert!(
+            matches!(status, Ok(AuthStatus::Unauthorized)),
+            "get_auth_status after revoke on empty store must return Ok(Unauthorized) (req 4.5), got: {status:?}"
+        );
+    }
+
+    /// revoke_auth は store.delete() のみを呼び出す。
+    /// GDrive や LocalFileSystem への呼び出しがないことを構造的に保証する。
+    ///
+    /// この不変条件はコードレベルで OAuthManager に GDriveClient / LocalFileSystem への
+    /// フィールドや参照が存在しないことで保証される（型システムによる保証）。
+    /// テストでは revoke_auth 後にストアの状態のみが変化することを確認する。
+    #[tokio::test]
+    async fn test_revoke_auth_only_touches_token_store_invariant() {
+        let store = InMemoryTokenStore::new();
+        let token = canned_token();
+        // トークンを事前に保存する
+        store.save(&token).expect("pre-save must succeed");
+
+        let exchanger = FakeTokenExchanger::success(canned_token());
+        let manager = make_oauth_manager(store, exchanger);
+
+        // revoke_auth を呼ぶ
+        manager
+            .revoke_auth()
+            .await
+            .expect("revoke_auth must succeed");
+
+        // ストアのトークンが削除されていること（store.delete() が呼ばれた証拠）
+        let stored = manager.store.get_stored();
+        assert!(
+            stored.is_none(),
+            "revoke_auth must call store.delete(), token must be None after revoke, got: {stored:?}"
+        );
+
+        // OAuthManager<S, X> の型パラメータ上 GDriveClient / LocalFileSystem への
+        // フィールドが存在しないことは型システムで保証される（コンパイル時保証）。
+        // 追加の実行時チェックは不要。
     }
 }

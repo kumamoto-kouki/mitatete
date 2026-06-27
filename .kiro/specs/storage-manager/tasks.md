@@ -64,7 +64,7 @@
   - _Requirements: 2.3, 2.4_
   - _Boundary: OAuthManager_
 
-- [ ] 3.3 承認取り消し処理を実装する
+- [x] 3.3 承認取り消し処理を実装する
   - `revoke_auth()` 呼び出し時に、キーチェーンから OAuth トークンのみを削除する
   - GDrive 上のデータへの読み取り・更新・削除を一切行わないことをコードレベルで保証する
   - `~/.mitatete/` 以下のローカルファイルを削除しない
@@ -136,3 +136,4 @@
 - 共通(レビュー所見): reviewer は RED-phase を「git commit で失敗状態を記録していない」と WEAK 判定しがちだが、kiro-impl 仕様上 RED は status report の RED_PHASE_OUTPUT で足り、専用コミットは不要。advisory として扱い、status report に実測の失敗出力を必ず載せること。
 - 3.1: OAuthManager を `TokenStore`/`TokenExchanger` の2 trait で抽象化（本番=`KeyringTokenStore`+`GoogleTokenExchanger`、テスト=`InMemoryTokenStore`+`FakeTokenExchanger`、後者は #[cfg(test)] 限定）。`StoredToken` は keyring の単一エントリ(JSON)にのみ保存し、FS/GDrive には一切書かない（2.5 不変条件、レビューで検証済み）。`StorageError` に `OAuthFailed`/`TokenRefreshFailed`/`Unauthorized`(+将来用 `GDriveUpload`) を追加。3.2 のリフレッシュ・3.3 の revoke はこの構造に追加する。
 - 3.2: `OAuthManager::get_auth_status_at(now_unix)` の時刻シーム（`EXPIRY_SKEW_SECS=60`）で起動時の有効期限判定を実装。期限切れ→`TokenExchanger::refresh`（trait拡張、Google=grant_type=refresh_token、Fake=成功/失敗切替）。成功は新トークンを `store.save` のみ、失敗は `store.delete` して `Ok(Unauthorized)`（graceful degradation, 2.4）。keyring専用不変条件を維持。`get_auth_status()` は実 now を渡す薄ラッパ。
+- 3.3: `OAuthManager::revoke_auth()` は `self.store.delete()` のみ呼ぶ。GDrive・LocalFileSystem への到達経路が型レベルで存在しない（OAuthManager は GDriveClient/LocalFileSystem フィールドを持たない）ため 4.2/4.4 を構造的に保証。トークン不在時の delete も Ok（idempotent）。所見(軽微): revoke_auth は body が同期だが async 宣言（無害）。
