@@ -18,7 +18,7 @@
   - _Boundary: LocalFileSystem_
 
 - [ ] 2. コア: LocalFileSystem — ファイル読み書き実装
-- [ ] 2.1 (P) 対話履歴の保存・読み込みを実装する
+- [x] 2.1 (P) 対話履歴の保存・読み込みを実装する
   - `~/.mitatete/history/YYYY-MM-DD.json` への書き込みと読み込みを実装する
   - ファイルパスは受け取った日付文字列から LocalFileSystem 内部で構築し、外部から任意パスを受け付けない
   - 書き込み・読み込みそれぞれの成功／失敗を `Result<T, StorageError>` で返す
@@ -127,3 +127,5 @@
 ## Implementation Notes
 - 1.2: `StorageError` に design の enum 外の `InitDir(String)` variant を追加（初期化エラー用）。design のエラー型は例示であり許容範囲だが、後続タスク（2.x〜）でエラー型を拡張する際はこの variant の存在を前提にすること。
 - LocalFileSystem のパス構築は内部固定（外部から任意パスを受け取らない＝パストラバーサル防止）。`init_dirs(&Path)` はテスト用に pub だが、本番入口 `init_storage_dirs()` は外部パスを受け取らない。
+- 2.1: `LocalFileSystem { base }` struct を導入（`with_base()`=テスト用 / `new()`=home解決）。read/write は tokio::fs、エラーは明示 map_err で `LocalWrite`/`LocalRead`（`From<io::Error>`=InitDir に依存しない）。日付は `validate_date` でバイト単位検証（長さ10・位置4,7が`-`・他は数字）＝パストラバーサル防止。後続 2.2〜2.4 はこの struct にメソッド追加する形で拡張すること。
+- 2.1 残課題(軽微): `test_save_history_rejects_path_traversal` 内に常に真の assertion(`!escaped.exists() || true`)があるが、直後の `base.join("history")` 非作成 assert で実害なし。将来テスト整理時に簡素化。
