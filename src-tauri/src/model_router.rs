@@ -320,6 +320,155 @@ impl<H: HttpClient> ModelProvider for ClaudeClient<H> {
     }
 }
 
+// ─── OpenAI（Chat Completions） ──────────────────────────────────────────────
+
+const OPENAI_URL: &str = "https://api.openai.com/v1/chat/completions";
+
+/// OpenAI（GPT）クライアント。system を `messages` 先頭の `{role:"system"}` として渡す。
+pub struct OpenAIClient<H: HttpClient> {
+    http: H,
+}
+
+impl<H: HttpClient> OpenAIClient<H> {
+    pub fn new(http: H) -> Self {
+        Self { http }
+    }
+}
+
+impl<H: HttpClient> ModelProvider for OpenAIClient<H> {
+    async fn send(&self, api_key: &str, req: &ChatRequest) -> Result<ChatResponse, ModelError> {
+        // messages = [{role:"system", system_prompt}, ...履歴/新規]
+        let mut messages: Vec<serde_json::Value> =
+            vec![serde_json::json!({ "role": "system", "content": req.system_prompt })];
+        messages.extend(
+            req.messages
+                .iter()
+                .map(|m| serde_json::json!({ "role": role_str(m.role), "content": m.content })),
+        );
+        let payload = serde_json::json!({
+            "model": req.model,
+            "max_tokens": req.max_tokens,
+            "messages": messages,
+        });
+        let mut headers = std::collections::HashMap::new();
+        headers.insert("authorization".to_string(), format!("Bearer {api_key}"));
+        headers.insert("content-type".to_string(), "application/json".to_string());
+
+        let res = self
+            .http
+            .send(HttpRequest {
+                method: "POST".to_string(),
+                url: OPENAI_URL.to_string(),
+                headers,
+                body: serde_json::to_vec(&payload)
+                    .map_err(|e| ModelError::Decode(e.to_string()))?,
+            })
+            .await?;
+        if !(200..300).contains(&res.status) {
+            return Err(ModelError::Http {
+                status: res.status,
+                message: res.body,
+            });
+        }
+        let parsed: serde_json::Value =
+            serde_json::from_str(&res.body).map_err(|e| ModelError::Decode(e.to_string()))?;
+        let text = parsed
+            .pointer("/choices/0/message/content")
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| {
+                ModelError::Decode("choices[0].message.content が見つかりません".to_string())
+            })?
+            .to_string();
+        Ok(ChatResponse {
+            text,
+            model: req.model.clone(),
+        })
+    }
+}
+
+// ─── Gemini（generateContent） ───────────────────────────────────────────────
+
+const GEMINI_BASE: &str = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/// Gemini クライアント。system は `systemInstruction`、メッセージは `contents`。
+pub struct GeminiClient<H: HttpClient> {
+    http: H,
+}
+
+impl<H: HttpClient> GeminiClient<H> {
+    pub fn new(http: H) -> Self {
+        Self { http }
+    }
+}
+
+/// Gemini の role 表現（assistant→model）。
+fn gemini_role(role: Role) -> &'static str {
+    match role {
+        Role::User => "user",
+        Role::Assistant => "model",
+    }
+}
+
+impl<H: HttpClient> ModelProvider for GeminiClient<H> {
+    async fn send(&self, api_key: &str, req: &ChatRequest) -> Result<ChatResponse, ModelError> {
+        let contents: Vec<serde_json::Value> = req
+            .messages
+            .iter()
+            .map(|m| {
+                serde_json::json!({
+                    "role": gemini_role(m.role),
+                    "parts": [{ "text": m.content }]
+                })
+            })
+            .collect();
+        let payload = serde_json::json!({
+            "systemInstruction": { "parts": [{ "text": req.system_prompt }] },
+            "contents": contents,
+        });
+        let mut headers = std::collections::HashMap::new();
+        // API キーはヘッダで渡す（URL/ログへ露出させない）。
+        headers.insert("x-goog-api-key".to_string(), api_key.to_string());
+        headers.insert("content-type".to_string(), "application/json".to_string());
+
+        let res = self
+            .http
+            .send(HttpRequest {
+                method: "POST".to_string(),
+                url: format!("{GEMINI_BASE}/{}:generateContent", req.model),
+                headers,
+                body: serde_json::to_vec(&payload)
+                    .map_err(|e| ModelError::Decode(e.to_string()))?,
+            })
+            .await?;
+        if !(200..300).contains(&res.status) {
+            return Err(ModelError::Http {
+                status: res.status,
+                message: res.body,
+            });
+        }
+        let parsed: serde_json::Value =
+            serde_json::from_str(&res.body).map_err(|e| ModelError::Decode(e.to_string()))?;
+        // candidates[0].content.parts[].text を連結。
+        let text = parsed
+            .pointer("/candidates/0/content/parts")
+            .and_then(|p| p.as_array())
+            .map(|parts| {
+                parts
+                    .iter()
+                    .filter_map(|p| p.get("text").and_then(|t| t.as_str()))
+                    .collect::<Vec<_>>()
+                    .join("")
+            })
+            .ok_or_else(|| {
+                ModelError::Decode("candidates[0].content.parts が見つかりません".to_string())
+            })?;
+        Ok(ChatResponse {
+            text,
+            model: req.model.clone(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -514,5 +663,56 @@ mod tests {
         let err = client.send("k", &req(vec![])).await.unwrap_err();
         assert!(matches!(err, ModelError::Http { status: 429, .. }));
         assert!(err.is_retryable());
+    }
+
+    #[tokio::test]
+    async fn openai_client_sends_bearer_and_system_message() {
+        let mock =
+            MockHttp::ok(r#"{"choices":[{"message":{"role":"assistant","content":"了解"}}]}"#);
+        let client = OpenAIClient::new(mock);
+        let messages = vec![ChatMessage {
+            role: Role::User,
+            content: "やあ".into(),
+        }];
+        let res = client.send("sk-openai", &req(messages)).await.unwrap();
+        assert_eq!(res.text, "了解");
+
+        let sent = client.http.last.lock().unwrap();
+        let sent = sent.as_ref().unwrap();
+        assert_eq!(sent.url, OPENAI_URL);
+        assert_eq!(
+            sent.headers.get("authorization").unwrap(),
+            "Bearer sk-openai"
+        );
+        let payload: serde_json::Value = serde_json::from_slice(&sent.body).unwrap();
+        // system は messages 先頭。
+        assert_eq!(payload["messages"][0]["role"], "system");
+        assert_eq!(payload["messages"][0]["content"], "あなたは「ミタ」です。");
+        assert_eq!(payload["messages"][1]["content"], "やあ");
+    }
+
+    #[tokio::test]
+    async fn gemini_client_sends_system_instruction_and_maps_role() {
+        let mock = MockHttp::ok(
+            r#"{"candidates":[{"content":{"parts":[{"text":"こん"},{"text":"にちは"}]}}]}"#,
+        );
+        let client = GeminiClient::new(mock);
+        let messages = vec![ChatMessage {
+            role: Role::Assistant,
+            content: "前".into(),
+        }];
+        let res = client.send("g-key", &req(messages)).await.unwrap();
+        assert_eq!(res.text, "こんにちは"); // parts[].text 連結
+
+        let sent = client.http.last.lock().unwrap();
+        let sent = sent.as_ref().unwrap();
+        assert!(sent.url.ends_with(":generateContent"));
+        assert_eq!(sent.headers.get("x-goog-api-key").unwrap(), "g-key");
+        let payload: serde_json::Value = serde_json::from_slice(&sent.body).unwrap();
+        assert_eq!(
+            payload["systemInstruction"]["parts"][0]["text"],
+            "あなたは「ミタ」です。"
+        );
+        assert_eq!(payload["contents"][0]["role"], "model"); // assistant→model
     }
 }
