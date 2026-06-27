@@ -190,6 +190,15 @@ impl TokenStore for KeyringTokenStore {
 #[allow(async_fn_in_trait)]
 pub trait TokenExchanger: Send + Sync {
     async fn exchange_code(&self, code: &str) -> Result<StoredToken, StorageError>;
+
+    /// リフレッシュトークンを使って新しいアクセストークンを取得する。
+    ///
+    /// - 成功時: 新しい `StoredToken` を返す（access_token・expires_at が更新される）
+    /// - 失敗時: `StorageError::TokenRefreshFailed` を返す
+    ///
+    /// # セキュリティ不変条件
+    /// 返却された `StoredToken` は呼び出し元（`OAuthManager`）が `TokenStore` 経由でのみ保存する。
+    async fn refresh(&self, refresh_token: &str) -> Result<StoredToken, StorageError>;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +282,64 @@ impl TokenExchanger for GoogleTokenExchanger {
         Ok(StoredToken {
             access_token,
             refresh_token,
+            expires_at,
+        })
+    }
+
+    /// Google OAuth 2.0 トークンエンドポイントへ grant_type=refresh_token を POST して
+    /// アクセストークンを更新する。
+    ///
+    /// Google のリフレッシュ応答では `refresh_token` フィールドが含まれない場合があるため、
+    /// 既存の `refresh_token` をそのまま引き継ぐ。
+    async fn refresh(&self, refresh_token: &str) -> Result<StoredToken, StorageError> {
+        let client = reqwest::Client::new();
+
+        let form_body = format!(
+            "client_id={}&client_secret={}&refresh_token={}&grant_type=refresh_token",
+            url_encode(&self.client_id),
+            url_encode(&self.client_secret),
+            url_encode(refresh_token),
+        );
+
+        let response = client
+            .post(Self::TOKEN_ENDPOINT)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(form_body)
+            .send()
+            .await
+            .map_err(|_| StorageError::TokenRefreshFailed)?;
+
+        if !response.status().is_success() {
+            return Err(StorageError::TokenRefreshFailed);
+        }
+
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|_| StorageError::TokenRefreshFailed)?;
+
+        let access_token = body["access_token"]
+            .as_str()
+            .ok_or(StorageError::TokenRefreshFailed)?
+            .to_string();
+        let expires_in = body["expires_in"].as_i64().unwrap_or(3600);
+
+        // Google のリフレッシュ応答には refresh_token が含まれない場合があるため、
+        // 既存のリフレッシュトークンをそのまま引き継ぐ。
+        let new_refresh_token = body["refresh_token"]
+            .as_str()
+            .unwrap_or(refresh_token)
+            .to_string();
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        let expires_at = now + expires_in;
+
+        Ok(StoredToken {
+            access_token,
+            refresh_token: new_refresh_token,
             expires_at,
         })
     }
