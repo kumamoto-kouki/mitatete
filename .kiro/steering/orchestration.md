@@ -67,3 +67,4 @@ Wave 2（並行可）:            model-router         diary-engine
 
 - **コミット／ローカルマージはコンダクターが行う**。worker は自 `feat/<feature>` ブランチにコミットし、wave/マイルストーン境界でコンダクターがレビューして `main` へローカルマージする。コミットは意味のある単位で、trailer に `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` を付ける。デフォルトブランチ上では先にブランチを切る。
 - **push（外部公開）は人間が実行する**。コンダクターは push せず、「コミット済み・push 可能」状態を報告する。最終公開判断は人間が保持する。
+- **subagent / worker への指示には「git の add / commit / push を行わない（生成・編集のみ）」を必ず明記する**。コミットはコンダクターが一元的に行う。（2026-06-27、spec移行 subagent が自律的に `git add -A && git commit` を実行し履歴を汚した事故の反省。`git reset --soft` で再構成した。）
