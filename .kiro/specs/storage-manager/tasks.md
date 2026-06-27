@@ -73,7 +73,7 @@
   - _Boundary: OAuthManager_
 
 - [ ] 4. コア: GDriveClient — Google Drive API クライアント実装
-- [ ] 4.1 GDriveClient の基本アップロード処理を実装する
+- [x] 4.1 GDriveClient の基本アップロード処理を実装する
   - OAuthManager からトークンを取得し、Google Drive API v3 を用いてファイルをアップロードする
   - `mitatete/` フォルダが GDrive に存在しない場合は作成してからアップロードする
   - センシティブデータ（API キーを含む）を引数として受け取らないようインターフェースを設計する
@@ -137,3 +137,5 @@
 - 3.1: OAuthManager を `TokenStore`/`TokenExchanger` の2 trait で抽象化（本番=`KeyringTokenStore`+`GoogleTokenExchanger`、テスト=`InMemoryTokenStore`+`FakeTokenExchanger`、後者は #[cfg(test)] 限定）。`StoredToken` は keyring の単一エントリ(JSON)にのみ保存し、FS/GDrive には一切書かない（2.5 不変条件、レビューで検証済み）。`StorageError` に `OAuthFailed`/`TokenRefreshFailed`/`Unauthorized`(+将来用 `GDriveUpload`) を追加。3.2 のリフレッシュ・3.3 の revoke はこの構造に追加する。
 - 3.2: `OAuthManager::get_auth_status_at(now_unix)` の時刻シーム（`EXPIRY_SKEW_SECS=60`）で起動時の有効期限判定を実装。期限切れ→`TokenExchanger::refresh`（trait拡張、Google=grant_type=refresh_token、Fake=成功/失敗切替）。成功は新トークンを `store.save` のみ、失敗は `store.delete` して `Ok(Unauthorized)`（graceful degradation, 2.4）。keyring専用不変条件を維持。`get_auth_status()` は実 now を渡す薄ラッパ。
 - 3.3: `OAuthManager::revoke_auth()` は `self.store.delete()` のみ呼ぶ。GDrive・LocalFileSystem への到達経路が型レベルで存在しない（OAuthManager は GDriveClient/LocalFileSystem フィールドを持たない）ため 4.2/4.4 を構造的に保証。トークン不在時の delete も Ok（idempotent）。所見(軽微): revoke_auth は body が同期だが async 宣言（無害）。
+- 4.1: `GDriveClient<H: HttpExecutor>` を HTTP シームで実装（本番=`ReqwestExecutor`、テスト=`MockHttpExecutor` #[cfg(test)]）。`ensure_mitatete_folder`（list→無ければcreate）/`upload(access_token, remote_path, content, mime)`（Bearer 認証・multipart）。3.3 不変条件: GDriveClient は executor のみ保持し API キー/secret を引数に取らない。
+- **4.1 繰越事項(重要)**: GDrive のサブフォルダ（`mitatete/history/`・`mitatete/diary/`）は未対応で、現状ファイルは `mitatete/` 直下に保存される。design 3.2 の `mitatete/history/YYYY-MM-DD.json` 構造は **5.1(StorageManager) もしくは後続タスクで対応する**こと。

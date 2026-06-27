@@ -906,6 +906,308 @@ fn resolve_home() -> Option<std::path::PathBuf> {
 }
 
 // ---------------------------------------------------------------------------
+// GDriveClient
+// ---------------------------------------------------------------------------
+
+/// Google Drive API v3 のリクエストを表す型。
+///
+/// `HttpExecutor` のモック実装がリクエスト内容（メソッド・URL・ヘッダー・ボディ）を
+/// 検査できるようにするためのデータ転送オブジェクト。
+#[derive(Debug, Clone)]
+pub struct GDriveRequest {
+    /// HTTP メソッド（"GET", "POST" など）
+    pub method: String,
+    /// リクエスト先 URL
+    pub url: String,
+    /// リクエストヘッダー（キーは小文字で格納する）
+    pub headers: std::collections::HashMap<String, String>,
+    /// リクエストボディ（バイト列）
+    pub body: Vec<u8>,
+}
+
+/// Google Drive API v3 のレスポンスを表す型。
+///
+/// `HttpExecutor` のモック実装が canned レスポンスを返すために使う。
+#[derive(Debug, Clone)]
+pub struct GDriveResponse {
+    /// HTTP ステータスコード（200 など）
+    pub status: u16,
+    /// レスポンスボディ（JSON テキスト）
+    pub body: String,
+}
+
+/// HTTP リクエストの実行を抽象化するトレイト。
+///
+/// プロダクション実装: `ReqwestExecutor`（reqwest で実際のネットワーク呼び出し）
+/// テスト実装: `MockHttpExecutor`（canned レスポンスを返しリクエストを記録）
+///
+/// このシームにより `GDriveClient` のロジックをネットワークなしでユニットテストできる。
+#[allow(async_fn_in_trait)]
+pub trait HttpExecutor: Send + Sync {
+    async fn execute(&self, req: GDriveRequest) -> Result<GDriveResponse, StorageError>;
+}
+
+/// reqwest を使って実際のネットワーク呼び出しを行うプロダクション実装。
+pub struct ReqwestExecutor;
+
+impl HttpExecutor for ReqwestExecutor {
+    async fn execute(&self, req: GDriveRequest) -> Result<GDriveResponse, StorageError> {
+        let client = reqwest::Client::new();
+
+        let method = reqwest::Method::from_bytes(req.method.as_bytes())
+            .map_err(|e| StorageError::GDriveUpload(format!("invalid HTTP method: {e}")))?;
+
+        let mut builder = client.request(method, &req.url);
+        for (key, value) in &req.headers {
+            builder = builder.header(key.as_str(), value.as_str());
+        }
+        builder = builder.body(req.body);
+
+        let response = builder
+            .send()
+            .await
+            .map_err(|e| StorageError::GDriveUpload(format!("HTTP request failed: {e}")))?;
+
+        let status = response.status().as_u16();
+        let body = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "(unreadable)".to_string());
+
+        Ok(GDriveResponse { status, body })
+    }
+}
+
+/// Google Drive API v3 を使って `mitatete/` フォルダ以下にファイルをアップロードするクライアント。
+///
+/// # セキュリティ不変条件 (要件 3.3)
+/// - GDriveClient の公開 API は API キー・クライアントシークレットを引数として受け取らない。
+/// - アップロードに必要なのは OAuth アクセストークン（呼び出し元の OAuthManager が取得した値）と
+///   アップロードするデータのみ。
+/// - センシティブデータ（API キーを含む）を Google Drive に書き込まないことは呼び出し元の責務とする。
+pub struct GDriveClient<H: HttpExecutor> {
+    executor: H,
+}
+
+impl<H: HttpExecutor> GDriveClient<H> {
+    /// Google Drive Files API v3 のベース URL。
+    const FILES_API: &'static str = "https://www.googleapis.com/drive/v3/files";
+    /// Google Drive Upload API v3 のベース URL（multipart upload 用）。
+    const UPLOAD_API: &'static str =
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    /// GDrive 上に作成・確認するフォルダ名。
+    const FOLDER_NAME: &'static str = "mitatete";
+    /// GDrive のフォルダ MIME タイプ。
+    const FOLDER_MIME: &'static str = "application/vnd.google-apps.folder";
+
+    /// `HttpExecutor` を注入してクライアントを生成する。
+    ///
+    /// # セキュリティ不変条件 (要件 3.3)
+    /// コンストラクタは API キー・クライアントシークレットを受け取らない。
+    /// OAuth アクセストークンはアップロードメソッドの引数として渡す（呼び出し元が管理する）。
+    pub fn new(executor: H) -> Self {
+        Self { executor }
+    }
+
+    /// GDrive 上で `mitatete` フォルダを確認し、存在しない場合は作成してそのフォルダ ID を返す。
+    ///
+    /// アルゴリズム:
+    /// 1. Drive API v3 files.list で `name='mitatete'` かつ MIME タイプがフォルダのアイテムを検索。
+    /// 2. 見つかった場合は最初のアイテムの ID をそのまま返す（再利用）。
+    /// 3. 見つからなかった場合は files.create でフォルダを作成し、返却された ID を返す。
+    ///
+    /// # 引数
+    /// - `access_token`: OAuth アクセストークン（API キー・シークレットではない）
+    ///
+    /// # セキュリティ不変条件 (要件 3.3)
+    /// `access_token` は OAuth Bearer トークンであり、API キーやクライアントシークレットではない。
+    pub async fn ensure_mitatete_folder(&self, access_token: &str) -> Result<String, StorageError> {
+        // Step 1: mitatete フォルダを検索する
+        let query = format!(
+            "name='{}' and mimeType='{}' and trashed=false",
+            Self::FOLDER_NAME,
+            Self::FOLDER_MIME
+        );
+        let list_url = format!(
+            "{}?q={}&fields=files(id,name)",
+            Self::FILES_API,
+            url_encode(&query)
+        );
+
+        let mut headers = std::collections::HashMap::new();
+        headers.insert(
+            "authorization".to_string(),
+            format!("Bearer {}", access_token),
+        );
+
+        let list_req = GDriveRequest {
+            method: "GET".to_string(),
+            url: list_url,
+            headers: headers.clone(),
+            body: Vec::new(),
+        };
+
+        let list_resp = self.executor.execute(list_req).await?;
+
+        if list_resp.status < 200 || list_resp.status >= 300 {
+            return Err(StorageError::GDriveUpload(format!(
+                "folder list failed with status {}: {}",
+                list_resp.status, list_resp.body
+            )));
+        }
+
+        let list_json: serde_json::Value = serde_json::from_str(&list_resp.body).map_err(|e| {
+            StorageError::GDriveUpload(format!("folder list response parse error: {e}"))
+        })?;
+
+        // Step 2: フォルダが見つかった場合はそのまま ID を返す
+        if let Some(files) = list_json["files"].as_array() {
+            if let Some(first) = files.first() {
+                if let Some(id) = first["id"].as_str() {
+                    return Ok(id.to_string());
+                }
+            }
+        }
+
+        // Step 3: フォルダが見つからなかった場合は作成する
+        let create_meta = serde_json::json!({
+            "name": Self::FOLDER_NAME,
+            "mimeType": Self::FOLDER_MIME
+        });
+        let create_body = serde_json::to_vec(&create_meta).map_err(|e| {
+            StorageError::GDriveUpload(format!("folder create body serialize error: {e}"))
+        })?;
+
+        let mut create_headers = std::collections::HashMap::new();
+        create_headers.insert(
+            "authorization".to_string(),
+            format!("Bearer {}", access_token),
+        );
+        create_headers.insert("content-type".to_string(), "application/json".to_string());
+
+        let create_req = GDriveRequest {
+            method: "POST".to_string(),
+            url: Self::FILES_API.to_string(),
+            headers: create_headers,
+            body: create_body,
+        };
+
+        let create_resp = self.executor.execute(create_req).await?;
+
+        if create_resp.status < 200 || create_resp.status >= 300 {
+            return Err(StorageError::GDriveUpload(format!(
+                "folder create failed with status {}: {}",
+                create_resp.status, create_resp.body
+            )));
+        }
+
+        let create_json: serde_json::Value =
+            serde_json::from_str(&create_resp.body).map_err(|e| {
+                StorageError::GDriveUpload(format!("folder create response parse error: {e}"))
+            })?;
+
+        let folder_id = create_json["id"].as_str().ok_or_else(|| {
+            StorageError::GDriveUpload("folder create response missing 'id'".to_string())
+        })?;
+
+        Ok(folder_id.to_string())
+    }
+
+    /// ファイルを GDrive の `mitatete/` フォルダにアップロードする。
+    ///
+    /// `remote_path` は `history/2026-06-27.json` のような相対パスを期待する。
+    /// 実装の単純化として、現バージョンでは `remote_path` のファイル名部分のみを使用して
+    /// `mitatete/` フォルダ直下にアップロードする（サブフォルダの再帰作成は省略）。
+    ///
+    /// # 引数
+    /// - `access_token`: OAuth アクセストークン（API キー・シークレットではない、要件 3.3）
+    /// - `remote_path`: GDrive 上のパス（例: `history/2026-06-27.json`）
+    /// - `content`: アップロードするファイルの内容
+    /// - `mime`: ファイルの MIME タイプ（例: `application/json`）
+    ///
+    /// # 実装の制限事項
+    /// `remote_path` 内のサブフォルダ（`history/` など）は現バージョンでは作成しない。
+    /// ファイルは `mitatete/` フォルダ直下に `remote_path` のファイル名で保存される。
+    /// 設計書で示された `mitatete/history/YYYY-MM-DD.json` 構造は将来のタスクで対応する。
+    ///
+    /// # セキュリティ不変条件 (要件 3.3)
+    /// - `access_token` のみを認証に使用する（API キー・クライアントシークレットは受け取らない）。
+    /// - `content` の中身がセンシティブデータを含まないかどうかは呼び出し元の責務とする。
+    pub async fn upload(
+        &self,
+        access_token: &str,
+        remote_path: &str,
+        content: &[u8],
+        mime: &str,
+    ) -> Result<(), StorageError> {
+        // mitatete/ フォルダを確保する
+        let folder_id = self.ensure_mitatete_folder(access_token).await?;
+
+        // remote_path からファイル名を抽出する（サブディレクトリは現バージョンでは無視）
+        let file_name = remote_path
+            .rsplit('/')
+            .next()
+            .unwrap_or(remote_path)
+            .to_string();
+
+        // multipart/related リクエストを構築する
+        // Drive API v3 はマルチパートアップロードで metadata + media を同時に送信できる
+        let boundary = "mitatete_upload_boundary_42";
+
+        let metadata = serde_json::json!({
+            "name": file_name,
+            "parents": [folder_id],
+        });
+        let metadata_str = serde_json::to_string(&metadata).map_err(|e| {
+            StorageError::GDriveUpload(format!("upload metadata serialize error: {e}"))
+        })?;
+
+        // multipart/related ボディを手動構築する
+        let mut body = Vec::new();
+        // Part 1: JSON メタデータ
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(b"Content-Type: application/json; charset=UTF-8\r\n\r\n");
+        body.extend_from_slice(metadata_str.as_bytes());
+        body.extend_from_slice(b"\r\n");
+        // Part 2: ファイル内容
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(format!("Content-Type: {mime}\r\n\r\n").as_bytes());
+        body.extend_from_slice(content);
+        body.extend_from_slice(b"\r\n");
+        body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+
+        let mut headers = std::collections::HashMap::new();
+        // Authorization: Bearer <access_token>（要件 3.1: 認証ヘッダー必須）
+        headers.insert(
+            "authorization".to_string(),
+            format!("Bearer {}", access_token),
+        );
+        headers.insert(
+            "content-type".to_string(),
+            format!("multipart/related; boundary={boundary}"),
+        );
+
+        let upload_req = GDriveRequest {
+            method: "POST".to_string(),
+            url: Self::UPLOAD_API.to_string(),
+            headers,
+            body,
+        };
+
+        let resp = self.executor.execute(upload_req).await?;
+
+        if resp.status < 200 || resp.status >= 300 {
+            return Err(StorageError::GDriveUpload(format!(
+                "upload failed with status {}: {}",
+                resp.status, resp.body
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+// ---------------------------------------------------------------------------
 // ユニットテスト
 // ---------------------------------------------------------------------------
 
@@ -2016,5 +2318,275 @@ mod tests {
         // OAuthManager<S, X> の型パラメータ上 GDriveClient / LocalFileSystem への
         // フィールドが存在しないことは型システムで保証される（コンパイル時保証）。
         // 追加の実行時チェックは不要。
+    }
+
+    // =========================================================================
+    // Task 4.1: GDriveClient テスト用 MockHttpExecutor
+    // =========================================================================
+
+    /// GDriveClient のユニットテスト用モック HTTP エグゼキュータ。
+    ///
+    /// - 送信されたリクエストをすべて `requests` に記録する。
+    /// - `responses` キューから順に canned レスポンスを返す（FIFO）。
+    /// - キューが空の場合は 500 Internal Server Error を返す。
+    struct MockHttpExecutor {
+        requests: std::sync::Mutex<Vec<GDriveRequest>>,
+        responses: std::sync::Mutex<std::collections::VecDeque<GDriveResponse>>,
+    }
+
+    impl MockHttpExecutor {
+        fn new(responses: Vec<GDriveResponse>) -> Self {
+            Self {
+                requests: std::sync::Mutex::new(Vec::new()),
+                responses: std::sync::Mutex::new(responses.into_iter().collect()),
+            }
+        }
+
+        /// 記録された全リクエストを取得する。
+        fn recorded_requests(&self) -> Vec<GDriveRequest> {
+            self.requests.lock().unwrap().clone()
+        }
+    }
+
+    impl HttpExecutor for MockHttpExecutor {
+        async fn execute(&self, req: GDriveRequest) -> Result<GDriveResponse, StorageError> {
+            self.requests.lock().unwrap().push(req);
+            let resp = self
+                .responses
+                .lock()
+                .unwrap()
+                .pop_front()
+                .unwrap_or(GDriveResponse {
+                    status: 500,
+                    body: "mock queue empty".to_string(),
+                });
+            Ok(resp)
+        }
+    }
+
+    // =========================================================================
+    // Task 4.1: GDriveClient ユニットテスト
+    // =========================================================================
+
+    /// ensure_mitatete_folder: list が空 → create リクエストが発行され、新しい folder_id が返る。
+    ///
+    /// 検証内容 (要件 3.1, 3.2):
+    /// - 1 回目のリクエスト: GET files.list（Authorization: Bearer 付き）
+    /// - 2 回目のリクエスト: POST files（フォルダ作成、Authorization: Bearer 付き）
+    /// - 戻り値: create レスポンスの id フィールド
+    #[tokio::test]
+    async fn test_ensure_mitatete_folder_creates_when_list_empty() {
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": []}"#.to_string(),
+        };
+        let create_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"id": "folder-id-abc", "name": "mitatete"}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp, create_resp]);
+        let client = GDriveClient::new(mock);
+
+        let folder_id = client
+            .ensure_mitatete_folder("test-access-token")
+            .await
+            .expect("ensure_mitatete_folder must succeed");
+
+        assert_eq!(
+            folder_id, "folder-id-abc",
+            "must return the created folder id"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            2,
+            "must issue exactly 2 requests (list + create)"
+        );
+
+        // リクエスト 1: GET list
+        let list_req = &reqs[0];
+        assert_eq!(list_req.method, "GET", "first request must be GET");
+        assert!(
+            list_req.url.contains("googleapis.com/drive/v3/files"),
+            "list URL must hit Drive v3 files endpoint, got: {}",
+            list_req.url
+        );
+        assert!(
+            list_req
+                .headers
+                .get("authorization")
+                .map(|v| v.starts_with("Bearer "))
+                .unwrap_or(false),
+            "list request must have Authorization: Bearer header"
+        );
+
+        // リクエスト 2: POST create
+        let create_req = &reqs[1];
+        assert_eq!(create_req.method, "POST", "second request must be POST");
+        assert!(
+            create_req
+                .headers
+                .get("authorization")
+                .map(|v| v.starts_with("Bearer "))
+                .unwrap_or(false),
+            "create request must have Authorization: Bearer header"
+        );
+        let body_json: serde_json::Value =
+            serde_json::from_slice(&create_req.body).expect("create body must be valid JSON");
+        assert_eq!(
+            body_json["name"], "mitatete",
+            "create body must include name=mitatete"
+        );
+        assert_eq!(
+            body_json["mimeType"], "application/vnd.google-apps.folder",
+            "create body must include folder mimeType"
+        );
+    }
+
+    /// ensure_mitatete_folder: list が既存フォルダを返す → create は発行せず既存 id を返す。
+    ///
+    /// 検証内容 (要件 3.1):
+    /// - リクエストは list の 1 回のみ
+    /// - 戻り値: list レスポンスの最初のアイテムの id
+    #[tokio::test]
+    async fn test_ensure_mitatete_folder_reuses_existing_when_found() {
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "existing-folder-id", "name": "mitatete"}]}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp]);
+        let client = GDriveClient::new(mock);
+
+        let folder_id = client
+            .ensure_mitatete_folder("test-access-token")
+            .await
+            .expect("ensure_mitatete_folder must succeed");
+
+        assert_eq!(
+            folder_id, "existing-folder-id",
+            "must return the existing folder id without creating a new one"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        assert_eq!(
+            reqs.len(),
+            1,
+            "must issue exactly 1 request (list only, no create)"
+        );
+        assert_eq!(reqs[0].method, "GET", "the single request must be GET list");
+    }
+
+    /// upload: Authorization: Bearer <token> が設定され、ファイル内容・メタデータが送信される。
+    ///
+    /// 検証内容 (要件 3.1, 3.2):
+    /// - ensure_mitatete_folder (list + 場合によって create) の後に upload リクエストが送信される
+    /// - upload リクエストに Authorization: Bearer <access_token> が含まれる
+    /// - upload リクエストのボディにファイル名とコンテンツが含まれる
+    /// - 成功レスポンスで Ok(()) が返る
+    #[tokio::test]
+    async fn test_upload_sends_correct_auth_header_and_content() {
+        // ensure_mitatete_folder: 既存フォルダあり（1 リクエスト）
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload レスポンス: 成功
+        let upload_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"id": "file-id-001", "name": "2026-06-27.json"}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp, upload_resp]);
+        let client = GDriveClient::new(mock);
+
+        let content = br#"{"date":"2026-06-27","messages":[]}"#;
+        let result = client
+            .upload(
+                "my-access-token",
+                "history/2026-06-27.json",
+                content,
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "upload must succeed for 200 response, got: {result:?}"
+        );
+
+        let reqs = client.executor.recorded_requests();
+        // ensure_mitatete_folder (1 list) + upload = 2 リクエスト
+        assert_eq!(
+            reqs.len(),
+            2,
+            "must issue 2 requests (list + upload), got: {}",
+            reqs.len()
+        );
+
+        let upload_req = &reqs[1];
+        assert_eq!(upload_req.method, "POST", "upload request must be POST");
+        assert!(
+            upload_req.url.contains("uploadType=multipart"),
+            "upload URL must use multipart upload, got: {}",
+            upload_req.url
+        );
+
+        // Authorization: Bearer ヘッダーが設定されていること（要件 3.1）
+        let auth = upload_req
+            .headers
+            .get("authorization")
+            .expect("upload must have Authorization header");
+        assert_eq!(
+            auth, "Bearer my-access-token",
+            "Authorization must be 'Bearer my-access-token', got: {auth}"
+        );
+
+        // ボディにファイル名が含まれること（要件 3.2: 対応する構造で書き込む）
+        let body_str = String::from_utf8_lossy(&upload_req.body);
+        assert!(
+            body_str.contains("2026-06-27.json"),
+            "upload body must contain the file name, got body (truncated): {}",
+            &body_str[..body_str.len().min(200)]
+        );
+        // ボディにファイル内容が含まれること
+        assert!(
+            body_str.contains("2026-06-27"),
+            "upload body must contain the file content, got body (truncated): {}",
+            &body_str[..body_str.len().min(200)]
+        );
+    }
+
+    /// upload: モックが HTTP エラー (400) を返す → Err(StorageError::GDriveUpload(_)) になる。
+    ///
+    /// 検証内容 (要件 5.2: GDrive 書き込み失敗時はエラーを返す):
+    /// - 非 2xx レスポンスで GDriveUpload エラーが返ること
+    #[tokio::test]
+    async fn test_upload_returns_gdrive_upload_error_on_http_error() {
+        // ensure_mitatete_folder: 既存フォルダあり
+        let list_resp = GDriveResponse {
+            status: 200,
+            body: r#"{"files": [{"id": "folder-xyz", "name": "mitatete"}]}"#.to_string(),
+        };
+        // upload レスポンス: 403 Forbidden
+        let upload_err_resp = GDriveResponse {
+            status: 403,
+            body: r#"{"error": {"message": "insufficientPermissions"}}"#.to_string(),
+        };
+        let mock = MockHttpExecutor::new(vec![list_resp, upload_err_resp]);
+        let client = GDriveClient::new(mock);
+
+        let result = client
+            .upload(
+                "my-access-token",
+                "history/2026-06-27.json",
+                b"content",
+                "application/json",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(StorageError::GDriveUpload(_))),
+            "upload must return Err(GDriveUpload) on non-2xx response, got: {result:?}"
+        );
     }
 }
