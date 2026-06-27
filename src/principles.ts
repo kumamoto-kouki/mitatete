@@ -23,3 +23,38 @@ export function calcDiaryIntensity(principles: PrincipleValues): number {
     principles["行動で示す"] * 0.1
   );
 }
+
+// ─── キャラクターストアとの接続（要件 4.1, 4.4） ───────────────────────────────
+import { CharacterStore } from "./character-store";
+import type { CharacterSchema } from "./character-validator";
+
+// アクティブキャラクターから受け取った 7原則の現在値。未接続なら null。
+let currentPrinciples: PrincipleValues | null = null;
+
+/** 原則エンジンが保持する現在の 7原則値を返す。 */
+export function getCurrentPrinciples(): PrincipleValues | null {
+  return currentPrinciples;
+}
+
+/**
+ * 原則エンジンをキャラクターストアに接続する。(要件 4.1, 4.4)
+ *
+ * アクティブキャラクターが切り替わるたびに `principleDefaults` を受け取り、
+ * 7原則の現在値を更新する。原則エンジンは character ウィンドウと同じく store の購読者であり、
+ * 切り替え時に即座に更新される。
+ *
+ * @returns 購読を解除する関数
+ */
+export function initPrincipleEngine(
+  onUpdate?: (values: PrincipleValues) => void
+): () => void {
+  return CharacterStore.subscribe((schema: CharacterSchema) => {
+    currentPrinciples = { ...schema.principleDefaults };
+    onUpdate?.(currentPrinciples);
+  });
+}
+
+// main ウィンドウ読み込み時に接続する。
+if (typeof document !== "undefined") {
+  initPrincipleEngine();
+}

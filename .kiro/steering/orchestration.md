@@ -45,3 +45,26 @@ Wave 2（並行可）:            model-router         diary-engine
   - 課金を伴う操作、GitHub 等の外部サービスへの書き込み・変更
   - 認証・シークレット操作（`gh auth refresh` 等の対話的認証は人間が実行する）
 - マイルストーン（M1〜M5：視認できる垂直スライス）の完成時は、人間がアプリを起動して視認確認できる状態にしてから報告する。
+
+## コミュニケーション・ゲート（連携リズム）
+
+- 報告・相談は **wave 境界・マイルストーン境界**で行う。個々のタスク（Issue）はその範囲内で自走する。
+- 例外として、次は途中でも即相談する：重要な設計分岐、前提の崩れ、想定外のエラーが収束しないとき、外部/破壊的操作が必要になったとき。
+- 長時間の自走で人間の介在機会が減りすぎないよう、上記ゲートを必ず通す。
+
+## 可視化：真マルチプロセス swarm
+
+人間が「複数ウィンドウで各 AI が稼働している様子」を視認できるようにする。
+
+- `scripts/swarm-up.sh <feature>...` — 各 feature の worktree（`../wt-<feature>` / `feat/<feature>`）を作り、tmux セッション `mitatete-swarm` の各ペインで**独立した worker claude プロセス**を起動する（pane0=コンダクター観測、pane1..N=各ワーカー）。
+- コンダクター（メインセッション）は `tmux send-keys -t mitatete-swarm:0.<n> "<タスク>" C-m` でワーカーへタスクを投入する。ワーカーは自 worktree で実装・コミットし、結果は git / `progress.log` で確認・統合する。
+- 人間は `tmux attach -t mitatete-swarm` で全ワーカーの稼働をリアルタイム視認する。
+- `scripts/swarm-down.sh [<feature>...]` — swarm 終了・worktree 撤去（マージ確認後）。
+- 観測専用サマリ（git/progress/build）は `scripts/dev-dashboard.sh`。swarm と併用してよい。
+- 各 worker claude は独立認証・独立コンテキスト・独立課金である点に留意（コスト効率重視の作業はコンダクター直下の subagent 方式を選ぶ）。
+
+## git 運用（commit / push の分担）
+
+- **コミット／ローカルマージはコンダクターが行う**。worker は自 `feat/<feature>` ブランチにコミットし、wave/マイルストーン境界でコンダクターがレビューして `main` へローカルマージする。コミットは意味のある単位で、trailer に `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` を付ける。デフォルトブランチ上では先にブランチを切る。
+- **push（外部公開）は人間が実行する**。コンダクターは push せず、「コミット済み・push 可能」状態を報告する。最終公開判断は人間が保持する。
+- **subagent / worker への指示には「git の add / commit / push を行わない（生成・編集のみ）」を必ず明記する**。コミットはコンダクターが一元的に行う。（2026-06-27、spec移行 subagent が自律的に `git add -A && git commit` を実行し履歴を汚した事故の反省。`git reset --soft` で再構成した。）

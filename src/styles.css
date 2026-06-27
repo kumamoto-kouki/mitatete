@@ -74,6 +74,150 @@ body {
   cursor: pointer;
 }
 
+/* ===== キャラクター選択パネル（プリセット一覧） ===== */
+.character-panel {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e6e0d8;
+}
+
+.character-panel__message {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #b00020;
+}
+
+.character-panel__empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.character-switcher {
+  margin-bottom: 8px;
+}
+
+.character-switcher__select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d8d0c6;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+}
+
+.character-panel__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.character-panel__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid #d8d0c6;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.character-panel__item.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.character-panel__name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.character-panel__tone {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ===== カスタムキャラクター作成フォーム ===== */
+.character-editor {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e6e0d8;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor__input {
+  padding: 8px 10px;
+  border: 1px solid #d8d0c6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.editor__file {
+  font-size: 12px;
+}
+
+.editor__disclosure {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.editor__save {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.editor__message {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.editor__message--error {
+  color: #b00020;
+}
+
+/* レイヤービジュアルエディター（フェーズ2） */
+.visual-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e6e0d8;
+  border-radius: 8px;
+}
+
+.visual-editor__preview {
+  width: 96px;
+  height: 96px;
+  background: #fff;
+  border: 1px solid #e6e0d8;
+  border-radius: 8px;
+}
+
+.visual-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ===== キャラクターウィンドウ（character ウィンドウ・透明背景） ===== */
 .character-body {
   margin: 0;
@@ -95,6 +239,12 @@ body {
   font-size: 64px;
   line-height: 1;
   color: var(--accent);
+}
+
+.character__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .character__speech {
