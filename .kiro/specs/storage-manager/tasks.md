@@ -41,7 +41,7 @@
   - _Requirements: 1.4, 1.6, 5.1_
   - _Boundary: LocalFileSystem_
 
-- [ ] 2.4 (P) AI観察日記の保存・読み込みを実装する
+- [x] 2.4 (P) AI観察日記の保存・読み込みを実装する
   - `~/.mitatete/diary/YYYY-MM-DD.md` への書き込みと読み込みを実装する
   - Markdown 文字列をそのまま書き込む（変換なし）
   - ユニットテストで保存→読み込みのラウンドトリップが正確であることを確認できる
@@ -131,3 +131,5 @@
 - 2.1 残課題(軽微): `test_save_history_rejects_path_traversal` 内に常に真の assertion(`!escaped.exists() || true`)があるが、直後の `base.join("history")` 非作成 assert で実害なし。将来テスト整理時に簡素化。
 - 2.2: `save_settings`/`read_settings` を `base/settings.json` に固定（パス引数なし）。read_settings は NotFound を `Ok({})` に縮退し、既存ファイルの read/parse 失敗のみ `LocalRead`（read_history との挙動差）。
 - 2.3: `save_character`/`read_character`/`list_characters` を `base/characters/<name>.json` に実装。`validate_character_name` で empty/空白・NUL・`/`・`\`・`..`(部分一致)・先頭`.` を拒否（保守的、`foo..bar` も弾く）。list は `.json` の file stem を返し、ディレクトリ不在時は空 Vec。
+- 2.4: `save_diary`/`read_diary` を `base/diary/<date>.md` に実装。Markdown を `content.as_bytes()` で逐語書き込み、read は `String::from_utf8` で完全一致復元。日付検証は既存 `validate_date` を再利用（重複バリデータなし）。
+- 共通(レビュー所見): reviewer は RED-phase を「git commit で失敗状態を記録していない」と WEAK 判定しがちだが、kiro-impl 仕様上 RED は status report の RED_PHASE_OUTPUT で足り、専用コミットは不要。advisory として扱い、status report に実測の失敗出力を必ず載せること。

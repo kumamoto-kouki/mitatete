@@ -280,6 +280,52 @@ impl LocalFileSystem {
         Ok(value)
     }
 
+    // -------------------------------------------------------------------------
+    // Task 2.4: AI観察日記の保存・読み込み
+    // -------------------------------------------------------------------------
+
+    /// AI観察日記を `base/diary/{date}.md` に書き込む。
+    ///
+    /// - `date` は `YYYY-MM-DD` 形式のみ受け付ける（検証失敗で `StorageError::LocalWrite`）
+    /// - `content` は Markdown 文字列をそのまま書き込む（変換なし）
+    /// - `diary/` ディレクトリが存在しない場合は自動作成する
+    pub async fn save_diary(&self, date: &str, content: &str) -> Result<(), StorageError> {
+        if !Self::validate_date(date) {
+            return Err(StorageError::LocalWrite(format!(
+                "invalid date format (expected YYYY-MM-DD): {date:?}"
+            )));
+        }
+        let diary_dir = self.base.join(SUBDIR_DIARY);
+        tokio::fs::create_dir_all(&diary_dir)
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", diary_dir.display())))?;
+
+        let path = diary_dir.join(format!("{date}.md"));
+        tokio::fs::write(&path, content.as_bytes())
+            .await
+            .map_err(|e| StorageError::LocalWrite(format!("{}: {e}", path.display())))?;
+        Ok(())
+    }
+
+    /// `base/diary/{date}.md` から AI観察日記を読み込む。
+    ///
+    /// - `date` は `YYYY-MM-DD` 形式のみ受け付ける（検証失敗で `StorageError::LocalRead`）
+    /// - ファイルが存在しない場合は `StorageError::LocalRead` を返す
+    /// - 書き込んだ Markdown 文字列をそのまま返す（変換なし）
+    pub async fn read_diary(&self, date: &str) -> Result<String, StorageError> {
+        if !Self::validate_date(date) {
+            return Err(StorageError::LocalRead(format!(
+                "invalid date format (expected YYYY-MM-DD): {date:?}"
+            )));
+        }
+        let path = self.base.join(SUBDIR_DIARY).join(format!("{date}.md"));
+        let bytes = tokio::fs::read(&path)
+            .await
+            .map_err(|e| StorageError::LocalRead(format!("{}: {e}", path.display())))?;
+        String::from_utf8(bytes)
+            .map_err(|e| StorageError::LocalRead(format!("UTF-8 decode error: {e}")))
+    }
+
     /// `base/characters/` 以下の `.json` ファイルのファイル名（拡張子なし）を一覧返却する。
     ///
     /// - ディレクトリが存在しない場合は空の `Vec` を返す（エラーにしない）
@@ -896,6 +942,81 @@ mod tests {
         assert!(
             names.is_empty(),
             "list_characters must return empty Vec when characters/ dir doesn't exist, got: {names:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    // -------------------------------------------------------------------------
+    // Task 2.4: save_diary / read_diary
+    // -------------------------------------------------------------------------
+
+    /// save_diary → read_diary でラウンドトリップが成立する。
+    /// Markdown 文字列が変換なしでそのまま返ること（改行・強調を含む）を確認する。
+    #[tokio::test]
+    async fn test_diary_round_trip_verbatim_markdown() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let content = "# 日記\n本文 *強調* と改行\n";
+
+        fs.save_diary("2026-06-27", content)
+            .await
+            .expect("save_diary should succeed");
+
+        let loaded = fs
+            .read_diary("2026-06-27")
+            .await
+            .expect("read_diary should succeed");
+
+        assert_eq!(
+            content, loaded,
+            "read_diary must return the exact Markdown string written (verbatim, including newlines)"
+        );
+
+        // ファイルが正しい場所に作られていること
+        assert!(
+            base.join("diary").join("2026-06-27.md").is_file(),
+            "diary file should exist at base/diary/YYYY-MM-DD.md"
+        );
+
+        cleanup(&base);
+    }
+
+    /// 存在しない日付のファイルを読み込むと LocalRead エラーが返る。
+    #[tokio::test]
+    async fn test_read_nonexistent_diary_returns_local_read_error() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.read_diary("2000-01-01").await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalRead(_))),
+            "reading nonexistent diary must return StorageError::LocalRead, got: {result:?}"
+        );
+
+        cleanup(&base);
+    }
+
+    /// 無効な日付文字列（パストラバーサル）は save_diary で拒否され、
+    /// base/diary 外にファイルが作られないことを確認する。
+    #[tokio::test]
+    async fn test_save_diary_rejects_invalid_date_path_traversal() {
+        let base = temp_base();
+        let fs = LocalFileSystem::with_base(base.clone());
+
+        let result = fs.save_diary("../evil", "malicious content").await;
+
+        assert!(
+            matches!(result, Err(StorageError::LocalWrite(_))),
+            "invalid date must be rejected with StorageError::LocalWrite, got: {result:?}"
+        );
+
+        // base/diary が作られていないこと（バリデーションが create_dir_all より先に走る）
+        assert!(
+            !base.join("diary").exists(),
+            "diary dir must not be created when date is invalid"
         );
 
         cleanup(&base);
