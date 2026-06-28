@@ -87,6 +87,32 @@ describe("buildCustomCharacter (要件 2.3, 2.4)", () => {
     expect(schema.visual).toBe("/local/pic.png");
     expect(schema.visualConfig?.mode).toBe("upload");
   });
+
+  it("diaryEnabled 未指定のとき既定 false（原則9）", () => {
+    const schema = buildCustomCharacter({
+      name: "テスト",
+      tone: "口調。",
+    });
+    expect(schema.diaryEnabled).toBe(false);
+  });
+
+  it("diaryEnabled: true を渡すとスキーマに反映される（原則9）", () => {
+    const schema = buildCustomCharacter({
+      name: "日記有効",
+      tone: "口調。",
+      diaryEnabled: true,
+    });
+    expect(schema.diaryEnabled).toBe(true);
+  });
+
+  it("diaryEnabled: false を明示しても false になる（原則9）", () => {
+    const schema = buildCustomCharacter({
+      name: "日記無効",
+      tone: "口調。",
+      diaryEnabled: false,
+    });
+    expect(schema.diaryEnabled).toBe(false);
+  });
 });
 
 describe("submitCustomCharacter (要件 2.5)", () => {
