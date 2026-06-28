@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mitatete 開発ダッシュボード — PDCA / ループエンジニアリング</title>
+    <style>
+      :root {
+        --bg: #faf8f4;
+        --card: #fff;
+        --fg: #2b2622;
+        --muted: #8a817a;
+        --line: #e6e0d8;
+        --accent: #b08968;
+        --ok: #2e7d52;
+        --warn: #d9a441;
+        --bad: #b00020;
+        --blue: #3a6ea5;
+        --p: #6a8caf;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+        line-height: 1.6;
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 24px 20px 64px;
+      }
+      header h1 {
+        font-size: 22px;
+        margin: 0 0 2px;
+      }
+      header .sub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 32px 0 12px;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--accent);
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+      .cols-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      @media (max-width: 720px) {
+        .cols-2,
+        .cols-3 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        color: #fff;
+        white-space: nowrap;
+      }
+      .b-ok {
+        background: var(--ok);
+      }
+      .b-warn {
+        background: var(--warn);
+        color: #3a2c00;
+      }
+      .b-bad {
+        background: var(--bad);
+      }
+      .b-mute {
+        background: var(--muted);
+      }
+      .b-blue {
+        background: var(--blue);
+      }
+      .bar {
+        height: 8px;
+        background: var(--line);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar > span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+      }
+      .kpi {
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .kpi small {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .pdca {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .pdca .steps {
+        flex: 1;
+        min-width: 280px;
+      }
+      .step {
+        display: flex;
+        gap: 8px;
+        padding: 5px 0;
+        font-size: 13px;
+      }
+      .step b {
+        display: inline-block;
+        min-width: 58px;
+      }
+      .tag {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      ul.tight {
+        margin: 6px 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      ul.tight li {
+        margin: 2px 0;
+      }
+      .l-tier {
+        border-left: 4px solid var(--p);
+        padding-left: 10px;
+      }
+      .foot {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 28px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+      code {
+        background: #f0ece5;
+        padding: 0 4px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Mitatete 開発ダッシュボード</h1>
+        <div class="sub">
+          スナップショット: 2026-06-27 ／ ブランチ
+          <code>chore/sdlc-bootstrap</code> ／ 体制:
+          コンダクター・オーケストレーション（PDCA / ループエンジニアリング）
+        </div>
+      </header>
+
+      <!-- ===== 健全性 KPI ===== -->
+      <h2>健全性（本日再実行の証拠）</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <div class="kpi">80 <small>Rust テスト pass</small></div>
+          <div class="tag">cargo test --lib ／ 0 fail・警告0</div>
+        </div>
+        <div class="card">
+          <div class="kpi">60 <small>frontend テスト pass</small></div>
+          <div class="tag">vitest ／ tsc 0・vite build OK</div>
+        </div>
+        <div class="card">
+          <div class="kpi">0 <small>semgrep findings</small></div>
+          <div class="tag">CSP 設定済 ／ 実機 smoke 違反0</div>
+        </div>
+      </div>
+
+      <!-- ===== spec 状態 ===== -->
+      <h2>spec / 実装状態</h2>
+      <div class="card">
+        <table>
+          <tr>
+            <th>spec</th>
+            <th>フェーズ</th>
+            <th>実装</th>
+            <th>テスト</th>
+            <th>状態</th>
+          </tr>
+          <tr>
+            <td>storage-manager</td>
+            <td>tasks-approved</td>
+            <td>全23</td>
+            <td>Rust 56</td>
+            <td><span class="badge b-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>character-layer</td>
+            <td>tasks-approved</td>
+            <td>全18（フェーズ2含む）</td>
+            <td>vitest 54</td>
+            <td><span class="badge b-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>model-router</td>
+            <td>tasks-generated</td>
+            <td>全18 ＋ generate_text</td>
+            <td>Rust 22 / vitest 6</td>
+            <td><span class="badge b-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>diary-engine</td>
+            <td>tasks-generated</td>
+            <td>未着手（前提解消済）</td>
+            <td>—</td>
+            <td><span class="badge b-warn">spec のみ</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ===== マイルストーン ===== -->
+      <h2>マイルストーン（M1→M5）</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>M1 アプリ起動+2窓 <span class="badge b-ok">達成</span></h3>
+          <div class="bar"><span style="width: 100%"></span></div>
+        </div>
+        <div class="card">
+          <h3>
+            M2 キャラ選択がUI反映 <span class="badge b-ok">サインオフ済</span>
+          </h3>
+          <div class="bar"><span style="width: 100%"></span></div>
+          <div class="tag">実機ログで character window 描画を実証</div>
+        </div>
+        <div class="card">
+          <h3>M3 モデルと実対話 <span class="badge b-warn">未</span></h3>
+          <div class="bar"><span style="width: 70%"></span></div>
+          <div class="tag">
+            実装完了・実APIキー＋GUI目視が残（人間ブロック）
+          </div>
+        </div>
+        <div class="card">
+          <h3>
+            M4 観察日記 / M5 GDrive同期 <span class="badge b-mute">未着手</span>
+          </h3>
+          <div class="bar"><span style="width: 15%"></span></div>
+          <div class="tag">diary-engine / OAuth 実資格情報</div>
+        </div>
+      </div>
+
+      <!-- ===== PDCA 実践 ===== -->
+      <h2>ループエンジニアリング＝PDCA の実践と検証（証跡）</h2>
+      <div class="pdca">
+        <!-- PDCA cycle SVG -->
+        <svg
+          width="150"
+          height="150"
+          viewBox="0 0 150 150"
+          role="img"
+          aria-label="PDCAサイクル"
+        >
+          <circle
+            cx="75"
+            cy="75"
+            r="52"
+            fill="none"
+            stroke="#e6e0d8"
+            stroke-width="14"
+          />
+          <circle
+            cx="75"
+            cy="75"
+            r="52"
+            fill="none"
+            stroke="#b08968"
+            stroke-width="14"
+            stroke-dasharray="245 82"
+            stroke-linecap="round"
+            transform="rotate(-90 75 75)"
+          />
+          <text
+            x="75"
+            y="34"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            Plan
+          </text>
+          <text
+            x="121"
+            y="79"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            Do
+          </text>
+          <text
+            x="75"
+            y="125"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            Check
+          </text>
+          <text
+            x="29"
+            y="79"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            Act
+          </text>
+          <text
+            x="75"
+            y="78"
+            text-anchor="middle"
+            font-size="13"
+            font-weight="700"
+            fill="#b08968"
+          >
+            PDCA
+          </text>
+        </svg>
+        <div class="steps">
+          <div class="card" style="margin-bottom: 10px">
+            <h3>
+              ループ① 品質（精査→検証→是正）
+              <span class="badge b-ok">クローズ</span>
+            </h3>
+            <div class="step">
+              <b>Plan</b><span>プロダクト精査・検証・記録を計画</span>
+            </div>
+            <div class="step">
+              <b>Do</b><span>実装・記録、独立QAペルソナで再検証</span>
+            </div>
+            <div class="step">
+              <b>Check</b
+              ><span
+                >QA が
+                <b>実バグ(chat.ts)</b
+                >・CSP無効・設計乖離を検出（証拠で受理）</span
+              >
+            </div>
+            <div class="step">
+              <b>Act</b
+              ><span
+                >R1/R2/R3 是正 → 再検証
+                <span class="badge b-ok">green</span>（コミット
+                <code>68ae134</code>/<code>e47a74a</code>）</span
+              >
+            </div>
+          </div>
+          <div class="card">
+            <h3>
+              ループ② 体制（委譲の試行）
+              <span class="badge b-ok">クローズ</span>
+            </h3>
+            <div class="step">
+              <b>Plan</b><span>generate_text を実装エージェントへ委譲</span>
+            </div>
+            <div class="step">
+              <b>Do</b><span>worktree 隔離で実装→feat ブランチへコミット</span>
+            </div>
+            <div class="step">
+              <b>Check</b
+              ><span
+                >独立レビュー <span class="badge b-ok">PASS</span> ＋
+                コンダクター自身が80テスト再実行</span
+              >
+            </div>
+            <div class="step">
+              <b>Act</b
+              ><span
+                >統合 <code>ba8aa08</code> ＋ worktree起点問題を
+                orchestration.md 是正 <code>7eec6ee</code></span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 自律ティア ===== -->
+      <h2>自律ティア（L1→L2→L3）と安全装置</h2>
+      <div class="grid cols-3">
+        <div class="card l-tier">
+          <h3>L1 レポートのみ</h3>
+          <div class="tag">
+            triage して所見を STATE.md に集約。コード変更なし。
+          </div>
+          <ul class="tight">
+            <li>今サイクルで実施（<code>.orchestration/STATE.md</code>）</li>
+          </ul>
+        </div>
+        <div class="card l-tier">
+          <h3>L2 補助 <span class="badge b-blue">現行</span></h3>
+          <div class="tag">
+            Maker(実装)＋Checker(独立レビュー)で修正。マージ/公開は人間。
+          </div>
+          <ul class="tight">
+            <li>generate_text 試行はこのティア</li>
+          </ul>
+        </div>
+        <div class="card l-tier">
+          <h3>L3 無人</h3>
+          <div class="tag">
+            denylist 外を自動。予算・metrics・denylist 整備後の選択肢。
+          </div>
+          <ul class="tight">
+            <li>未整備 → 当面 L2 まで</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card" style="margin-top: 12px">
+        <h3>安全装置</h3>
+        <ul class="tight">
+          <li>
+            <b>Maker-Checker 分離</b>:
+            実装と独立レビューを別エージェントに（自己採点バイアス排除）。Verifier
+            Theater 対策＝テスト出力必須。
+          </li>
+          <li>
+            <b>停止条件 first-class</b>: ゴール達成／人間ハンドオフ／attempt
+            上限／予算超過。
+          </li>
+          <li>
+            <b>トークン予算</b>:
+            軽微は委譲せず直接（コスト・可視性のバランス）。
+          </li>
+          <li>
+            <b>理解負債対策</b>:
+            節目で要約（reports）・読み直し・「スループットでなく判断レバレッジの移動」。
+          </li>
+          <li><b>並行衝突</b>: worktree 隔離＋<code>acting_on</code> 確認。</li>
+        </ul>
+      </div>
+
+      <!-- ===== 次アクション（L1 triage） ===== -->
+      <h2>次アクション（L1 triage の出力）</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>High Priority <span class="badge b-bad">優先</span></h3>
+          <ul class="tight">
+            <li>
+              検証自動化ライブラリ導入（happy-dom / insta / tauri-driver）—
+              承認済
+            </li>
+            <li>diary-engine 実装（前提 generate_text 解消済）</li>
+            <li>push（未push 9コミット）— 公開は人間判断</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Watch List <span class="badge b-warn">監視</span></h3>
+          <ul class="tight">
+            <li>M3 実機サインオフ（実APIキー必須）</li>
+            <li>OpenAI max_tokens（将来 provider 別分岐）</li>
+            <li>GDrive サブフォルダ / OAuth 実資格情報</li>
+            <li>GitHub Project に Wave2 未反映 / ストリーミング(4.3) 繰越</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="foot">
+        正本: <code>.kiro/steering/orchestration.md</code>（体制） ／ 詳細記録:
+        <code>.claude/reports/2026-06-27-product-state-and-handoff.md</code> ／
+        ループ状態: <code>.orchestration/STATE.md</code>。
+        本HTMLは自己完結（外部依存なし）。VSCode
+        のプレビューまたはブラウザで開けます。
+      </div>
+    </div>
+  </body>
+</html>

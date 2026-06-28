@@ -51,6 +51,21 @@ Wave 2（並行可）:            model-router         diary-engine
 - **CI 緑 ≠ 受理**。独立レビュー＋証拠検証を必須にする（CI で出ない設計問題・無関係変更混入を防ぐ）。
 - 並行マージは衝突に注意（マージ順を直列化＋マージ後 main で実機検証）。
 
+## ループエンジニアリング（PDCA を回す自律ティアと安全装置）
+
+コンダクター・オーケストレーションは PDCA（Plan→Do→Check→Act）を回す制御系として運用する。参考: ループエンジニアリング（[[loop-engineering-reference]]）。実践と検証の証跡は `docs/status-dashboard.html` に図解で集約する。
+
+- **段階的自律 L1→L2→L3**（新パターンは必ず L1 から。検証なしに上位へ上げない）:
+  - **L1（レポートのみ）**: triage して所見を報告。コード変更なし。`.orchestration/STATE.md` に優先度を集約。
+  - **L2（補助）**: 実装エージェント(Maker)＋独立レビューエージェント(Checker)で修正・統合候補を作る。**マージ/公開は人間**。← 当面の既定ティア。
+  - **L3（無人）**: denylist 外を自動。トークン予算・metrics・denylist が整って初めて選択肢。目標ではない。
+- **Maker-Checker 分離 = 実装エージェント ＋ 独立レビューエージェント**（既出）。Checker は fresh context・「拒否理由を探す」姿勢。Verifier Theater 対策にテスト出力を必須化。
+- **停止条件を first-class に**: ループを作る前に止め方（ゴール達成／人間ハンドオフ／attempt 上限／予算超過）を決める。
+- **トークン予算**: 高頻度ループ・subagent 委譲はコストが二次的に増える。軽微は委譲せず直接（コスト・可視性のバランス）。予算超過で一時停止。
+- **理解負債（Comprehension Debt）対策**: 自動化速度がレビュー速度を超えると理解が追いつかない。節目で要約（`.claude/reports/`）・定期の読み直し・「スループット向上ではなく判断レバレッジの移動」と捉える。
+- **失敗モード対策**: Infinite Fix Loop→attempt 上限＋強い Checker／State Rot→STATE.md を定期 pruning／Parallel Collision→worktree 隔離＋`acting_on` 確認／Token Explosion→予算と triage-first。
+- **状態の外部化**: `.orchestration/STATE.md`（High Priority / Watch List / acting_on / Last run）と `progress.log` でセッションを跨ぐ。
+
 ## 進捗ログ（人間の可視化用）
 
 - コンダクター／ワーカーは `.orchestration/progress.log` に1行ずつ状態を追記する：
