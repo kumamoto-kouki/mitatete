@@ -303,6 +303,11 @@
             <b>開発体制に「デザイン」職能を追加しました。</b
             >エンジニアリングと並ぶレーンとして、作る役とチェック役を分けた体制を新設（下の「開発体制」図）。
           </li>
+          <li>
+            <b>外部サービスとの関係図を追加しました。</b
+            >GitHub（公開・進捗管理）と Claude
+            Design（デザイン生成）が、ローカルとどうつながるかを図示。
+          </li>
         </ul>
         <div class="prev">
           以降、ダッシュボードを更新するたびに、ここに日付つきで「何が変わったか」を残します（古い版との差分がわかるように）。
@@ -608,6 +613,317 @@
             <b>デザインの作り方</b>：claude.ai/design で生成（文面は
             <code>docs/design-brief.md</code>）→ レビュー →
             <code>/design-sync</code> で1部品ずつコードへ取り込み → 公開は人間。
+          </li>
+        </ul>
+      </div>
+
+      <!-- ===== 外部サービスとの関係 ===== -->
+      <h2>
+        外部サービスとの関係（GitHub / Claude Design）
+        <span class="badge b-upd">更新 6/28</span>
+        <span class="note">どこで作り・どこへ出すか</span>
+      </h2>
+      <div class="card is-updated">
+        <svg
+          viewBox="0 0 760 250"
+          width="100%"
+          role="img"
+          aria-label="外部サービスとの関係図。左の Claude Design、中央のローカルリポジトリ、右の GitHub がデータの流れでつながる"
+          style="max-width: 760px; display: block; margin: 0 auto"
+          font-family="system-ui, sans-serif"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M0,0 L10,5 L0,10 z" fill="#8a817a" />
+            </marker>
+          </defs>
+
+          <!-- Claude Design -->
+          <rect
+            x="20"
+            y="78"
+            width="200"
+            height="94"
+            rx="10"
+            fill="#eaf3fa"
+            stroke="#2f6f9f"
+            stroke-width="1.5"
+          />
+          <text
+            x="120"
+            y="104"
+            text-anchor="middle"
+            font-size="13"
+            font-weight="700"
+            fill="#2b2622"
+          >
+            Claude Design
+          </text>
+          <text
+            x="120"
+            y="122"
+            text-anchor="middle"
+            font-size="10.5"
+            fill="#8a817a"
+          >
+            claude.ai/design
+          </text>
+          <text
+            x="120"
+            y="140"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            デザインを生成
+          </text>
+          <text
+            x="120"
+            y="156"
+            text-anchor="middle"
+            font-size="10"
+            fill="#8a817a"
+          >
+            （デザイン実施者が操作）
+          </text>
+
+          <!-- ローカルリポジトリ -->
+          <rect
+            x="280"
+            y="64"
+            width="200"
+            height="122"
+            rx="10"
+            fill="#fff"
+            stroke="#b08968"
+            stroke-width="2"
+          />
+          <text
+            x="380"
+            y="92"
+            text-anchor="middle"
+            font-size="13"
+            font-weight="700"
+            fill="#2b2622"
+          >
+            ローカルリポジトリ
+          </text>
+          <text
+            x="380"
+            y="110"
+            text-anchor="middle"
+            font-size="10.5"
+            fill="#8a817a"
+          >
+            この PC・本アプリ
+          </text>
+          <text
+            x="380"
+            y="130"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            実装・テスト・統合
+          </text>
+          <text
+            x="380"
+            y="148"
+            text-anchor="middle"
+            font-size="10"
+            fill="#8a817a"
+          >
+            コンダクター＋実施者
+          </text>
+          <text
+            x="380"
+            y="163"
+            text-anchor="middle"
+            font-size="10"
+            fill="#8a817a"
+          >
+            ＋レビュアー
+          </text>
+
+          <!-- GitHub -->
+          <rect
+            x="540"
+            y="78"
+            width="200"
+            height="94"
+            rx="10"
+            fill="#f3f1ee"
+            stroke="#2b2622"
+            stroke-width="1.5"
+          />
+          <text
+            x="640"
+            y="104"
+            text-anchor="middle"
+            font-size="13"
+            font-weight="700"
+            fill="#2b2622"
+          >
+            GitHub
+          </text>
+          <text
+            x="640"
+            y="122"
+            text-anchor="middle"
+            font-size="10.5"
+            fill="#8a817a"
+          >
+            公開リポジトリ
+          </text>
+          <text
+            x="640"
+            y="140"
+            text-anchor="middle"
+            font-size="11"
+            fill="#2b2622"
+          >
+            コード公開・進捗管理
+          </text>
+          <text
+            x="640"
+            y="156"
+            text-anchor="middle"
+            font-size="10"
+            fill="#8a817a"
+          >
+            （Projects / PR）
+          </text>
+
+          <!-- Claude Design ⇄ ローカル -->
+          <line
+            x1="222"
+            y1="112"
+            x2="278"
+            y2="112"
+            stroke="#8a817a"
+            stroke-width="2"
+            marker-end="url(#arrow)"
+          />
+          <line
+            x1="278"
+            y1="140"
+            x2="222"
+            y2="140"
+            stroke="#cdbfae"
+            stroke-width="1.5"
+            marker-end="url(#arrow)"
+          />
+          <text
+            x="250"
+            y="100"
+            text-anchor="middle"
+            font-size="10"
+            fill="#2f6f9f"
+          >
+            /design-sync
+          </text>
+          <text
+            x="250"
+            y="166"
+            text-anchor="middle"
+            font-size="9.5"
+            fill="#8a817a"
+          >
+            1部品ずつ
+          </text>
+
+          <!-- ローカル ⇄ GitHub -->
+          <line
+            x1="482"
+            y1="112"
+            x2="538"
+            y2="112"
+            stroke="#8a817a"
+            stroke-width="2"
+            marker-end="url(#arrow)"
+          />
+          <line
+            x1="538"
+            y1="140"
+            x2="482"
+            y2="140"
+            stroke="#cdbfae"
+            stroke-width="1.5"
+            marker-end="url(#arrow)"
+          />
+          <text
+            x="510"
+            y="100"
+            text-anchor="middle"
+            font-size="10"
+            fill="#2b2622"
+          >
+            push / PR
+          </text>
+          <text
+            x="510"
+            y="166"
+            text-anchor="middle"
+            font-size="9.5"
+            fill="#8a817a"
+          >
+            clone / pull
+          </text>
+
+          <!-- 人間ゲート（push は人間承認） -->
+          <g>
+            <rect
+              x="455"
+              y="24"
+              width="110"
+              height="26"
+              rx="13"
+              fill="#fff"
+              stroke="#b00020"
+              stroke-width="1.5"
+            />
+            <text
+              x="510"
+              y="41"
+              text-anchor="middle"
+              font-size="11"
+              fill="#b00020"
+            >
+              🔒 人間が承認
+            </text>
+            <line
+              x1="510"
+              y1="50"
+              x2="510"
+              y2="106"
+              stroke="#b00020"
+              stroke-width="1"
+              stroke-dasharray="3 3"
+            />
+          </g>
+        </svg>
+        <ul class="tight" style="margin-top: 12px">
+          <li>
+            <b>Claude Design（claude.ai/design）</b
+            >：デザインを会話で生成する場所。デザイン実施者が操作し、結果を
+            <code>/design-sync</code>
+            で<b>1部品ずつ</b>ローカルへ取り込む。新規課金は不要だが共通の利用枠を消費。
+          </li>
+          <li>
+            <b>ローカルリポジトリ（この PC）</b
+            >：実装・テスト・統合の中心。コンダクター・実施者・レビュアーが動く。
+          </li>
+          <li>
+            <b>GitHub</b>：コードを公開し進捗（Projects /
+            PR）を管理する先。<b>push（公開）は人間が承認</b>してから（図の🔒）。
           </li>
         </ul>
       </div>
