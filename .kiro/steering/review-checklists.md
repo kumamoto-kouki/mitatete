@@ -1,6 +1,6 @@
 # review-checklists.md — レビュー観点チェックリスト
 
-レビュアー（🕵🏼‍♀️ 望月／🛡️ 守屋）と統括（👨🏼‍💼 神谷）が受理前に当てる観点の標準化。分類は agent-skills（[[agent-skills-and-role-catalog]]）の `references/` を借用、**中身は本プロジェクトの実レビューで繰り返し出た所見**から（推測でなく実績）。kiro-review と併用。
+レビュアー（🕵🏼‍♀️ 望月／🛡️ 守屋）と統括（👨🏼‍💼 神谷）が受理前に当てる観点。**汎用のレビュー手順は `kiro-review`（Mechanical/Judgment 12 点・Severity・Verdict）、証拠ゲートは `kiro-verify-completion` が正本**。本ファイルはそれを**補完する本プロジェクト固有の所見のみ**（汎用手順は再掲しない＝重複でドリフトさせない）。分類は agent-skills（[[agent-skills-and-role-catalog]]）の `references/` を借用、中身は実レビューで繰り返し出た実績から。
 
 ## 🔐 セキュリティ
 
@@ -33,8 +33,7 @@
 - **「成功時のみ保存」はフロントが orchestrate**（生成と保存を分離・保存失敗で応答を捨てない）。
 - 別ウィンドウ連携は Tauri イベント（`character:changed` / `theme:changed`）。store は module singleton＋subscribe。
 
-## 🔁 プロセス（証拠で受理）
+## 🔁 プロセス（汎用は skills が正本・固有の注意のみ）
 
-- **証拠の再生成**：レビュアー/統括が `pnpm test` / `pnpm check` / `pnpm vite build`（必要なら `pnpm e2e`）を**自分で再実行**。テスト合計が現行を下回ったら古いベースの疑い。
-- **ベース是正は `git merge`**（`git reset --hard` は使わせない）。委譲 worktree は `.gitignore`、統合は明示 add（`git add -A` 回避）。
-- 受理は報告でなく証拠で。独立レビュアー≠実装者（自己レビュー禁止）。詰まりは越えず共有。
+- 証拠の再生成・独立レビュー・boundary/受理判定は `kiro-review` ＋ `kiro-verify-completion` に従う（ここで再掲しない）。
+- 本プロジェクト固有：**テスト合計が現行を下回ったら古ベースの疑い**（base-guard の信号）。ベース是正（`git merge`）・worktree 撤去の手順は `orchestration.md`（worktree 戦略）が正本。
