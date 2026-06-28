@@ -41,6 +41,8 @@
       "Bash(git merge:*)",
       "Bash(git stash:*)",
       "Bash(git restore:*)",
+      "Bash(git cat-file:*)",
+      "Bash(git grep:*)",
       "Bash(bash scripts/swarm-up.sh:*)",
       "Bash(scripts/swarm-up.sh:*)",
       "Bash(./scripts/swarm-up.sh:*)",

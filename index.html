@@ -29,25 +29,39 @@
         </div>
       </div>
 
-      <!-- モデル選択・API キー設定パネル（model-ui.ts が描画） -->
-      <aside id="model-panel" class="model-ui" aria-label="モデル設定"></aside>
+      <!-- 設定ドロワー（既定は閉じた状態）: モデル/APIキー/キャラクター/日記 -->
+      <details id="settings-drawer" class="settings-drawer">
+        <summary class="settings-drawer__summary">設定</summary>
+        <div class="settings-drawer__body">
+          <!-- モデル選択・API キー設定パネル（model-ui.ts が描画） -->
+          <aside
+            id="model-panel"
+            class="model-ui"
+            aria-label="モデル設定"
+          ></aside>
 
-      <!-- プリセットキャラクター選択パネル（character-ui.ts が描画） -->
-      <aside
-        id="character-panel"
-        class="character-panel"
-        aria-label="キャラクター選択"
-      ></aside>
+          <!-- プリセットキャラクター選択パネル（character-ui.ts が描画） -->
+          <aside
+            id="character-panel"
+            class="character-panel"
+            aria-label="キャラクター選択"
+          ></aside>
 
-      <!-- カスタムキャラクター作成フォーム（character-editor.ts が描画） -->
-      <aside
-        id="character-editor"
-        class="character-editor"
-        aria-label="カスタムキャラクター作成"
-      ></aside>
+          <!-- カスタムキャラクター作成フォーム（character-editor.ts が描画） -->
+          <aside
+            id="character-editor"
+            class="character-editor"
+            aria-label="カスタムキャラクター作成"
+          ></aside>
 
-      <!-- 観察日記パネル（diary.ts が描画・原則9） -->
-      <aside id="diary-panel" class="diary-panel" aria-label="観察日記"></aside>
+          <!-- 観察日記パネル（diary.ts が描画・原則9） -->
+          <aside
+            id="diary-panel"
+            class="diary-panel"
+            aria-label="観察日記"
+          ></aside>
+        </div>
+      </details>
 
       <section
         id="messages"

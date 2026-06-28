@@ -247,3 +247,133 @@ describe("diary-panel 構造", () => {
     document.body.removeChild(panel);
   });
 });
+
+// ─── 設定ドロワー（A2: レイアウト再構成） ─────────────────────────────────────
+
+describe("settings-drawer（折りたたみ設定）", () => {
+  let drawer: HTMLDetailsElement;
+
+  beforeEach(() => {
+    drawer = document.createElement("details");
+    drawer.id = "settings-drawer";
+    drawer.className = "settings-drawer";
+
+    const summary = document.createElement("summary");
+    summary.className = "settings-drawer__summary";
+    summary.textContent = "設定";
+
+    const body = document.createElement("div");
+    body.className = "settings-drawer__body";
+
+    const modelPanel = document.createElement("aside");
+    modelPanel.id = "model-panel";
+
+    const charPanel = document.createElement("aside");
+    charPanel.id = "character-panel";
+
+    body.append(modelPanel, charPanel);
+    drawer.append(summary, body);
+    document.body.appendChild(drawer);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(drawer);
+  });
+
+  it("details#settings-drawer が存在し、既定は閉じた状態（open 属性なし）", () => {
+    expect(document.querySelector("#settings-drawer")).not.toBeNull();
+    expect((document.querySelector("#settings-drawer") as HTMLDetailsElement).open).toBe(false);
+  });
+
+  it("summary に「設定」テキストを持つ", () => {
+    expect(drawer.querySelector(".settings-drawer__summary")?.textContent).toBe(
+      "設定"
+    );
+  });
+
+  it("折りたたみ内に #model-panel と #character-panel が存在する（E2E セレクター維持）", () => {
+    expect(drawer.querySelector("#model-panel")).not.toBeNull();
+    expect(drawer.querySelector("#character-panel")).not.toBeNull();
+  });
+});
+
+// ─── キャラクターカード（D-1: mtt-char + mtt-avt アバター） ───────────────────
+
+describe("mtt-char カード（D-1: アバター体裁）", () => {
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(container);
+  });
+
+  function createCharCard(name: string, trait: string, selected = false): HTMLButtonElement {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = selected
+      ? "character-panel__item mtt-char is-selected"
+      : "character-panel__item mtt-char";
+    btn.dataset.presetId = "test-id";
+
+    const avt = document.createElement("span");
+    avt.className = "mtt-avt mtt-avt--brown";
+    avt.setAttribute("aria-hidden", "true");
+    avt.textContent = name.charAt(0);
+
+    const body = document.createElement("span");
+    body.className = "mtt-char__body";
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "character-panel__name mtt-char__name";
+    nameEl.textContent = name;
+
+    const traitEl = document.createElement("span");
+    traitEl.className = "character-panel__tone mtt-char__trait";
+    traitEl.textContent = trait;
+
+    body.append(nameEl, traitEl);
+
+    const pick = document.createElement("span");
+    pick.className = "mtt-char__pick";
+    pick.setAttribute("aria-hidden", "true");
+
+    btn.append(avt, body, pick);
+    return btn;
+  }
+
+  it("カードは .character-panel__item（E2E互換）と .mtt-char（新体裁）を両方持つ", () => {
+    const card = createCharCard("ひまり", "明るく元気");
+    container.appendChild(card);
+
+    expect(container.querySelector(".character-panel__item")).not.toBeNull();
+    expect(container.querySelector(".mtt-char")).not.toBeNull();
+  });
+
+  it(".mtt-avt アバター要素が存在し、キャラクター名頭文字を持つ", () => {
+    const card = createCharCard("ひまり", "明るく元気");
+    container.appendChild(card);
+
+    const avt = container.querySelector(".mtt-avt");
+    expect(avt).not.toBeNull();
+    expect(avt?.textContent).toBe("ひ");
+  });
+
+  it("選択時は .is-selected が付く", () => {
+    const card = createCharCard("そら", "冷静沈着", true);
+    container.appendChild(card);
+
+    expect(container.querySelector(".mtt-char.is-selected")).not.toBeNull();
+  });
+
+  it(".mtt-char__name と .mtt-char__trait が正しいテキストを持つ", () => {
+    const card = createCharCard("ゆき", "おだやか");
+    container.appendChild(card);
+
+    expect(container.querySelector(".mtt-char__name")?.textContent).toBe("ゆき");
+    expect(container.querySelector(".mtt-char__trait")?.textContent).toBe("おだやか");
+  });
+});

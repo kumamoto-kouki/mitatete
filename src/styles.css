@@ -677,6 +677,13 @@ body {
   color: var(--text-muted);
 }
 
+/* モデルカードのグリッドラッパー */
+.model-ui__cards {
+  display: grid;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+
 /* モデル選択カード体裁 */
 .mtt-model {
   position: relative;
@@ -962,6 +969,172 @@ body {
 
 .diary-panel__content:empty {
   display: none;
+}
+
+/* ===== 設定ドロワー（<details> 折りたたみ） ===== */
+.settings-drawer {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-drawer__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.settings-drawer__summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-drawer__summary::before {
+  content: "▶";
+  font-size: 10px;
+  transition: transform 0.2s;
+  /* 望月レビュー#2: 開閉インジケータは機能要素。AA のため text-muted(5.24:1)。 */
+  color: var(--text-muted);
+}
+
+.settings-drawer[open] .settings-drawer__summary::before {
+  transform: rotate(90deg);
+}
+
+.settings-drawer__summary:hover {
+  color: var(--text);
+}
+
+.settings-drawer__body {
+  /* パネルに個別 border-bottom があるので body 側は余白なし */
+}
+
+/* ===== component: character card with avatar (mtt-char / mtt-avt) ===== */
+.mtt-chars {
+  display: grid;
+  gap: 10px;
+}
+
+.mtt-char {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.mtt-char:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.mtt-char:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-char.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mtt-char__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mtt-char__name {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+.mtt-char__trait {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.mtt-char__pick {
+  margin-left: auto;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+}
+
+.mtt-char.is-selected .mtt-char__pick {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.mtt-char__pick svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* アバター（soft flat プレースホルダー） */
+.mtt-avt {
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  /* 望月レビュー#3: 頭文字（画像未設定時）を円に対し適切な大きさで表示。 */
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: 1.15rem;
+}
+
+.mtt-avt--brown {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.mtt-avt--green {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.mtt-avt--blue {
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+.mtt-avt svg {
+  width: 48%;
+  height: 48%;
+}
+
+/* mtt-char 内アバター（46×46） */
+.mtt-char .mtt-avt {
+  width: 46px;
+  height: 46px;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ===== キャラクターウィンドウ（character ウィンドウ・透明背景） ===== */
