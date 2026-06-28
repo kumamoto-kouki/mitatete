@@ -1012,6 +1012,11 @@
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
             <b
+              >候補ペルソナ（設計・セキュリティ監査・パフォーマンス監査・ライター）を「チーム」名簿へ合流させました。</b
+            >配役済（実線）と候補（破線）を同じ名簿に並べ、これまで投入すべきだった役／これから投入する役を凡例で区別。あわせて体制図下の注記リストを<b>テーブル表記</b>へ変更。
+          </li>
+          <li>
+            <b
               >作業ボードの更新タイミングを「状態遷移トリガー」で明文化しました（PO
               承認）。</b
             >これまで更新タイミングが未定義で「実装→コミットしたがカードを動かさない」ドリフトが発生（仕組みの弱さ・blameless）。<b>コミット→🔍レビュー中／受理→✅完了</b>を遷移の瞬間に反映し、👩🏼‍💼
@@ -1026,23 +1031,23 @@
             <b>機構で観測</b
             >（指摘→是正の追跡・詰まり共有率・差し戻しの向き先・リフレッシュが責められたか・振り返りの反映）。運用パネルに兆候表を追加。
           </li>
-          <li>
-            <b
-              >🧪 QA／テストエンジニア（👨🏼‍🔬 安西）を投入しました（PO
-              承認・スコープ限定）。</b
-            >E2→M2
-            の選択回帰が実観測されたため、回帰/エッジを事前に潰す専任を繰越＋diary-engine
-            スプリント限定で投入。境界＝安西はテストを足す（Maker
-            寄り・受理権限なし）／🛡️ 守屋は合否を出す（独立
-            Checker）。体制名簿・③ 実装ツリー（QA
-            を実線化）・候補ロスターを更新。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b
+                >🧪 QA／テストエンジニア（👨🏼‍🔬 安西）を投入しました（PO
+                承認・スコープ限定）。</b
+              >E2→M2
+              の選択回帰が実観測されたため、回帰/エッジを事前に潰す専任を繰越＋diary-engine
+              スプリント限定で投入。境界＝安西はテストを足す（Maker
+              寄り・受理権限なし）／🛡️ 守屋は合否を出す（独立
+              Checker）。体制名簿・③ 実装ツリー（QA
+              を実線化）・候補ロスターを更新。
+            </li>
             <li>
               <b
                 >体制図に候補ペルソナ（未投入）を追加し、フェーズ別の「ツリー体制図」と現在フェーズ表示を新設しました。</b
@@ -1244,9 +1249,23 @@
           <span class="note">作る役とチェック役を必ず分ける</span>
         </summary>
         <div class="fold-body card card-updated">
-          <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
-          <div class="mb-3 text-xs font-bold text-muted">
+          <!-- チーム名簿（擬人化ペルソナ＋専門性。配役済＋候補を合流表示） -->
+          <div class="mb-1 text-xs font-bold text-muted">
             チーム（あなた＋担当ペルソナ）
+            <span class="note">正本: <code>role-catalog.md</code></span>
+          </div>
+          <div
+            class="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted"
+          >
+            <span>実線＝配役済（現役）</span>
+            <span
+              ><span class="badge badge-warn">▰</span>
+              これまで投入すべきだった（後追いで凌いだ＝仕組みの弱さ・blameless）</span
+            >
+            <span
+              ><span class="badge badge-info">▱</span>
+              これから投入する（破線＝候補）</span
+            >
           </div>
           <div
             class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
@@ -1383,6 +1402,84 @@
                   専門:
                   テスト戦略・カバレッジ設計・回帰/エッジのテスト追加（Maker
                   寄り・受理権限なし。守屋＝合否、安西＝テストを足す）
+                </div>
+              </div>
+            </div>
+            <!-- 設計（アーキテクト・候補） -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#c9a36a] bg-[#fbf7f0] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >🧭</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  設計（アーキテクト）
+                  <span class="badge badge-warn">投入すべきだった</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">着手前の設計判断</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: UX・データモデル・I/F の事前設計。E2/D2
+                  で即興判断した反省点。投入の目安: 新 spec／大機能の着手前。
+                </div>
+              </div>
+            </div>
+            <!-- セキュリティ監査（候補） -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >🔐</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  セキュリティ監査
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">脆弱性・脅威分析</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 脆弱性・脅威分析。投入の目安: 外部
+                  I/O・認証・公開（push/リリース）前。
+                </div>
+              </div>
+            </div>
+            <!-- パフォーマンス監査（候補） -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >⚡</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  パフォーマンス監査
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">
+                  起動／レンダー／バンドル
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 起動・描画・バンドルサイズ。投入の目安:
+                  パフォ問題発生時・リリース前。
+                </div>
+              </div>
+            </div>
+            <!-- テクニカルライター（候補） -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >✍️</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  テクニカルライター
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">引き継ぎ／文書整備</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: reports・引き継ぎ・ユーザー文書。投入の目安:
+                  引き継ぎ・ドキュメント整備フェーズ。
                 </div>
               </div>
             </div>
@@ -1755,137 +1852,58 @@
               </text>
             </g>
           </svg>
-          <ul class="tight mt-3">
-            <li>
-              <b>担当（神谷・橘・桜井・望月・工藤・林・守屋・安西）</b>は AI
-              エージェントの役割ペルソナ（実在の個人ではありません）。各役を「担当者」として固定し、責任の所在を明確にしています。
-            </li>
-            <li>
-              <b>👩🏼‍💼 橘（運用マネージャー・横断支援）</b
-              >：図の破線は報告系統（橘→神谷→PO）。運用の実行状況の管理と相談窓口を担い、受理判断には不介入（独立性で統括の自己評価バイアスを避ける）。
-            </li>
-            <li>
-              <b>2つのレーン</b
-              >：エンジニアリング（実装）とデザイン。どちらも同じ三役（コンダクター・実施者・レビュアー）。
-            </li>
-            <li>
-              <b>実施者（作る役）は複数が並行</b
-              >：機能やコンポーネントごとに別々の作業者が同時に動く（図のカードの重なり）。コンダクターと受理（レビュー）が集約点。
-            </li>
-            <li>
-              <b>作る役とチェック役は必ず別</b
-              >：自分で作って自分で合格を出さない（甘い判定を防ぐ）。受理は「証拠」で行う。
-            </li>
-            <li>
-              <b>デザインの証拠</b
-              >：見た目の好みでなく、コントラスト比（読みやすさ）・状態網羅・原則8（AI開示）の遵守・実装できるか、で判定。
-            </li>
-            <li>
-              <b>デザインの作り方</b>：claude.ai/design で生成（文面は
-              <code>docs/design-brief.md</code>）→ レビュー →
-              <code>/design-sync</code> で1部品ずつコードへ取り込み →
-              公開は人間。
-            </li>
-          </ul>
-
-          <!-- ───── 候補ペルソナ（未投入＝事前カタログ） ───── -->
-          <div class="mt-6 mb-3 text-xs font-bold text-muted">
-            候補ペルソナ（まだ投入していない・カタログから計画投入する）
-            <span class="note">正本: <code>role-catalog.md</code></span>
-          </div>
-          <div
-            class="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted"
-          >
-            <span
-              ><span class="badge badge-warn">▰</span>
-              これまで投入すべきだった（後追いで凌いだ＝仕組みの弱さ・blameless）</span
-            >
-            <span
-              ><span class="badge badge-info">▱</span> これから投入する</span
-            >
-          </div>
-          <div
-            class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            <!-- 設計（アーキテクト） -->
-            <div
-              class="flex gap-2.5 rounded-xl border border-dashed border-[#c9a36a] bg-[#fbf7f0] p-2.5"
-            >
-              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
-                >🧭</span
-              >
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 text-[13px] font-bold">
-                  設計（アーキテクト）
-                  <span class="badge badge-warn">投入すべきだった</span>
-                </div>
-                <div class="text-xs text-[#6f4e37]">着手前の設計判断</div>
-                <div class="mt-0.5 text-[11px] text-muted">
-                  専門: UX・データモデル・I/F の事前設計。E2/D2
-                  で即興判断した反省点。投入の目安: 新 spec／大機能の着手前。
-                </div>
-              </div>
-            </div>
-            <!-- セキュリティ監査 -->
-            <div
-              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
-            >
-              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
-                >🔐</span
-              >
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 text-[13px] font-bold">
-                  セキュリティ監査
-                  <span class="badge badge-info">これから</span>
-                </div>
-                <div class="text-xs text-[#6f4e37]">脆弱性・脅威分析</div>
-                <div class="mt-0.5 text-[11px] text-muted">
-                  専門: 脆弱性・脅威分析。投入の目安: 外部
-                  I/O・認証・公開（push/リリース）前。
-                </div>
-              </div>
-            </div>
-            <!-- パフォーマンス監査 -->
-            <div
-              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
-            >
-              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
-                >⚡</span
-              >
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 text-[13px] font-bold">
-                  パフォーマンス監査
-                  <span class="badge badge-info">これから</span>
-                </div>
-                <div class="text-xs text-[#6f4e37]">
-                  起動／レンダー／バンドル
-                </div>
-                <div class="mt-0.5 text-[11px] text-muted">
-                  専門: 起動・描画・バンドルサイズ。投入の目安:
-                  パフォ問題発生時・リリース前。
-                </div>
-              </div>
-            </div>
-            <!-- テクニカルライター -->
-            <div
-              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
-            >
-              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
-                >✍️</span
-              >
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 text-[13px] font-bold">
-                  テクニカルライター
-                  <span class="badge badge-info">これから</span>
-                </div>
-                <div class="text-xs text-[#6f4e37]">引き継ぎ／文書整備</div>
-                <div class="mt-0.5 text-[11px] text-muted">
-                  専門: reports・引き継ぎ・ユーザー文書。投入の目安:
-                  引き継ぎ・ドキュメント整備フェーズ。
-                </div>
-              </div>
-            </div>
-          </div>
+          <table class="mt-3 text-[13px]">
+            <tr>
+              <th>観点</th>
+              <th>内容</th>
+            </tr>
+            <tr>
+              <td><b>担当ペルソナ</b></td>
+              <td>
+                神谷・橘・桜井・望月・工藤・林・守屋・安西は AI
+                エージェントの役割ペルソナ（実在の個人ではありません）。各役を「担当者」として固定し、責任の所在を明確にしています。
+              </td>
+            </tr>
+            <tr>
+              <td><b>👩🏼‍💼 橘（運用マネージャー・横断支援）</b></td>
+              <td>
+                図の破線は報告系統（橘→神谷→PO）。運用の実行状況の管理と相談窓口を担い、受理判断には不介入（独立性で統括の自己評価バイアスを避ける）。
+              </td>
+            </tr>
+            <tr>
+              <td><b>2つのレーン</b></td>
+              <td>
+                エンジニアリング（実装）とデザイン。どちらも同じ三役（コンダクター・実施者・レビュアー）。
+              </td>
+            </tr>
+            <tr>
+              <td><b>実施者（作る役）は複数が並行</b></td>
+              <td>
+                機能やコンポーネントごとに別々の作業者が同時に動く（図のカードの重なり）。コンダクターと受理（レビュー）が集約点。
+              </td>
+            </tr>
+            <tr>
+              <td><b>作る役とチェック役は必ず別</b></td>
+              <td>
+                自分で作って自分で合格を出さない（甘い判定を防ぐ）。受理は「証拠」で行う。
+              </td>
+            </tr>
+            <tr>
+              <td><b>デザインの証拠</b></td>
+              <td>
+                見た目の好みでなく、コントラスト比（読みやすさ）・状態網羅・原則8（AI開示）の遵守・実装できるか、で判定。
+              </td>
+            </tr>
+            <tr>
+              <td><b>デザインの作り方</b></td>
+              <td>
+                claude.ai/design で生成（文面は
+                <code>docs/design-brief.md</code>）→ レビュー →
+                <code>/design-sync</code> で1部品ずつコードへ取り込み →
+                公開は人間。
+              </td>
+            </tr>
+          </table>
 
           <!-- ───── フェーズ別 投入計画（ツリー体制図・現在フェーズ表示） ───── -->
           <div class="mt-6 mb-1 text-xs font-bold text-muted">
