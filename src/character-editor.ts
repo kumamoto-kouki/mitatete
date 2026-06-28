@@ -114,8 +114,16 @@ export function initCharacterEditor(): void {
   if (!root) return;
   root.replaceChildren();
 
+  /** 編集モード時に保持する元 id。新規作成時は null。 */
+  let editingId: string | null = null;
+
   const form = document.createElement("form");
   form.className = "editor";
+
+  const modeLabel = document.createElement("p");
+  modeLabel.className = "editor__mode-label";
+  modeLabel.hidden = true;
+  modeLabel.textContent = "編集モード";
 
   const nameInput = document.createElement("input");
   nameInput.type = "text";
@@ -196,7 +204,14 @@ export function initCharacterEditor(): void {
   saveButton.className = "editor__save";
   saveButton.textContent = "保存";
 
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "editor__cancel";
+  cancelButton.textContent = "キャンセル";
+  cancelButton.hidden = true;
+
   form.append(
+    modeLabel,
     nameInput,
     toneInput,
     visualEditorContainer,
@@ -205,6 +220,7 @@ export function initCharacterEditor(): void {
     diaryHint,
     disclosure,
     saveButton,
+    cancelButton,
     message
   );
   root.appendChild(form);
@@ -215,26 +231,94 @@ export function initCharacterEditor(): void {
     message.classList.toggle("editor__message--error", isError);
   }
 
+  function resetToNewMode(): void {
+    editingId = null;
+    form.reset();
+    diaryCheckbox.checked = false;
+    uploadConfig = undefined;
+    modeLabel.hidden = true;
+    cancelButton.hidden = true;
+    saveButton.textContent = "保存";
+    message.hidden = true;
+  }
+
+  cancelButton.addEventListener("click", resetToNewMode);
+
   form.addEventListener("submit", async (e: SubmitEvent) => {
     e.preventDefault();
     try {
       // アップロード画像があればそれを優先、無ければレイヤーテンプレートの VisualConfig を使う。
       const visualConfig = uploadConfig ?? getTemplateConfig();
-      const schema = await submitCustomCharacter({
+      const input: CustomCharacterInput = {
         name: nameInput.value,
         tone: toneInput.value,
         visualConfig,
         diaryEnabled: diaryCheckbox.checked,
-      });
+      };
+
+      let schema: CharacterSchema;
+      if (editingId !== null) {
+        // 編集モード: 元 id を保持して上書き save（新規 id を振らない）。
+        // buildCustomCharacter は validate 内で crypto.randomUUID() を呼ぶため、
+        // 元 id を持つ候補を直接 validate して save する。
+        const fromConfig = input.visualConfig
+          ? (() => {
+              if (
+                input.visualConfig!.mode === "template" &&
+                input.visualConfig!.templateParams
+              ) {
+                return svgToDataUri(buildVisualSvg(input.visualConfig!.templateParams));
+              }
+              if (input.visualConfig!.mode === "upload") {
+                return input.visualConfig!.uploadedImagePath;
+              }
+              return undefined;
+            })()
+          : undefined;
+        const visual =
+          fromConfig ??
+          (input.visual && input.visual.trim() !== ""
+            ? input.visual
+            : DEFAULT_AVATAR);
+        schema = CharacterValidator.validate({
+          id: editingId,
+          name: input.name,
+          tone: input.tone,
+          visual,
+          isPreset: false,
+          diaryEnabled: input.diaryEnabled ?? false,
+          ...(input.visualConfig ? { visualConfig: input.visualConfig } : {}),
+        });
+        await CharacterStore.save(schema);
+      } else {
+        schema = await submitCustomCharacter(input);
+      }
+
       showMessage(`「${schema.name}」を保存しました。`, false);
-      form.reset();
-      diaryCheckbox.checked = false;
-      uploadConfig = undefined;
+      resetToNewMode();
     } catch (error) {
       console.error(error);
       showMessage("保存に失敗しました。名前と口調を入力してください。", true);
     }
   });
+
+  /**
+   * エディタを編集モードに切り替え、既存 schema の値をフォームへ流し込む。
+   * character-ui.ts の「編集」ボタンから呼ばれる想定。
+   */
+  (root as HTMLElement & { populateEditor?: (schema: CharacterSchema) => void }).populateEditor =
+    (schema: CharacterSchema): void => {
+      editingId = schema.id;
+      nameInput.value = schema.name;
+      toneInput.value = schema.tone;
+      diaryCheckbox.checked = schema.diaryEnabled;
+      uploadConfig = undefined;
+      modeLabel.hidden = false;
+      modeLabel.textContent = `編集モード: ${schema.name}`;
+      cancelButton.hidden = false;
+      saveButton.textContent = "更新";
+      message.hidden = true;
+    };
 }
 
 // main ウィンドウ読み込み時に初期化する。

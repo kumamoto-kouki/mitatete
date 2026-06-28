@@ -14,6 +14,7 @@ import {
   BookOpen,
   Sun,
   Moon,
+  Pencil,
 } from "lucide";
 
 /**
@@ -33,6 +34,7 @@ export function initIcons(): void {
       BookOpen,
       Sun,
       Moon,
+      Pencil,
     },
   });
 }
