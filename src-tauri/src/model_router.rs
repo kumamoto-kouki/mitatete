@@ -759,6 +759,21 @@ mod tests {
         assert!(hi < mid, "強度降順で並ぶべき");
     }
 
+    #[test]
+    fn build_system_prompt_snapshot() {
+        // insta スナップショット: プロンプト全体の構造（書き出し・行動指針・原則8）が
+        // 意図せず変化したら検知する（回帰検出）。固定入力で決定的。
+        let c = character(
+            AI_DISCLOSURE,
+            &[
+                ("固有性を与える", 5),
+                ("信頼から始める", 3),
+                ("余白を持つ", 1),
+            ],
+        );
+        insta::assert_snapshot!(build_system_prompt(&c));
+    }
+
     // ─── ClaudeClient（HttpClient モックで検証） ───────────────────────────────
 
     use std::sync::Mutex;

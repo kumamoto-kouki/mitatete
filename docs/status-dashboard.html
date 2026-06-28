@@ -199,16 +199,45 @@
       <h2>健全性（本日再実行の証拠）</h2>
       <div class="grid cols-3">
         <div class="card">
-          <div class="kpi">80 <small>Rust テスト pass</small></div>
-          <div class="tag">cargo test --lib ／ 0 fail・警告0</div>
+          <div class="kpi">81 <small>Rust テスト pass</small></div>
+          <div class="tag">cargo test ／ insta スナップショット +1・警告0</div>
         </div>
         <div class="card">
-          <div class="kpi">60 <small>frontend テスト pass</small></div>
-          <div class="tag">vitest ／ tsc 0・vite build OK</div>
+          <div class="kpi">61 <small>frontend テスト pass</small></div>
+          <div class="tag">vitest ／ happy-dom DOM +1・tsc 0・build OK</div>
         </div>
         <div class="card">
           <div class="kpi">0 <small>semgrep findings</small></div>
           <div class="tag">CSP 設定済 ／ 実機 smoke 違反0</div>
+        </div>
+      </div>
+
+      <!-- ===== 検証自動化 ===== -->
+      <h2>検証自動化ライブラリ（導入状況）</h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>happy-dom <span class="badge b-ok">導入・検証済</span></h3>
+          <div class="tag">
+            vitest の DOM 環境。<code>initVisualEditor</code>
+            描画を自動テスト（手動確認を自動化）。
+          </div>
+        </div>
+        <div class="card">
+          <h3>insta <span class="badge b-ok">導入・検証済</span></h3>
+          <div class="tag">
+            Rust スナップショット。<code>build_system_prompt</code>
+            の構造を回帰検出。
+          </div>
+        </div>
+        <div class="card">
+          <h3>
+            tauri-driver + WebdriverIO
+            <span class="badge b-warn">設定のみ</span>
+          </h3>
+          <div class="tag">
+            E2E を <code>e2e/</code> に scaffold。実行は OS の WebKitWebDriver
+            等が前提（<code>docs/e2e-setup.md</code>）。当環境では未実行。
+          </div>
         </div>
       </div>
 
