@@ -364,12 +364,14 @@
         <div
           class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
         >
-          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
-          <b>直近:</b>
           <span
-            >C（diary-engine）を<b>受理・統合</b>（👨🏼‍💻 工藤 実装 → 🕵🏼‍♂️ 守屋
-            条件付きPASS → 👨🏼‍💼 神谷 が必須是正＋証拠再実行で受理）。次は
-            A（リスタイル・👩🏼‍🎨 桜井）に着手できます。</span
+            class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-warn"
+          ></span>
+          <b>いま:</b>
+          <span
+            >A（UI を mtt- 体裁へリスタイル＋Lucide アイコン）を 👩🏼‍🎨 桜井 が
+            worktree で<b>実装中</b>。レビューは 🕵🏼‍♀️
+            望月。C（diary-engine）は受理・統合済み。</span
           >
         </div>
 
@@ -382,11 +384,30 @@
 
         <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
         <div class="mb-3 text-xs font-bold text-muted">
-          チーム（担当ペルソナ）
+          チーム（あなた＋担当ペルソナ）
         </div>
         <div
           class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
         >
+          <!-- あなた（人間・プロダクトオーナー） -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-[#fbf3e9] p-2.5 ring-2 ring-accent"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">🧑🏻‍💼</span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                あなた
+                <span class="badge badge-warn">人間</span>
+              </div>
+              <div class="text-xs text-[#6f4e37]">
+                プロダクトオーナー / 意思決定者
+              </div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門:
+                大方針・優先順位・各フェーズ承認・公開（push）判断・要件の最終決定
+              </div>
+            </div>
+          </div>
           <!-- 神谷 -->
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
@@ -519,14 +540,14 @@
               >
               <div class="min-w-0 flex-1">
                 <div class="text-[13px] font-bold">
-                  UI を mtt- 体裁へリスタイル
+                  UI を mtt- 体裁へリスタイル＋Lucide
                 </div>
                 <div class="text-xs text-muted">
-                  <b>👩🏼‍🎨 桜井</b> が担当（レビュー: 🕵🏼‍♀️ 望月）。C
-                  受理済みのため着手可。
+                  <b>👩🏼‍🎨 桜井</b> が worktree で実装中（レビュー: 🕵🏼‍♀️
+                  望月）。トークン適用済みの上に部品の体裁を反映。
                 </div>
               </div>
-              <span class="badge badge-mute">次</span>
+              <span class="badge badge-warn">進行中</span>
             </div>
           </div>
 
@@ -569,7 +590,10 @@
         </div>
 
         <div class="mt-3 text-[11px] text-muted">
-          ※ 担当名（👨🏼‍💼 神谷・👩🏼‍🎨 桜井・🕵🏼‍♀️ 望月・👨🏼‍💻 工藤・👩🏼‍💻 林・🕵🏼‍♂️ 守屋）は AI
+          ※
+          <b>🧑🏻‍💼 あなたは実在の人間</b
+          >（プロダクトオーナー＝大方針・承認・公開判断）。担当名（👨🏼‍💼 神谷・👩🏼‍🎨
+          桜井・🕵🏼‍♀️ 望月・👨🏼‍💻 工藤・👩🏼‍💻 林・🕵🏼‍♂️ 守屋）は AI
           エージェントの役割ペルソナです（実在の個人ではありません）。
         </div>
       </div>
@@ -913,7 +937,7 @@
                 font-size="13"
                 fill="#2b2622"
               >
-                人間（承認・公開判断）
+                あなた（人間・PO・承認/公開）
               </text>
             </g>
 
