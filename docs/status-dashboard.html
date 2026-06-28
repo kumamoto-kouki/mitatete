@@ -232,11 +232,13 @@
         <div class="card">
           <h3>
             tauri-driver + WebdriverIO
-            <span class="badge b-warn">設定のみ</span>
+            <span class="badge b-ok">導入・検証済</span>
           </h3>
           <div class="tag">
-            E2E を <code>e2e/</code> に scaffold。実行は OS の WebKitWebDriver
-            等が前提（<code>docs/e2e-setup.md</code>）。当環境では未実行。
+            実アプリ起動 E2E。<code>pnpm e2e</code> →
+            <strong>1 passed</strong>。
+            WebKitWebDriver(apt)＋tauri-driver(cargo)＋classic WebDriver で
+            本番ビルドを起動し主要 UI を検証（<code>docs/e2e-setup.md</code>）。
           </div>
         </div>
       </div>
@@ -510,11 +512,13 @@
           <h3>High Priority <span class="badge b-bad">優先</span></h3>
           <ul class="tight">
             <li>
-              検証自動化ライブラリ導入（happy-dom / insta / tauri-driver）—
-              承認済
+              検証自動化ライブラリ（happy-dom / insta / tauri-driver）—
+              <strong>3種とも導入・検証済（E2E 1 passed）</strong>
             </li>
-            <li>diary-engine 実装（前提 generate_text 解消済）</li>
-            <li>push（未push 9コミット）— 公開は人間判断</li>
+            <li>
+              diary-engine 実装（前提 generate_text 解消済・ユーザー承認待ち）
+            </li>
+            <li>push — 公開は人間判断</li>
           </ul>
         </div>
         <div class="card">
