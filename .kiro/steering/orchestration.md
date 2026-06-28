@@ -149,8 +149,7 @@ Wave 2（並行可）:            model-router         diary-engine
 
 ## レビューゲート
 
-- Kiro の3フェーズ承認（requirements → design → tasks → impl）を維持する。各フェーズ完了時にコンダクターがレビューし、重要判断は人間レビューを挟む。
-- 並行で一気通貫に進めず、wave 境界・フェーズ境界でゲートを通す。
+- 3 フェーズ承認（Requirements→Design→Tasks→Implementation・各フェーズ人間レビュー）の**正本は CLAUDE.md「Development Rules」**。orchestration はこれを並行開発へ適用する＝各フェーズ完了時にコンダクターがレビューし、**一気通貫にせず wave 境界・フェーズ境界でゲートを通す**。
 
 ## 権限境界（コンダクターへの委譲）
 
