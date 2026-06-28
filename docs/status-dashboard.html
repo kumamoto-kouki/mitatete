@@ -213,6 +213,20 @@
         details.fold > .fold-body {
           @apply mt-3;
         }
+        /* 大区分の見出し（進捗報告 / プロジェクト概要） */
+        h2.part {
+          @apply mt-12 mb-5 rounded-xl px-4 py-2.5 text-lg text-white shadow-sm;
+          background: linear-gradient(135deg, #b9926e 0%, #8f6b4e 100%);
+        }
+        h2.part:first-of-type {
+          @apply mt-6;
+        }
+        h2.part::before {
+          content: none;
+        }
+        h2.part .note {
+          @apply text-white/80;
+        }
       }
     </style>
   </head>
@@ -228,15 +242,486 @@
         </div>
       </header>
 
+      <!-- ===== ▼ 進捗報告 ===== -->
+      <h2 class="part">
+        📊 進捗報告 <span class="note">— いまの状況・残り・直近の変化</span>
+      </h2>
+
+      <!-- ===== 見積もり時間サマリー ===== -->
+      <div class="card card-updated">
+        <div class="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h3 class="!text-base">⏱ 見積もり時間（参考値）</h3>
+          <span class="note"
+            >タスク数 × 難易度 ×
+            ボリュームから算出した概算。実時間ではなく目安です。</span
+          >
+        </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div>
+            <div class="kpi !text-3xl text-accent">~60h</div>
+            <div class="tag">全体の見積</div>
+          </div>
+          <div>
+            <div class="kpi !text-3xl text-info">~41h</div>
+            <div class="tag">これまで（換算）</div>
+          </div>
+          <div>
+            <div class="kpi !text-3xl text-warn">~19h</div>
+            <div class="tag">残り（概算）</div>
+          </div>
+          <div>
+            <div class="kpi !text-3xl text-ok">68%</div>
+            <div class="tag">全体の進捗</div>
+          </div>
+        </div>
+        <div class="bar mt-3"><span style="width: 68%"></span></div>
+        <details class="mt-3">
+          <summary class="cursor-pointer text-xs font-semibold text-muted">
+            内訳（マイルストーン別の見積・進捗・残り）
+          </summary>
+          <table class="mt-2">
+            <tr>
+              <th>区分</th>
+              <th>難易度</th>
+              <th>見積</th>
+              <th>進捗</th>
+              <th>これまで</th>
+              <th>残り</th>
+            </tr>
+            <tr>
+              <td>M1 起動＋2窓</td>
+              <td>2/5</td>
+              <td>6h</td>
+              <td>100%</td>
+              <td>6.0h</td>
+              <td>0h</td>
+            </tr>
+            <tr>
+              <td>M2 キャラ選択がUI反映</td>
+              <td>3/5</td>
+              <td>10h</td>
+              <td>100%</td>
+              <td>10.0h</td>
+              <td>0h</td>
+            </tr>
+            <tr>
+              <td>M3 モデルと実対話</td>
+              <td>4/5</td>
+              <td>14h</td>
+              <td>75%</td>
+              <td>10.5h</td>
+              <td>3.5h</td>
+            </tr>
+            <tr>
+              <td>M4 観察日記</td>
+              <td>3/5</td>
+              <td>12h</td>
+              <td>70%</td>
+              <td>8.4h</td>
+              <td>3.6h</td>
+            </tr>
+            <tr>
+              <td>M5 クラウド同期</td>
+              <td>3/5</td>
+              <td>10h</td>
+              <td>15%</td>
+              <td>1.5h</td>
+              <td>8.5h</td>
+            </tr>
+            <tr>
+              <td>横断: デザイン/基盤</td>
+              <td>3/5</td>
+              <td>8h</td>
+              <td>55%</td>
+              <td>4.4h</td>
+              <td>3.6h</td>
+            </tr>
+            <tr>
+              <td><b>合計</b></td>
+              <td>—</td>
+              <td><b>60h</b></td>
+              <td><b>68%</b></td>
+              <td><b>40.8h</b></td>
+              <td><b>19.2h</b></td>
+            </tr>
+          </table>
+          <div class="mt-2 text-[11px] text-muted">
+            計算式: 見積(h)=タスク数×難易度(1–5)×ボリューム係数 を丸めた概算。
+            これまで=見積×進捗%、残り=見積×(1−進捗%)。 ※ AIエージェント実測（例:
+            観察日記の実装16分・レビュー7分）とは別の「人間換算の参考値」です。
+          </div>
+        </details>
+      </div>
+
+      <!-- ===== 作業ボード（いま誰が何を） ===== -->
+      <h2>
+        作業ボード（いま誰が何を持っているか）
+        <span class="badge badge-upd">更新 6/28</span>
+        <span class="note">進行に応じて更新</span>
+      </h2>
+      <div class="card card-updated">
+        <!-- 現在の状況バナー -->
+        <div
+          class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
+        >
+          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
+          <b>直近:</b>
+          <span
+            >C（diary-engine）を<b>受理・統合</b>（👨🏼‍💻 工藤 実装 → 🕵🏼‍♂️ 守屋
+            条件付きPASS → 👨🏼‍💼 神谷 が必須是正＋証拠再実行で受理）。次は
+            A（リスタイル・👩🏼‍🎨 桜井）に着手できます。</span
+          >
+        </div>
+
+        <!-- 凡例（状態） -->
+        <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+          <span><span class="badge badge-warn">レビュー中</span> 受理待ち</span>
+          <span><span class="badge badge-ok">完了</span> 受理済み</span>
+          <span><span class="badge badge-mute">次</span> 後続で着手</span>
+        </div>
+
+        <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
+        <div class="mb-3 text-xs font-bold text-muted">
+          チーム（担当ペルソナ）
+        </div>
+        <div
+          class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <!-- 神谷 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">神谷（かみや）</div>
+              <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: 計画分解・委譲設計・証拠ベースの受理
+              </div>
+            </div>
+          </div>
+          <!-- 桜井 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍🎨</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">桜井（さくらい）</div>
+              <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: デザインシステム・UI ビジュアル・トークン設計・a11y
+              </div>
+            </div>
+          </div>
+          <!-- 望月 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♀️</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">望月（もちづき）</div>
+              <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: コントラスト・状態網羅・原則8 の視覚監査
+              </div>
+            </div>
+          </div>
+          <!-- 工藤 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💻</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">工藤（くどう）</div>
+              <div class="text-xs text-[#6f4e37]">
+                実装エンジニア（Rust/Tauri）
+              </div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: trait シーム設計・TDD・バックエンド
+              </div>
+            </div>
+          </div>
+          <!-- 林 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💻</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">林（はやし）</div>
+              <div class="text-xs text-[#6f4e37]">
+                実装エンジニア（TypeScript）
+              </div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: フロント状態管理・Tauri 配線・DOM テスト
+              </div>
+            </div>
+          </div>
+          <!-- 守屋 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♂️</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">守屋（もりや）</div>
+              <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: 敵対的レビュー・証拠再実行・回帰/セキュリティ確認
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- チームの約束（心理的安全性） -->
+        <div
+          class="mb-4 rounded-xl bg-[#e9f0ea] px-4 py-3 text-[12.5px] ring-1 ring-[#cfe2d6]"
+        >
+          <b>💬 チームの約束 — 心理的安全性</b>
+          <div class="mt-1 text-muted">
+            このチームは心理的安全性を常に担保しています。失敗・不明点・反対意見を安心して出せ、レビューは<b>人格ではなく成果物</b>に向けます。「分からない」「やり直したい」と言える率直さと、互いへの敬意を両立し、円滑なコミュニケーションを保ちます（🕵🏼‍♂️
+            守屋の指摘は 👨🏼‍💻 工藤
+            を責めるためでなく、品質を一緒に上げるためのものです）。
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <!-- デザイン・レーン -->
+          <div class="rounded-xl p-3 ring-1 ring-line/70">
+            <div
+              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
+            >
+              <span class="h-3 w-3 rounded-full bg-accent"></span>
+              デザイン・レーン
+            </div>
+            <!-- B -->
+            <div
+              class="mb-2 flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f0e6da] font-bold text-[#6f4e37]"
+                >B</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">見出しフォント同梱＋CSP</div>
+                <div class="text-xs text-muted">
+                  <b>👨🏼‍💼 神谷</b> が対応。Zen Maru Gothic を woff2 同梱・CSP
+                  font-src 'self'・オフライン可。
+                </div>
+              </div>
+              <span class="badge badge-ok">完了</span>
+            </div>
+            <!-- A -->
+            <div
+              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f4efe7] font-bold text-muted"
+                >A</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">
+                  UI を mtt- 体裁へリスタイル
+                </div>
+                <div class="text-xs text-muted">
+                  <b>👩🏼‍🎨 桜井</b> が担当（レビュー: 🕵🏼‍♀️ 望月）。C
+                  受理済みのため着手可。
+                </div>
+              </div>
+              <span class="badge badge-mute">次</span>
+            </div>
+          </div>
+
+          <!-- エンジニアリング・レーン -->
+          <div class="rounded-xl p-3 ring-1 ring-line/70">
+            <div
+              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
+            >
+              <span
+                class="h-3 w-3 rounded-full"
+                style="background: #6a8caf"
+              ></span>
+              エンジニアリング・レーン
+            </div>
+            <!-- C -->
+            <div
+              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#e9f0f7] font-bold text-[#2c5680]"
+                >C</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">
+                  diary-engine（観察日記）実装
+                </div>
+                <div class="text-xs text-muted">
+                  <b>👨🏼‍💻 工藤</b> 実装 → <b>🕵🏼‍♂️ 守屋</b> 条件付きPASS →
+                  <b>👨🏼‍💼 神谷</b>
+                  統合・受理。フロント105・Rust81・型0・build OK。
+                </div>
+              </div>
+              <span class="badge badge-ok">完了</span>
+            </div>
+            <div class="mt-2 text-xs text-muted">
+              繰越（Watch List）: 感情制約アサーション強化・read_history
+              失敗経路テスト追加（守屋の指摘・次スプリント）。
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 text-[11px] text-muted">
+          ※ 担当名（👨🏼‍💼 神谷・👩🏼‍🎨 桜井・🕵🏼‍♀️ 望月・👨🏼‍💻 工藤・👩🏼‍💻 林・🕵🏼‍♂️ 守屋）は AI
+          エージェントの役割ペルソナです（実在の個人ではありません）。
+        </div>
+      </div>
+
+      <!-- ===== マイルストーン ===== -->
+      <h2>節目（M1→M5）<span class="note">作りたいものへの到達段階</span></h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="card">
+          <h3>
+            M1 アプリが起動し2つの窓が出る
+            <span class="badge badge-ok">達成</span>
+          </h3>
+          <div class="bar"><span style="width: 100%"></span></div>
+        </div>
+        <div class="card">
+          <h3>
+            M2 キャラ選択が画面に反映 <span class="badge badge-ok">確認済</span>
+          </h3>
+          <div class="bar"><span style="width: 100%"></span></div>
+          <div class="tag">実機ログでキャラ窓の描画を確認済み</div>
+        </div>
+        <div class="card">
+          <h3>
+            M3 モデルと実際に会話 <span class="badge badge-warn">あと一歩</span>
+          </h3>
+          <div class="bar"><span style="width: 70%"></span></div>
+          <div class="tag">
+            実装は完了。本物の API キー＋目視確認が残り（人の作業待ち）
+          </div>
+        </div>
+        <div class="card">
+          <h3>
+            M4 観察日記 / M5 クラウド同期
+            <span class="badge badge-mute">これから</span>
+          </h3>
+          <div class="bar"><span style="width: 15%"></span></div>
+          <div class="tag">日記機能 / Google ドライブ連携の本番資格情報</div>
+        </div>
+      </div>
+
+      <!-- ===== spec 状態 ===== -->
+      <h2>
+        機能ごとの状態
+        <span class="note">spec＝機能の仕様書。4機能を段階管理</span>
+      </h2>
+      <div class="card">
+        <table>
+          <tr>
+            <th>機能（spec）</th>
+            <th>仕様の段階</th>
+            <th>実装</th>
+            <th>テスト</th>
+            <th>状態</th>
+          </tr>
+          <tr>
+            <td>保存まわり（storage-manager）</td>
+            <td>仕様確定</td>
+            <td>全23項目</td>
+            <td>Rust 56</td>
+            <td><span class="badge badge-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>キャラ表示（character-layer）</td>
+            <td>仕様確定</td>
+            <td>全18項目</td>
+            <td>画面側 54</td>
+            <td><span class="badge badge-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>モデル切替・対話（model-router）</td>
+            <td>タスク化済</td>
+            <td>全18 ＋ 汎用生成コマンド</td>
+            <td>Rust 22 / 画面側 6</td>
+            <td><span class="badge badge-ok">完了</span></td>
+          </tr>
+          <tr>
+            <td>観察日記（diary-engine）</td>
+            <td>タスク化済</td>
+            <td>未着手（前提は解消済）</td>
+            <td>—</td>
+            <td><span class="badge badge-warn">仕様のみ</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- ===== 健全性 KPI ===== -->
+      <h2>
+        今の健全性
+        <span class="note">（数値は本日コマンドを実行し直して確認）</span>
+      </h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="card">
+          <div class="kpi text-accent">81 <small>Rust テスト 合格</small></div>
+          <div class="tag">
+            裏側（Rust）の自動テスト。スナップショット検査 +1・警告0。
+          </div>
+        </div>
+        <div class="card">
+          <div class="kpi text-info">61 <small>画面側テスト 合格</small></div>
+          <div class="tag">
+            画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
+          </div>
+        </div>
+        <div class="card">
+          <div class="kpi text-ok">0 <small>脆弱性の指摘</small></div>
+          <div class="tag">
+            コード脆弱性スキャナー（semgrep）で指摘0。通信先を絞る設定（CSP）も済。
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 次アクション ===== -->
+      <h2>次にやること</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="card">
+          <h3>優先 <span class="badge badge-bad">高</span></h3>
+          <ul class="tight">
+            <li>
+              テスト自動化の道具3種 —
+              <strong>導入・確認すべて完了（実アプリ E2E も1件合格）</strong>
+            </li>
+            <li>
+              観察日記（diary-engine）の実装 — 前提は解消済・あなたの承認待ち
+            </li>
+            <li>公開（push）— 出すかどうかは人の判断</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>見守り <span class="badge badge-warn">中</span></h3>
+          <ul class="tight">
+            <li>M3 の実機確認（本物の API キーが必要）</li>
+            <li>OpenAI の上限指定（将来モデル別に分岐）</li>
+            <li>Google ドライブのサブフォルダー / 本番ログイン疎通</li>
+            <li>進捗管理ツールへの第2陣の反映 / 逐次表示は後回し</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- ===== ① この版の更新（変更点を毎回ここで明示） ===== -->
       <section class="changelog">
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
             <b
+              >ダッシュボードを「進捗報告」と「プロジェクト概要」に分割しました。</b
+            >進捗報告を先頭にし、その冒頭に<b>見積もり時間（全体・経過・残り・進捗）</b>を追加。担当ペルソナは名前から<b>苗字</b>表記に変更（神谷・桜井・望月・工藤・林・守屋）。
+          </li>
+          <li>
+            <b
               >ペルソナを人物の絵文字にし、名前と性別・肌トーンを一致させました。</b
-            >また C（観察日記 diary-engine）を独立レビュー（健・条件付きPASS）→
-            必須是正 →
+            >また C（観察日記
+            diary-engine）を独立レビュー（守屋・条件付きPASS）→ 必須是正 →
             証拠再実行で<b>受理・統合</b>しました（フロント105・Rust81・型0）。
           </li>
           <li>
@@ -256,7 +741,7 @@
             </li>
             <li>
               <b>担当を「人」に見立てて表示するようにしました。</b
-              >体制図と作業ボードに役割ペルソナ（司・彩・澪・拓・健）を割り当て、誰が何を持つかを明確化（実在の個人ではなく
+              >体制図と作業ボードに役割ペルソナ（神谷・桜井・望月・工藤・守屋）を割り当て、誰が何を持つかを明確化（実在の個人ではなく
               AI エージェントの役割）。
             </li>
             <li>
@@ -316,6 +801,12 @@
         </div>
       </section>
 
+      <!-- ===== ▼ プロジェクト概要 ===== -->
+      <h2 class="part">
+        📁 プロジェクト概要
+        <span class="note">— チーム・体制・進め方・用語</span>
+      </h2>
+
       <!-- ===== 凡例 ===== -->
       <h2>色の意味（凡例）</h2>
       <div class="card">
@@ -330,223 +821,44 @@
         </div>
       </div>
 
-      <!-- ===== 作業ボード（いま誰が何を） ===== -->
+      <!-- ===== 検証の自動化 ===== -->
       <h2>
-        作業ボード（いま誰が何を持っているか）
-        <span class="badge badge-upd">更新 6/28</span>
-        <span class="note">進行に応じて更新</span>
+        テストを自動で回す道具（3種そろいました）
+        <span class="note">手で確認していた作業を機械にやらせる</span>
       </h2>
-      <div class="card card-updated">
-        <!-- 現在の状況バナー -->
-        <div
-          class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
-        >
-          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
-          <b>直近:</b>
-          <span
-            >C（diary-engine）を<b>受理・統合</b>（👨🏼‍💻 拓 実装 → 🕵🏼‍♂️ 健
-            条件付きPASS → 👨🏼‍💼 司 が必須是正＋証拠再実行で受理）。次は
-            A（リスタイル・👩🏼‍🎨 彩）に着手できます。</span
-          >
-        </div>
-
-        <!-- 凡例（状態） -->
-        <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-          <span><span class="badge badge-warn">レビュー中</span> 受理待ち</span>
-          <span><span class="badge badge-ok">完了</span> 受理済み</span>
-          <span><span class="badge badge-mute">次</span> 後続で着手</span>
-        </div>
-
-        <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
-        <div class="mb-3 text-xs font-bold text-muted">
-          チーム（担当ペルソナ）
-        </div>
-        <div
-          class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <!-- 司 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">司（つかさ）</div>
-              <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: 計画分解・委譲設計・証拠ベースの受理
-              </div>
-            </div>
-          </div>
-          <!-- 彩 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍🎨</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">彩（あや）</div>
-              <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: デザインシステム・UI ビジュアル・トークン設計・a11y
-              </div>
-            </div>
-          </div>
-          <!-- 澪 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♀️</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">澪（みお）</div>
-              <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: コントラスト・状態網羅・原則8 の視覚監査
-              </div>
-            </div>
-          </div>
-          <!-- 拓 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💻</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">拓（たく）</div>
-              <div class="text-xs text-[#6f4e37]">
-                実装エンジニア（Rust/Tauri）
-              </div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: trait シーム設計・TDD・バックエンド
-              </div>
-            </div>
-          </div>
-          <!-- 玲 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💻</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">玲（れい）</div>
-              <div class="text-xs text-[#6f4e37]">
-                実装エンジニア（TypeScript）
-              </div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: フロント状態管理・Tauri 配線・DOM テスト
-              </div>
-            </div>
-          </div>
-          <!-- 健 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♂️</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">健（けん）</div>
-              <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: 敵対的レビュー・証拠再実行・回帰/セキュリティ確認
-              </div>
-            </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="card">
+          <h3>
+            画面部品テスト <span class="badge badge-ok">導入・確認済</span>
+          </h3>
+          <div class="tag">
+            道具:
+            happy-dom。ブラウザを起動せず画面部品の組み立てだけを高速に検査。キャラ編集画面の描画を自動チェック。
           </div>
         </div>
-
-        <!-- チームの約束（心理的安全性） -->
-        <div
-          class="mb-4 rounded-xl bg-[#e9f0ea] px-4 py-3 text-[12.5px] ring-1 ring-[#cfe2d6]"
-        >
-          <b>💬 チームの約束 — 心理的安全性</b>
-          <div class="mt-1 text-muted">
-            このチームは心理的安全性を常に担保しています。失敗・不明点・反対意見を安心して出せ、レビューは<b>人格ではなく成果物</b>に向けます。「分からない」「やり直したい」と言える率直さと、互いへの敬意を両立し、円滑なコミュニケーションを保ちます（🕵🏼‍♂️
-            健の指摘は 👨🏼‍💻 拓
-            を責めるためでなく、品質を一緒に上げるためのものです）。
+        <div class="card">
+          <h3>
+            出力の固定検査 <span class="badge badge-ok">導入・確認済</span>
+          </h3>
+          <div class="tag">
+            道具: insta。AI
+            への指示文の組み立て結果を「お手本」と突き合わせ、意図しない変化を自動検出。
           </div>
         </div>
-
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <!-- デザイン・レーン -->
-          <div class="rounded-xl p-3 ring-1 ring-line/70">
-            <div
-              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
+        <div class="card card-updated">
+          <h3>
+            実アプリ起動テスト
+            <span class="badge badge-ok">導入・確認済</span>
+            <span class="badge badge-upd">更新 6/28</span>
+          </h3>
+          <div class="tag">
+            道具: tauri-driver ＋
+            WebdriverIO。本物のアプリを起動し、画面に主要パーツが出るかを確認。<code
+              >pnpm e2e</code
             >
-              <span class="h-3 w-3 rounded-full bg-accent"></span>
-              デザイン・レーン
-            </div>
-            <!-- B -->
-            <div
-              class="mb-2 flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
-            >
-              <span
-                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f0e6da] font-bold text-[#6f4e37]"
-                >B</span
-              >
-              <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold">見出しフォント同梱＋CSP</div>
-                <div class="text-xs text-muted">
-                  <b>👨🏼‍💼 司</b> が対応。Zen Maru Gothic を woff2 同梱・CSP
-                  font-src 'self'・オフライン可。
-                </div>
-              </div>
-              <span class="badge badge-ok">完了</span>
-            </div>
-            <!-- A -->
-            <div
-              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
-            >
-              <span
-                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f4efe7] font-bold text-muted"
-                >A</span
-              >
-              <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold">
-                  UI を mtt- 体裁へリスタイル
-                </div>
-                <div class="text-xs text-muted">
-                  <b>👩🏼‍🎨 彩</b> が担当（レビュー: 🕵🏼‍♀️ 澪）。C
-                  受理済みのため着手可。
-                </div>
-              </div>
-              <span class="badge badge-mute">次</span>
-            </div>
+            → <strong>1件 合格</strong>（手順は
+            <code>docs/e2e-setup.md</code>）。
           </div>
-
-          <!-- エンジニアリング・レーン -->
-          <div class="rounded-xl p-3 ring-1 ring-line/70">
-            <div
-              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
-            >
-              <span
-                class="h-3 w-3 rounded-full"
-                style="background: #6a8caf"
-              ></span>
-              エンジニアリング・レーン
-            </div>
-            <!-- C -->
-            <div
-              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
-            >
-              <span
-                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#e9f0f7] font-bold text-[#2c5680]"
-                >C</span
-              >
-              <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold">
-                  diary-engine（観察日記）実装
-                </div>
-                <div class="text-xs text-muted">
-                  <b>👨🏼‍💻 拓</b> 実装 → <b>🕵🏼‍♂️ 健</b> 条件付きPASS → <b>👨🏼‍💼 司</b>
-                  統合・受理。フロント105・Rust81・型0・build OK。
-                </div>
-              </div>
-              <span class="badge badge-ok">完了</span>
-            </div>
-            <div class="mt-2 text-xs text-muted">
-              繰越（Watch List）: 感情制約アサーション強化・read_history
-              失敗経路テスト追加（健の指摘・次スプリント）。
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-3 text-[11px] text-muted">
-          ※ 担当名（👨🏼‍💼 司・👩🏼‍🎨 彩・🕵🏼‍♀️ 澪・👨🏼‍💻 拓・👩🏼‍💻 玲・🕵🏼‍♂️ 健）は AI
-          エージェントの役割ペルソナです（実在の個人ではありません）。
         </div>
       </div>
 
@@ -623,7 +935,7 @@
                 font-weight="700"
                 fill="#fff"
               >
-                統括コンダクター ・ 司
+                統括コンダクター ・ 神谷
               </text>
             </g>
 
@@ -742,7 +1054,7 @@
                 font-size="10.5"
                 fill="#8a817a"
               >
-                拓・玲（実装・並行）
+                工藤・林（実装・並行）
               </text>
             </g>
             <g>
@@ -773,7 +1085,7 @@
                 font-size="10.5"
                 fill="#8a817a"
               >
-                健・独立レビュー
+                守屋・独立レビュー
               </text>
             </g>
 
@@ -827,7 +1139,7 @@
                 font-size="10.5"
                 fill="#8a817a"
               >
-                彩・Claude Design＋同期
+                桜井・Claude Design＋同期
               </text>
             </g>
             <g>
@@ -858,13 +1170,13 @@
                 font-size="10.5"
                 fill="#8a817a"
               >
-                澪・デザイン独立レビュー
+                望月・デザイン独立レビュー
               </text>
             </g>
           </svg>
           <ul class="tight mt-3">
             <li>
-              <b>担当（司・彩・澪・拓・玲・健）</b>は AI
+              <b>担当（神谷・桜井・望月・工藤・林・守屋）</b>は AI
               エージェントの役割ペルソナ（実在の個人ではありません）。各役を「担当者」として固定し、責任の所在を明確にしています。
             </li>
             <li>
@@ -1205,154 +1517,6 @@
         </div>
       </details>
 
-      <!-- ===== 健全性 KPI ===== -->
-      <h2>
-        今の健全性
-        <span class="note">（数値は本日コマンドを実行し直して確認）</span>
-      </h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div class="card">
-          <div class="kpi text-accent">81 <small>Rust テスト 合格</small></div>
-          <div class="tag">
-            裏側（Rust）の自動テスト。スナップショット検査 +1・警告0。
-          </div>
-        </div>
-        <div class="card">
-          <div class="kpi text-info">61 <small>画面側テスト 合格</small></div>
-          <div class="tag">
-            画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
-          </div>
-        </div>
-        <div class="card">
-          <div class="kpi text-ok">0 <small>脆弱性の指摘</small></div>
-          <div class="tag">
-            コード脆弱性スキャナー（semgrep）で指摘0。通信先を絞る設定（CSP）も済。
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== 検証の自動化 ===== -->
-      <h2>
-        テストを自動で回す道具（3種そろいました）
-        <span class="note">手で確認していた作業を機械にやらせる</span>
-      </h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div class="card">
-          <h3>
-            画面部品テスト <span class="badge badge-ok">導入・確認済</span>
-          </h3>
-          <div class="tag">
-            道具:
-            happy-dom。ブラウザを起動せず画面部品の組み立てだけを高速に検査。キャラ編集画面の描画を自動チェック。
-          </div>
-        </div>
-        <div class="card">
-          <h3>
-            出力の固定検査 <span class="badge badge-ok">導入・確認済</span>
-          </h3>
-          <div class="tag">
-            道具: insta。AI
-            への指示文の組み立て結果を「お手本」と突き合わせ、意図しない変化を自動検出。
-          </div>
-        </div>
-        <div class="card card-updated">
-          <h3>
-            実アプリ起動テスト
-            <span class="badge badge-ok">導入・確認済</span>
-            <span class="badge badge-upd">更新 6/28</span>
-          </h3>
-          <div class="tag">
-            道具: tauri-driver ＋
-            WebdriverIO。本物のアプリを起動し、画面に主要パーツが出るかを確認。<code
-              >pnpm e2e</code
-            >
-            → <strong>1件 合格</strong>（手順は
-            <code>docs/e2e-setup.md</code>）。
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== spec 状態 ===== -->
-      <h2>
-        機能ごとの状態
-        <span class="note">spec＝機能の仕様書。4機能を段階管理</span>
-      </h2>
-      <div class="card">
-        <table>
-          <tr>
-            <th>機能（spec）</th>
-            <th>仕様の段階</th>
-            <th>実装</th>
-            <th>テスト</th>
-            <th>状態</th>
-          </tr>
-          <tr>
-            <td>保存まわり（storage-manager）</td>
-            <td>仕様確定</td>
-            <td>全23項目</td>
-            <td>Rust 56</td>
-            <td><span class="badge badge-ok">完了</span></td>
-          </tr>
-          <tr>
-            <td>キャラ表示（character-layer）</td>
-            <td>仕様確定</td>
-            <td>全18項目</td>
-            <td>画面側 54</td>
-            <td><span class="badge badge-ok">完了</span></td>
-          </tr>
-          <tr>
-            <td>モデル切替・対話（model-router）</td>
-            <td>タスク化済</td>
-            <td>全18 ＋ 汎用生成コマンド</td>
-            <td>Rust 22 / 画面側 6</td>
-            <td><span class="badge badge-ok">完了</span></td>
-          </tr>
-          <tr>
-            <td>観察日記（diary-engine）</td>
-            <td>タスク化済</td>
-            <td>未着手（前提は解消済）</td>
-            <td>—</td>
-            <td><span class="badge badge-warn">仕様のみ</span></td>
-          </tr>
-        </table>
-      </div>
-
-      <!-- ===== マイルストーン ===== -->
-      <h2>節目（M1→M5）<span class="note">作りたいものへの到達段階</span></h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="card">
-          <h3>
-            M1 アプリが起動し2つの窓が出る
-            <span class="badge badge-ok">達成</span>
-          </h3>
-          <div class="bar"><span style="width: 100%"></span></div>
-        </div>
-        <div class="card">
-          <h3>
-            M2 キャラ選択が画面に反映 <span class="badge badge-ok">確認済</span>
-          </h3>
-          <div class="bar"><span style="width: 100%"></span></div>
-          <div class="tag">実機ログでキャラ窓の描画を確認済み</div>
-        </div>
-        <div class="card">
-          <h3>
-            M3 モデルと実際に会話 <span class="badge badge-warn">あと一歩</span>
-          </h3>
-          <div class="bar"><span style="width: 70%"></span></div>
-          <div class="tag">
-            実装は完了。本物の API キー＋目視確認が残り（人の作業待ち）
-          </div>
-        </div>
-        <div class="card">
-          <h3>
-            M4 観察日記 / M5 クラウド同期
-            <span class="badge badge-mute">これから</span>
-          </h3>
-          <div class="bar"><span style="width: 15%"></span></div>
-          <div class="tag">日記機能 / Google ドライブ連携の本番資格情報</div>
-        </div>
-      </div>
-
       <!-- ===== PDCA 実践 ===== -->
       <details class="fold">
         <summary>
@@ -1548,33 +1712,6 @@
           </div>
         </div>
       </details>
-
-      <!-- ===== 次アクション ===== -->
-      <h2>次にやること</h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="card">
-          <h3>優先 <span class="badge badge-bad">高</span></h3>
-          <ul class="tight">
-            <li>
-              テスト自動化の道具3種 —
-              <strong>導入・確認すべて完了（実アプリ E2E も1件合格）</strong>
-            </li>
-            <li>
-              観察日記（diary-engine）の実装 — 前提は解消済・あなたの承認待ち
-            </li>
-            <li>公開（push）— 出すかどうかは人の判断</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>見守り <span class="badge badge-warn">中</span></h3>
-          <ul class="tight">
-            <li>M3 の実機確認（本物の API キーが必要）</li>
-            <li>OpenAI の上限指定（将来モデル別に分岐）</li>
-            <li>Google ドライブのサブフォルダー / 本番ログイン疎通</li>
-            <li>進捗管理ツールへの第2陣の反映 / 逐次表示は後回し</li>
-          </ul>
-        </div>
-      </div>
 
       <!-- ===== 用語集 ===== -->
       <details class="fold">
