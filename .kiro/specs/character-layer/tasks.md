@@ -2,7 +2,7 @@
 
 ## タスク一覧
 
-- [ ] 1. 基盤：データ型定義とバリデーション
+- [x] 1. 基盤：データ型定義とバリデーション
 - [x] 1.1 CharacterSchema 型定義とバリデーターの実装
   - `CharacterSchema` および `VisualConfig` の型定義を `character-validator.ts` に記述する（TypeScript の `interface` を使用）
   - `aiDisclosure` の固定文言（「私はAIアシスタントです。人間ではありません。」）を定数として定義し、いかなる入力でも上書きできないよう強制付与するロジックを実装する
@@ -10,7 +10,7 @@
   - `validate()` が返す `CharacterSchema.aiDisclosure` が常に固定文言と一致することをユニットテストで確認する
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 2. バックエンド：Tauriコマンドの実装
+- [x] 2. バックエンド：Tauriコマンドの実装
 - [x] 2.1 storage.rs へのキャラクター保存・読み込み・削除コマンド追加
   - `save_character(schema_json: String) -> Result<(), String>` を実装し、`~/.mitatete/characters/{id}.json` へ書き込む
   - `load_characters() -> Result<Vec<String>, String>` を実装し、`~/.mitatete/characters/` 配下の全JSONを読み込んで返す
@@ -19,7 +19,7 @@
   - `tauri.conf.json` にコマンド権限を追加し、フロントエンドから `invoke` できることを確認する
   - _Requirements: 2.5, 5.1, 5.2, 5.3_
 
-- [ ] 3. コア：キャラクター状態管理
+- [x] 3. コア：キャラクター状態管理
 - [x] 3.1 character-store.ts の実装
   - `init()` でアプリ起動時にTauriコマンド `load_characters` を呼び出し、保存済みキャラクターを復元する
   - `load_characters` 失敗時はデフォルトキャラクター（プリセット第一候補）にフォールバックし、エラーをUIに通知する
@@ -28,7 +28,7 @@
   - `subscribe(listener)` で変更通知を受け取れることをユニットテストで確認する
   - _Requirements: 3.3, 4.1, 4.2, 4.3, 5.2, 5.3, 5.4_
 
-- [ ] 4. コア：プリセットキャラクター読み込みUI
+- [x] 4. コア：プリセットキャラクター読み込みUI
 - [x] 4.1 (P) プリセット定義ファイルの作成と読み込み処理
   - `public/presets/preset-a.json` を `CharacterSchema` 準拠の形式で作成する（最低1件）
   - `character-ui.ts` で `public/presets/*.json` を fetch して一覧データを構築するロジックを実装する
@@ -45,7 +45,7 @@
   - _Boundary: character-ui.ts, character-validator.ts_
   - _Depends: 4.1_
 
-- [ ] 5. コア：カスタムキャラクター作成UI
+- [x] 5. コア：カスタムキャラクター作成UI
 - [x] 5.1 カスタムキャラクター作成フォームの実装
   - `character-editor.ts` に名前・口調・ビジュアル（画像アップロード）の入力フォームを実装する
   - ビジュアルが未設定の場合、デフォルトアバター（内蔵SVG）を `visual` フィールドに自動設定する
@@ -54,7 +54,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
   - _Boundary: character-editor.ts_
 
-- [ ] 6. 統合：キャラクター切り替えと下流通知
+- [x] 6. 統合：キャラクター切り替えと下流通知
 - [x] 6.1 切り替えUIと原則エンジン・キャラクターウィンドウへの通知統合
   - `character-ui.ts` にキャラクター切り替えボタン／セレクターを実装し、`character-store.setActive()` を呼び出す
   - `character-store.ts` の `subscribe` を使い、`principles.ts`（原則エンジン）が `principleDefaults` を受け取って更新することを確認する
@@ -63,14 +63,14 @@
   - _Requirements: 4.1, 4.4_
   - _Depends: 3.1, 4.2, 5.1_
 
-- [ ] 7. 検証：起動時復元とエラー縮退の確認
+- [x] 7. 検証：起動時復元とエラー縮退の確認
 - [x] 7.1 アプリ再起動後のキャラクター復元テスト
   - カスタムキャラクターを保存後にアプリを再起動し、最後に使用したキャラクターが正しく復元されることを確認する
   - `~/.mitatete/characters/` が存在しない初回起動時にデフォルトキャラクターで正常起動することを確認する
   - ファイルが破損している場合（不正JSON）にフォールバック動作が発動することを確認する
   - _Requirements: 5.2, 5.3, 5.4_
 
-- [ ] 8. フェーズ2：ビジュアルエディター（コア完成後に着手）
+- [x] 8. フェーズ2：ビジュアルエディター（コア完成後に着手）
 - [x] 8.1 (P) VisualConfig レイヤー構造エディターの実装
   - `character-visual-editor.ts` に体型・目・髪・服の色・肌色のレイヤーを選択できるUIを実装する
   - 選択内容をリアルタイムでSVGプレビューに反映する
