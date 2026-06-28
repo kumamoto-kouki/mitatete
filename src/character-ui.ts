@@ -14,6 +14,7 @@ import {
 } from "./character-validator";
 import { CharacterStore } from "./character-store";
 import { emit } from "@tauri-apps/api/event";
+import { initIcons } from "./icons";
 
 // Vite は public/ 配下をルート直下で配信する（public/presets/x.json → /presets/x.json）。
 const PRESET_DIR = "/presets";
@@ -222,11 +223,110 @@ export function renderSwitcher(
 }
 
 /**
+ * カスタムキャラクター一覧を container に描画する。(E2 カスタムカード表示・回帰解消)
+ *
+ * CharacterStore.getAll() の !isPreset なキャラを mtt-char カードで描画する。
+ * 各カードに「選択」クリックと「編集」ボタンを持つ。
+ *
+ * @param container 描画先コンテナ
+ * @param onSelect カスタムキャラクター選択時コールバック
+ * @param onEdit カスタムキャラクター編集ボタン押下時コールバック
+ */
+export function renderCustomList(
+  container: HTMLElement,
+  onSelect: (schema: CharacterSchema) => void,
+  onEdit: (schema: CharacterSchema) => void
+): void {
+  const customs = CharacterStore.getAll().filter((c) => !c.isPreset);
+
+  // セクションラベル + リストを毎回再構築する。
+  container.replaceChildren();
+
+  if (customs.length === 0) return;
+
+  const heading = document.createElement("p");
+  heading.className = "character-panel__section-heading";
+  heading.textContent = "あなたのキャラクター";
+  container.appendChild(heading);
+
+  const list = document.createElement("ul");
+  list.className = "character-panel__list mtt-chars character-panel__custom-list";
+
+  const activeId = CharacterStore.getActive()?.id ?? null;
+
+  for (const schema of customs) {
+    const item = document.createElement("li");
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "character-panel__item mtt-char";
+    card.dataset.customId = schema.id;
+    if (schema.id === activeId) card.classList.add("is-selected");
+
+    // アバター
+    const avt = document.createElement("span");
+    avt.className = `mtt-avt ${avatarColor(schema.id)}`;
+    avt.setAttribute("aria-hidden", "true");
+    avt.textContent = schema.name.charAt(0);
+
+    // ボディ
+    const body = document.createElement("span");
+    body.className = "mtt-char__body";
+
+    const name = document.createElement("span");
+    name.className = "character-panel__name mtt-char__name";
+    name.textContent = schema.name;
+
+    const trait = document.createElement("span");
+    trait.className = "character-panel__tone mtt-char__trait";
+    trait.textContent = schema.tone.length > 30 ? schema.tone.slice(0, 30) + "…" : schema.tone;
+
+    body.append(name, trait);
+
+    // 選択チェック
+    const pick = document.createElement("span");
+    pick.className = "mtt-char__pick";
+    pick.setAttribute("aria-hidden", "true");
+
+    // 編集ボタン
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "character-panel__edit-btn";
+    editBtn.setAttribute("aria-label", `${schema.name} を編集`);
+    const pencilIcon = document.createElement("i");
+    pencilIcon.setAttribute("data-lucide", "pencil");
+    editBtn.appendChild(pencilIcon);
+
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // カード選択と重ならないようにする
+      onEdit(schema);
+    });
+
+    card.append(avt, body, pick);
+    card.addEventListener("click", () => {
+      // 選択状態の更新（カスタムリスト内）
+      for (const el of list.querySelectorAll(".character-panel__item")) {
+        el.classList.toggle("is-selected", el === card);
+      }
+      onSelect(schema);
+    });
+
+    item.append(card, editBtn);
+    list.appendChild(item);
+  }
+
+  container.appendChild(list);
+
+  // Lucide の pencil アイコンを置換する。
+  initIcons();
+}
+
+/**
  * プリセット選択パネルと切り替えセレクターを初期化する。(要件 1.x, 4.1, 4.4)
  *
  * 1. 別ウィンドウ放送を接続し、store を init して保存済みキャラクターを復元する。
  * 2. プリセット一覧を読み込んで描画する（読み込みエラーはパネル内表示、要件 1.5）。
  * 3. store の全キャラクターから切り替えセレクターを描画し、store 変更時に再描画する。
+ * 4. カスタムキャラクターカードを描画し、store 変更時に再描画する。(E2)
  */
 export async function initCharacterUI(
   onSelect?: (preset: CharacterSchema) => void
@@ -242,6 +342,11 @@ export async function initCharacterUI(
   const switcherContainer = document.createElement("div");
   switcherContainer.className = "character-switcher";
   panel.appendChild(switcherContainer);
+
+  // カスタムキャラクターカード描画コンテナ（E2）
+  const customListContainer = document.createElement("div");
+  customListContainer.className = "character-panel__custom-section";
+  panel.appendChild(customListContainer);
 
   const listContainer = document.createElement("div");
   panel.appendChild(listContainer);
@@ -266,14 +371,37 @@ export async function initCharacterUI(
       CharacterStore.getActive()?.id ?? null,
       (id) => void switchCharacter(id)
     );
-  // store 変更（init/save/setActive）のたびにセレクターを再描画する。
+
+  // カスタムキャラクター一覧の再描画（E2）。
+  const renderCurrentCustomList = (): void =>
+    renderCustomList(
+      customListContainer,
+      (schema) => void switchCharacter(schema.id),
+      (schema) => {
+        // character-editor の populateEditor を呼ぶ（DOM 上のエディタに流し込む）。
+        const editorRoot = document.querySelector<
+          HTMLElement & {
+            populateEditor?: (
+              schema: CharacterSchema
+            ) => void;
+          }
+        >("#character-editor");
+        if (editorRoot?.populateEditor) {
+          editorRoot.populateEditor(schema);
+        }
+      }
+    );
+
+  // store 変更（init/save/setActive）のたびにセレクターとカスタムリストを再描画する。
   CharacterStore.subscribe(renderCurrentSwitcher);
+  CharacterStore.subscribe(renderCurrentCustomList);
 
   await CharacterStore.init();
 
   const presets = await loadPresets(showError);
   renderPresetList(listContainer, presets, handleSelect);
   renderCurrentSwitcher();
+  renderCurrentCustomList();
 
   // 起動時に復元されたアクティブキャラクターを記録する（診断・要件5.2の復元確認用）。
   console.info(
