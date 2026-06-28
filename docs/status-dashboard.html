@@ -210,6 +210,11 @@
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b>担当を「人」に見立てて表示するようにしました。</b
+            >体制図と作業ボードに役割ペルソナ（司・彩・澪・拓・健）を割り当て、誰が何を持つかを明確化（実在の個人ではなく
+            AI エージェントの役割）。
+          </li>
+          <li>
             <b>作業ボードと見出しフォントの同梱を追加しました。</b
             >「いま誰が何を」のボードを新設。見出しフォント Zen Maru Gothic
             を軽量化してアプリに同梱（オフライン可・外部 CDN 非依存）。
@@ -290,22 +295,61 @@
         <div
           class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
         >
-          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
-          <b>直近完了:</b>
           <span
-            >B（フォント同梱＋CSP）<b>完了</b>。次に A（リスタイル）と
-            C（diary-engine）を2レーン<b>並行で着手</b>します（未開始）。</span
+            class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-warn"
+          ></span>
+          <b>いま:</b>
+          <span
+            >拓 が C（diary-engine）の実装を上げ、健
+            が<b>レビュー中</b>。A（リスタイル・彩）は C
+            の受理後に着手します。</span
           >
         </div>
 
         <!-- 凡例（状態） -->
         <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-          <span><span class="badge badge-warn">進行中</span> 作業中</span>
-          <span><span class="badge badge-info">並行</span> 別レーンで同時</span>
-          <span
-            ><span class="badge badge-mute">待ち</span> 前工程の完了待ち</span
-          >
+          <span><span class="badge badge-warn">レビュー中</span> 受理待ち</span>
           <span><span class="badge badge-ok">完了</span> 受理済み</span>
+          <span><span class="badge badge-mute">次</span> 後続で着手</span>
+        </div>
+
+        <!-- チーム名簿（役割ペルソナ） -->
+        <div
+          class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[#f4efe7] px-4 py-2.5 text-xs"
+        >
+          <b class="text-muted">チーム:</b>
+          <span class="inline-flex items-center gap-1.5"
+            ><span
+              class="grid h-5 w-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-white"
+              >司</span
+            >司 — 統括コンダクター</span
+          >
+          <span class="inline-flex items-center gap-1.5"
+            ><span
+              class="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white"
+              style="background: #946f50"
+              >彩</span
+            >彩 — デザイン実施者</span
+          >
+          <span class="inline-flex items-center gap-1.5"
+            ><span
+              class="grid h-5 w-5 place-items-center rounded-full bg-info text-[10px] font-bold text-white"
+              >澪</span
+            >澪 — デザイン・レビュアー</span
+          >
+          <span class="inline-flex items-center gap-1.5"
+            ><span
+              class="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white"
+              style="background: #6a8caf"
+              >拓</span
+            >拓 — 実装エンジニア</span
+          >
+          <span class="inline-flex items-center gap-1.5"
+            ><span
+              class="grid h-5 w-5 place-items-center rounded-full bg-ok text-[10px] font-bold text-white"
+              >健</span
+            >健 — エンジニア・レビュアー</span
+          >
         </div>
 
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -326,12 +370,10 @@
                 >B</span
               >
               <div class="min-w-0 flex-1">
-                <div class="text-[13px] font-bold">
-                  フォント/アイコンのバンドル＋CSP
-                </div>
+                <div class="text-[13px] font-bold">見出しフォント同梱＋CSP</div>
                 <div class="text-xs text-muted">
-                  担当: コンダクター直。Zen Maru Gothic を woff2 同梱・CSP
-                  font-src 'self'。オフライン可。
+                  <b>司</b> が対応。Zen Maru Gothic を woff2 同梱・CSP font-src
+                  'self'・オフライン可。
                 </div>
               </div>
               <span class="badge badge-ok">完了</span>
@@ -349,10 +391,10 @@
                   UI を mtt- 体裁へリスタイル
                 </div>
                 <div class="text-xs text-muted">
-                  担当: デザイン実施者（B 完了 → 次に着手）
+                  <b>彩</b> が担当予定（レビュー: 澪）。C の受理後に着手。
                 </div>
               </div>
-              <span class="badge badge-info">次・並行</span>
+              <span class="badge badge-mute">次</span>
             </div>
           </div>
 
@@ -380,15 +422,21 @@
                   diary-engine（観察日記）実装
                 </div>
                 <div class="text-xs text-muted">
-                  担当: 実装エージェント（worktree・次に並行着手）
+                  <b>拓</b> が実装（worktree・<code>feat/diary-engine</code>）→
+                  <b>健</b> がレビュー中。受理後に 司 が統合。
                 </div>
               </div>
-              <span class="badge badge-info">次・並行</span>
+              <span class="badge badge-warn">レビュー中</span>
             </div>
             <div class="mt-2 text-xs text-muted">
-              受理はコンダクターと各レビュアーへ集約（作る役は複数並行・受理は一本化）。
+              受理は各レビュアー＋ 司 に集約（作る役は複数並行・受理は一本化）。
             </div>
           </div>
+        </div>
+
+        <div class="mt-3 text-[11px] text-muted">
+          ※ 担当名（司・彩・澪・拓・健）は AI
+          エージェントの役割ペルソナです（実在の個人ではありません）。
         </div>
       </div>
 
@@ -465,7 +513,7 @@
               font-weight="700"
               fill="#fff"
             >
-              統括コンダクター（取りまとめ）
+              統括コンダクター ・ 司
             </text>
           </g>
 
@@ -584,7 +632,7 @@
               font-size="10.5"
               fill="#8a817a"
             >
-              実装エージェント（並行）
+              拓・玲（実装・並行）
             </text>
           </g>
           <g>
@@ -615,7 +663,7 @@
               font-size="10.5"
               fill="#8a817a"
             >
-              独立レビュー
+              健・独立レビュー
             </text>
           </g>
 
@@ -669,7 +717,7 @@
               font-size="10.5"
               fill="#8a817a"
             >
-              Claude Design＋同期（並行）
+              彩・Claude Design＋同期
             </text>
           </g>
           <g>
@@ -700,11 +748,15 @@
               font-size="10.5"
               fill="#8a817a"
             >
-              デザイン独立レビュー
+              澪・デザイン独立レビュー
             </text>
           </g>
         </svg>
         <ul class="tight mt-3">
+          <li>
+            <b>担当（司・彩・澪・拓・玲・健）</b>は AI
+            エージェントの役割ペルソナ（実在の個人ではありません）。各役を「担当者」として固定し、責任の所在を明確にしています。
+          </li>
           <li>
             <b>2つのレーン</b
             >：エンジニアリング（実装）とデザイン。どちらも同じ三役（コンダクター・実施者・レビュアー）。
