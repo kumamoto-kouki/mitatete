@@ -2,24 +2,7 @@
 // テーマ切替トグル DOM テスト — ライト/ダーク切替ロジックと localStorage 永続化を検証する。
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-
-// ─── テーマ操作ヘルパー（main.ts のロジックを抜き出して再現） ───────────────────
-const THEME_STORAGE_KEY = "mitatete-theme";
-type Theme = "light" | "dark";
-
-function applyTheme(theme: Theme): void {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
-  const toggle = document.querySelector<HTMLButtonElement>("#theme-toggle");
-  if (toggle) {
-    toggle.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
-  }
-}
-
-function loadTheme(): Theme {
-  const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "dark" ? "dark" : "light";
-}
+import { THEME_STORAGE_KEY, loadTheme, applyTheme } from "./theme";
 
 // ─── トグルボタンのヘルパー ───────────────────────────────────────────────────
 function createThemeToggle(): HTMLButtonElement {
