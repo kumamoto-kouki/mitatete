@@ -77,6 +77,7 @@ pub fn run() {
             key_manager::set_api_key,
             key_manager::get_api_key_status,
             model_router::send_message,
+            model_router::generate_text,
             model_router::set_active_model,
             model_router::get_active_model,
         ])

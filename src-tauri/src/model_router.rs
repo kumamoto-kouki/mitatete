@@ -612,6 +612,29 @@ pub async fn send_message(
     Ok(res.text)
 }
 
+/// 汎用テキスト生成。呼び出し元が system プロンプトをそのまま供給する汎用エントリ。
+///
+/// `send_message` との違い: `send_message` は `schema_json`（CharacterSchema）から
+/// `build_system_prompt` でキャラ用 system を構築するのに対し、`generate_text` は
+/// 呼び出し元が組み立てた system（diary-engine の観察日記プロンプト等）をそのまま受け取り、
+/// `ModelRouter::generate` へ素通しする。これにより diary-engine 等がキャラ構築ロジックに
+/// 依存せず任意の生成タスクを実行できる。履歴保存は行わない（呼び出し元が orchestrate する）。
+///
+/// `history_json` は `Vec<ChatMessage>` の JSON（不正なら `ModelError::Decode`）。
+#[tauri::command]
+pub async fn generate_text(
+    router: tauri::State<'_, AppModelRouter>,
+    system_prompt: String,
+    history_json: String,
+) -> Result<String, ModelError> {
+    let messages: Vec<ChatMessage> =
+        serde_json::from_str(&history_json).map_err(|e| ModelError::Decode(e.to_string()))?;
+    let res = router
+        .generate(&system_prompt, messages, DEFAULT_MAX_TOKENS)
+        .await?;
+    Ok(res.text)
+}
+
 /// アクティブモデルを切り替える（ユーザー操作、要件1.1）。
 #[tauri::command]
 pub async fn set_active_model(
@@ -978,5 +1001,39 @@ mod tests {
         let active = r.get_active();
         assert_eq!(active.provider, Provider::Gemini);
         assert_eq!(active.model, "gemini-x");
+    }
+
+    // ─── generate_text のグルー（history_json デシリアライズ） ─────────────────
+
+    /// `generate_text` は `history_json` を `Vec<ChatMessage>` へデシリアライズし、失敗を
+    /// `ModelError::Decode` に写す。Tauri State を要するコマンド本体を直接呼べないため、
+    /// 同一の変換ロジック（不正JSON→Decode、および serde 往復）を検証する。
+    fn parse_history(history_json: &str) -> Result<Vec<ChatMessage>, ModelError> {
+        serde_json::from_str(history_json).map_err(|e| ModelError::Decode(e.to_string()))
+    }
+
+    #[test]
+    fn generate_text_invalid_history_json_returns_decode_error() {
+        let err = parse_history("not-json").unwrap_err();
+        assert!(matches!(err, ModelError::Decode(_)));
+    }
+
+    #[test]
+    fn generate_text_history_json_round_trips() {
+        let messages = vec![
+            ChatMessage {
+                role: Role::User,
+                content: "やあ".into(),
+            },
+            ChatMessage {
+                role: Role::Assistant,
+                content: "こんにちは".into(),
+            },
+        ];
+        let json = serde_json::to_string(&messages).unwrap();
+        let back = parse_history(&json).unwrap();
+        assert_eq!(back.len(), 2);
+        assert_eq!(back[0].role, Role::User);
+        assert_eq!(back[1].content, "こんにちは");
     }
 }
