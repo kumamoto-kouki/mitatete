@@ -28,10 +28,16 @@ form?.addEventListener("submit", async (e: SubmitEvent) => {
   const pending = appendMessage("assistant", "…"); // 応答待ち表示（要件4.4）
 
   try {
-    const reply = await sendChatMessage(active, [...conversation], text);
+    const { text: reply, saved } = await sendChatMessage(active, [...conversation], text);
+    // 応答は取得できた → 必ず表示し会話へ反映する（保存可否に関わらず、QA-R1）。
     pending.textContent = reply;
     conversation.push({ role: "user", content: text });
     conversation.push({ role: "assistant", content: reply });
+    if (!saved) {
+      // 履歴保存だけ失敗した場合は、応答は活かしつつ控えめに注記する。
+      pending.title = "この応答の履歴保存に失敗しました（会話は継続できます）。";
+      pending.classList.add("msg--unsaved");
+    }
   } catch (error) {
     // ModelError は { kind, message }。キー未設定は設定へ誘導する（要件3.4）。エラー時は履歴を残さない（6.2）。
     const kind = (error as { kind?: string })?.kind;

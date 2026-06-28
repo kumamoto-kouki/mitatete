@@ -32,7 +32,9 @@ model-router は、ユーザーが選んだ AI モデル（Claude / GPT / Gemini
 - モデル API へのリクエスト送信・応答取得（必要に応じ SSE ストリーミング）
 - API エラーのユーザー向け変換、失敗時に履歴へ記録しない制御
 - API キーのセキュア保存（`key_manager.rs`、OS キーチェーン）と有無の照会
-- 応答成功時の対話履歴記録の **依頼**（storage-manager の `save_history` を呼ぶ）
+- モデル生成の汎用エントリ `generate(system, messages)` の提供（チャット・diary が再利用）。**model-router 自身は対話履歴を保存しない**。
+
+> 実装整合メモ（QA-R2, 2026-06-27）: 当初案は「ModelRouter が成功時に `save_history` を呼ぶ」だったが、`generate` を汎用に保つため、**成功時のみの履歴保存は呼び出し元（フロント `chat.ts`/`main.ts`）が orchestrate**する実装とした（要件6.1/6.2 はフロント側で担保。`chat.test.ts` で検証）。以降の本書の「ModelRouter が save_history」記述はこの方針に読み替える。
 
 ### 境界外
 
@@ -122,7 +124,7 @@ graph TB
   HTTP --> AAPI
   HTTP --> OAPI
   HTTP --> GAPI
-  ROUTER -->|成功時のみ| HIST
+  CHAT -->|成功時のみ| HIST
 ```
 
 - **選択パターン：** Strategy（`ModelProvider` trait）。`ChatRequest` を各 provider の wire 形式へアダプタがマップする。
@@ -189,9 +191,10 @@ sequenceDiagram
     P->>API: HTTP(provider 固有形式)
     API-->>P: 応答
     P-->>R: ChatResponse
-    R->>H: save_history(user+assistant)
     R-->>UI: Ok(応答テキスト)
     UI-->>U: 応答表示
+    UI->>H: save_history(history+user+assistant)  // 成功時のみ・フロントが実施(QA-R2)
+    Note over UI,H: 保存失敗は応答を取り消さず警告のみ(QA-R1)
   end
 ```
 
@@ -223,7 +226,7 @@ sequenceDiagram
 | 4.1,4.2,4.4 | 送信・応答表示・待機表示                    | ModelProvider, send_message, main.ts     | ChatResponse                        | フロー1   |
 | 4.3         | ストリーミング（**MVP範囲外・拡張点予約**） | ModelProvider 拡張点, model:stream-chunk | send_streaming（将来）              | —         |
 | 5.1–5.3     | エラーハンドリング                          | ModelRouter, ModelError                  | Result<\_, ModelError>              | フロー2   |
-| 6.1–6.2     | 履歴記録（成功時のみ）                      | ModelRouter                              | save_history 依頼                   | フロー1,2 |
+| 6.1–6.2     | 履歴記録（成功時のみ）                      | chat.ts / main.ts（フロント）            | save_history（成功時のみ）          | フロー1,2 |
 
 ## コンポーネントとインターフェース
 
@@ -298,17 +301,18 @@ pub struct ModelRouter { /* active: Provider+model, providers, http, retry polic
 impl ModelRouter {
     pub fn set_active(&self, provider: Provider, model: String);   // ユーザー操作のみ（要件1.3）
     pub fn get_active(&self) -> (Provider, String);
-    /// プロンプト構築 → キー取得 → provider.send → 成功時のみ save_history。
+    /// 汎用生成: キー取得 → provider.send（retry）→ 応答返却。**履歴保存はしない**。
     /// キー未設定なら ApiKeyMissing を返し送信しない（要件3.4）。
-    /// history は呼び出し元が供給する過去ターン。ChatRequest.messages = history + 新規 message。
-    pub async fn route(&self, character: &PromptCharacter, history: &[ChatMessage],
-                       message: &str) -> Result<ChatResponse, ModelError>;
+    /// system は呼び出し元が供給（チャットは build_system_prompt、diary は日記プロンプト）。
+    /// 成功時の対話履歴保存はフロント（chat.ts/main.ts）が行う（QA-R2）。
+    pub async fn generate(&self, system_prompt: &str, messages: Vec<ChatMessage>,
+                          max_tokens: u32) -> Result<ChatResponse, ModelError>;
 }
 ```
 
 - 入力：原則値は `PromptCharacter.principle_defaults` に含む（プロンプト構築に必要なフィールドのみのミラー、データモデル節参照）。`history` は model-router が読まず呼び出し元から受領する（境界外の責務）。
 - リトライ：`ModelError` が retryable（429/5xx/529）の場合のみ指数バックオフ（上限回数）。不可エラーは即時返却。
-- 履歴記録：`route` が `Ok` を返す直前にのみ `save_history` を呼ぶ（要件6.1）。エラー・キャンセル・キー未設定の経路では呼ばない（要件5.2/6.2）。
+- 履歴記録：`generate` は履歴を保存しない。フロント（chat.ts）が応答成功時のみ `save_history` を呼ぶ（要件6.1）。送信失敗・キー未設定では `send_message` が throw し save に到達しない（要件5.2/6.2）。保存失敗は応答を取り消さず警告にとどめる（QA-R1）。
 
 ### バックエンド：key_manager（要件 3）
 
@@ -397,7 +401,8 @@ pub struct PromptCharacter {
 
 1. `build_system_prompt`：`PromptCharacter` 入力で `aiDisclosure` が常に含まれる／name・tone・原則ガイドラインが反映される／空 aiDisclosure でも固定文言にフォールバック（要件2.2,2.3）。`schema_json`→`PromptCharacter` のデシリアライズ往復も検証。
 2. ClaudeClient：`HttpExecutor` モックで `x-api-key`・`anthropic-version`・`system` トップレベル・`max_tokens` を含むリクエストを送る／`content[].text` を連結（要件4.1,4.2）。受領 `history` ＋新規 message が `messages` に反映されること。
-3. ModelRouter：キー未設定で `ApiKeyMissing` を返し `send`/`save_history` を呼ばない（要件3.4）。成功時のみ `save_history` を呼ぶ（要件6.1）。エラー時は `save_history` を呼ばない（要件5.2,6.2）。retryable で再試行・不可で即返却（要件5.3）。
+3. ModelRouter：キー未設定で `ApiKeyMissing` を返し送信しない（要件3.4）。retryable で再試行・不可で即返却（要件5.3）。履歴保存はしない。
+   成功時のみの履歴保存・送信失敗時の非保存・保存失敗時の応答継続は frontend `chat.test.ts` で検証（要件6.1/6.2, QA-R1）。
 4. key_manager：保存→照会で有無が反映／`get_api_key_status` が平文を返さない（要件3.3）。
 
 > ストリーミング（要件4.3）は MVP 範囲外のためテスト対象外。拡張点追加時に SSE チャンク転送のテストを足す。
@@ -405,7 +410,7 @@ pub struct PromptCharacter {
 ### 統合テスト
 
 1. `set_active_model` → `get_active_model` がユーザー選択を反映し、自動変更されない（要件1.1,1.3）。
-2. `send_message`（モック provider）→ 応答テキスト返却＋履歴記録（要件4.2,6.1）。
+2. `send_message`（モック provider）→ 応答テキスト返却（要件4.2）。成功時の履歴保存は frontend `chat.test.ts`（要件6.1）。
 
 ### E2E（手動・M3）
 

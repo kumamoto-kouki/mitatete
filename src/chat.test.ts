@@ -37,9 +37,9 @@ describe("sendChatMessage (要件 4.1, 4.2, 6.1, 6.2)", () => {
     });
     const history: ChatTurn[] = [{ role: "assistant", content: "前ターン" }];
 
-    const text = await sendChatMessage(active, history, "やあ");
+    const result = await sendChatMessage(active, history, "やあ");
 
-    expect(text).toBe("こんにちは");
+    expect(result).toEqual({ text: "こんにちは", saved: true });
     // send_message に schema/history/message を渡す。
     expect(invokeMock).toHaveBeenCalledWith(
       "send_message",
@@ -52,6 +52,20 @@ describe("sendChatMessage (要件 4.1, 4.2, 6.1, 6.2)", () => {
     expect(data).toHaveLength(3);
     expect(data[1]).toEqual({ role: "user", content: "やあ" });
     expect(data[2]).toEqual({ role: "assistant", content: "こんにちは" });
+  });
+
+  it("send成功×save失敗：応答は返し例外で握り潰さない（QA-R1）", async () => {
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "send_message") return Promise.resolve("こんにちは");
+      if (cmd === "save_history")
+        return Promise.reject(new Error("disk full"));
+      return Promise.resolve();
+    });
+
+    // 例外を投げず、応答テキストは返り、saved=false で保存失敗を知らせる。
+    const result = await sendChatMessage(active, [], "やあ");
+    expect(result.text).toBe("こんにちは");
+    expect(result.saved).toBe(false);
   });
 
   it("送信失敗時は例外を伝播し、履歴を保存しない（要件6.2）", async () => {

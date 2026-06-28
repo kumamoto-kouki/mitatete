@@ -185,6 +185,12 @@ body {
   color: #b00020;
 }
 
+/* 応答は成功したが履歴保存だけ失敗した場合の控えめな注記。 */
+.msg--unsaved {
+  border-left: 2px solid #d9a441;
+  padding-left: 6px;
+}
+
 /* ===== カスタムキャラクター作成フォーム ===== */
 .character-editor {
   padding: 8px 16px;
