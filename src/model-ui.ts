@@ -15,10 +15,34 @@ interface ApiKeyStatus {
   has_key: boolean;
 }
 
-const PROVIDERS: { id: Provider; label: string; defaultModel: string }[] = [
-  { id: "claude", label: "Claude (Anthropic)", defaultModel: "claude-opus-4-8" },
-  { id: "openai", label: "GPT (OpenAI)", defaultModel: "gpt-4o" },
-  { id: "gemini", label: "Gemini (Google)", defaultModel: "gemini-1.5-pro" },
+const PROVIDERS: {
+  id: Provider;
+  label: string;
+  abbr: string;
+  desc: string;
+  defaultModel: string;
+}[] = [
+  {
+    id: "claude",
+    label: "Claude (Anthropic)",
+    abbr: "C",
+    desc: "落ち着いて寄り添う。",
+    defaultModel: "claude-opus-4-8",
+  },
+  {
+    id: "openai",
+    label: "GPT (OpenAI)",
+    abbr: "G",
+    desc: "広い知識と柔軟な対話。",
+    defaultModel: "gpt-4o",
+  },
+  {
+    id: "gemini",
+    label: "Gemini (Google)",
+    abbr: "Gm",
+    desc: "マルチモーダル・高速。",
+    defaultModel: "gemini-1.5-pro",
+  },
 ];
 
 /** API キー有無の一覧を取得して設定状態の表示を更新する。 */
@@ -38,56 +62,70 @@ async function refreshKeyStatus(
 
 /**
  * モデル選択・API キー設定パネルを #model-panel に構築する。
+ * モデル選択は mtt-model カード UI（W-2）。
  */
 export async function initModelUI(): Promise<void> {
   const root = document.querySelector<HTMLElement>("#model-panel");
   if (!root) return;
   root.replaceChildren();
 
-  // ── モデル選択 ──
-  const select = document.createElement("select");
-  select.className = "model-ui__select";
-  select.setAttribute("aria-label", "モデル選択");
-  for (const p of PROVIDERS) {
-    const o = document.createElement("option");
-    o.value = p.id;
-    o.textContent = p.label;
-    select.appendChild(o);
-  }
-  const modelInput = document.createElement("input");
-  modelInput.type = "text";
-  modelInput.className = "model-ui__model";
-  modelInput.setAttribute("aria-label", "モデルID");
-
-  const applyProvider = (provider: Provider): void => {
-    const def = PROVIDERS.find((p) => p.id === provider)!.defaultModel;
-    if (!modelInput.value) modelInput.value = def;
-  };
-
-  const switchModel = (): void => {
-    const selection: ModelSelection = {
-      provider: select.value as Provider,
-      model: modelInput.value.trim(),
-    };
-    void invoke("set_active_model", { selection }).catch((e) =>
-      console.error("モデル切替に失敗しました。", e)
-    );
-  };
-
-  select.addEventListener("change", () => {
-    modelInput.value = PROVIDERS.find((p) => p.id === select.value)!.defaultModel;
-    switchModel();
-  });
-  modelInput.addEventListener("change", switchModel);
-
-  // 起動時に現在のアクティブモデルを反映する。
+  // ── モデル選択カード ──
+  let activeProvider: Provider = "claude";
   try {
     const active = await invoke<ModelSelection>("get_active_model");
-    select.value = active.provider;
-    modelInput.value = active.model;
+    activeProvider = active.provider;
   } catch {
-    select.value = "claude";
-    applyProvider("claude");
+    // Tauri 未実行時はデフォルト
+  }
+
+  const modelSection = document.createElement("div");
+  modelSection.className = "model-ui__cards";
+
+  const cardButtons = new Map<Provider, HTMLButtonElement>();
+
+  const selectProvider = (provider: Provider): void => {
+    activeProvider = provider;
+    for (const [id, btn] of cardButtons) {
+      btn.classList.toggle("is-selected", id === provider);
+    }
+    const def = PROVIDERS.find((p) => p.id === provider)!.defaultModel;
+    void invoke("set_active_model", {
+      selection: { provider, model: def },
+    }).catch((e) => console.error("モデル切替に失敗しました。", e));
+  };
+
+  for (const p of PROVIDERS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = p.id === activeProvider ? "mtt-model is-selected" : "mtt-model";
+    btn.dataset.provider = p.id;
+
+    const icon = document.createElement("span");
+    icon.className = "mtt-model__icon";
+    icon.textContent = p.abbr;
+
+    const body = document.createElement("span");
+    body.className = "mtt-model__body";
+
+    const name = document.createElement("span");
+    name.className = "mtt-model__name";
+    const nameText = document.createTextNode(p.label);
+    name.appendChild(nameText);
+
+    const desc = document.createElement("span");
+    desc.className = "mtt-model__desc";
+    desc.textContent = p.desc;
+
+    body.append(name, desc);
+
+    const check = document.createElement("span");
+    check.className = "mtt-model__check";
+    check.setAttribute("aria-hidden", "true");
+
+    btn.append(icon, body, check);
+    btn.addEventListener("click", () => selectProvider(p.id));
+    cardButtons.set(p.id, btn);
+    modelSection.appendChild(btn);
   }
 
   // ── API キー設定（provider ごと） ──
@@ -129,7 +167,7 @@ export async function initModelUI(): Promise<void> {
     keyList.appendChild(row);
   }
 
-  root.append(select, modelInput, keyList);
+  root.append(modelSection, keyList);
   await refreshKeyStatus(statusLabels);
 }
 

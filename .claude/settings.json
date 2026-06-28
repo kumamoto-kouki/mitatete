@@ -41,6 +41,9 @@
       "Bash(git merge:*)",
       "Bash(git stash:*)",
       "Bash(git restore:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git cat-file:*)",
+      "Bash(git grep:*)",
       "Bash(bash scripts/swarm-up.sh:*)",
       "Bash(scripts/swarm-up.sh:*)",
       "Bash(./scripts/swarm-up.sh:*)",
@@ -56,7 +59,6 @@
     ],
     "deny": [
       "Bash(rm -rf:*)",
-      "Bash(git reset --hard:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)"
     ],

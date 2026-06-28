@@ -60,11 +60,20 @@ export async function loadPresets(
   return presets;
 }
 
+/** キャラクター ID からアバター配色クラスを決める（循環割り当て）。 */
+const AVATAR_COLORS = ["mtt-avt--brown", "mtt-avt--green", "mtt-avt--blue"] as const;
+function avatarColor(id: string): string {
+  let hash = 0;
+  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
 /**
  * プリセット一覧を container に描画する。(要件 1.1, 1.4)
  *
  * 各項目はクリック可能で、選択時に onSelect(preset) を発火する。選択項目には
  * 選択状態のスタイル（.is-selected）を付与する。
+ * 各カードは mtt-char + mtt-avt アバター体裁（D-1）。
  */
 export function renderPresetList(
   container: HTMLElement,
@@ -82,24 +91,43 @@ export function renderPresetList(
   }
 
   const list = document.createElement("ul");
-  list.className = "character-panel__list";
+  list.className = "character-panel__list mtt-chars";
 
   for (const preset of presets) {
     const item = document.createElement("li");
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "character-panel__item";
+    // 後方互換: character-panel__item (E2E セレクター) + mtt-char (新体裁)
+    button.className = "character-panel__item mtt-char";
     button.dataset.presetId = preset.id;
 
+    // アバター
+    const avt = document.createElement("span");
+    avt.className = `mtt-avt ${avatarColor(preset.id)}`;
+    avt.setAttribute("aria-hidden", "true");
+    // プレースホルダー: 名前頭文字
+    avt.textContent = preset.name.charAt(0);
+
+    // ボディ
+    const body = document.createElement("span");
+    body.className = "mtt-char__body";
+
     const name = document.createElement("span");
-    name.className = "character-panel__name";
+    name.className = "character-panel__name mtt-char__name";
     name.textContent = preset.name;
 
-    const tone = document.createElement("span");
-    tone.className = "character-panel__tone";
-    tone.textContent = preset.tone;
+    const trait = document.createElement("span");
+    trait.className = "character-panel__tone mtt-char__trait";
+    trait.textContent = preset.tone;
 
-    button.append(name, tone);
+    body.append(name, trait);
+
+    // 選択チェック
+    const pick = document.createElement("span");
+    pick.className = "mtt-char__pick";
+    pick.setAttribute("aria-hidden", "true");
+
+    button.append(avt, body, pick);
     button.addEventListener("click", () => {
       // 選択状態のハイライトを更新する。
       for (const el of list.querySelectorAll(".character-panel__item")) {
