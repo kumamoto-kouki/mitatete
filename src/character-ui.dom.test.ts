@@ -117,6 +117,53 @@ describe("renderCustomList (E2: カスタムカード描画・選択・編集)",
     document.body.removeChild(container);
   });
 
+  it("削除ボタンが aria-label 付きで描画される", async () => {
+    invokeMock.mockResolvedValueOnce([JSON.stringify(customA)]);
+    await CharacterStore.init();
+
+    const container = document.createElement("div");
+    renderCustomList(container, vi.fn(), vi.fn(), vi.fn());
+
+    const deleteBtn = container.querySelector<HTMLButtonElement>(
+      ".character-panel__delete-btn"
+    );
+    expect(deleteBtn).not.toBeNull();
+    expect(deleteBtn?.getAttribute("aria-label")).toContain("削除");
+  });
+
+  it("削除ボタンクリックで onDelete が呼ばれ、カード選択（onSelect）は起きない", async () => {
+    invokeMock.mockResolvedValueOnce([JSON.stringify(customA)]);
+    await CharacterStore.init();
+
+    const onDelete = vi.fn();
+    const onSelect = vi.fn();
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    renderCustomList(container, onSelect, vi.fn(), onDelete);
+
+    const deleteBtn = container.querySelector<HTMLButtonElement>(
+      ".character-panel__delete-btn"
+    )!;
+    deleteBtn.click();
+
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: "custom-a" }));
+    expect(onSelect).not.toHaveBeenCalled();
+    document.body.removeChild(container);
+  });
+
+  it("onDelete 未指定でも削除ボタンのクリックで例外が出ない", async () => {
+    invokeMock.mockResolvedValueOnce([JSON.stringify(customA)]);
+    await CharacterStore.init();
+
+    const container = document.createElement("div");
+    renderCustomList(container, vi.fn(), vi.fn());
+
+    const deleteBtn = container.querySelector<HTMLButtonElement>(
+      ".character-panel__delete-btn"
+    )!;
+    expect(() => deleteBtn.click()).not.toThrow();
+  });
+
   it("カスタムが複数ある場合、重複なく全件描画される", async () => {
     const customB: CharacterSchema = { ...customA, id: "custom-b", name: "カスタムB" };
     await CharacterStore.save(customA);

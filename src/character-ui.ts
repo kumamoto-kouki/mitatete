@@ -233,16 +233,18 @@ export function renderSwitcher(
  * カスタムキャラクター一覧を container に描画する。(E2 カスタムカード表示・回帰解消)
  *
  * CharacterStore.getAll() の !isPreset なキャラを mtt-char カードで描画する。
- * 各カードに「選択」クリックと「編集」ボタンを持つ。
+ * 各カードに「選択」クリックと「編集」「削除」ボタンを持つ。
  *
  * @param container 描画先コンテナ
  * @param onSelect カスタムキャラクター選択時コールバック
  * @param onEdit カスタムキャラクター編集ボタン押下時コールバック
+ * @param onDelete カスタムキャラクター削除ボタン押下時コールバック（任意）
  */
 export function renderCustomList(
   container: HTMLElement,
   onSelect: (schema: CharacterSchema) => void,
-  onEdit: (schema: CharacterSchema) => void
+  onEdit: (schema: CharacterSchema) => void,
+  onDelete?: (schema: CharacterSchema) => void
 ): void {
   const customs = CharacterStore.getAll().filter((c) => !c.isPreset);
 
@@ -308,6 +310,20 @@ export function renderCustomList(
       onEdit(schema);
     });
 
+    // 削除ボタン
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "character-panel__delete-btn";
+    deleteBtn.setAttribute("aria-label", `${schema.name} を削除`);
+    const trashIcon = document.createElement("i");
+    trashIcon.setAttribute("data-lucide", "trash-2");
+    deleteBtn.appendChild(trashIcon);
+
+    deleteBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // カード選択と重ならないようにする
+      onDelete?.(schema);
+    });
+
     card.append(avt, body, pick);
     card.addEventListener("click", () => {
       // 選択状態の更新（カスタムリスト内）
@@ -317,7 +333,7 @@ export function renderCustomList(
       onSelect(schema);
     });
 
-    item.append(card, editBtn);
+    item.append(card, editBtn, deleteBtn);
     list.appendChild(item);
   }
 
@@ -407,6 +423,17 @@ export async function initCharacterUI(
         if (editorRoot?.populateEditor) {
           editorRoot.populateEditor(schema);
         }
+      },
+      (schema) => {
+        // 削除は取り返しがつかないので確認を取る。承認時のみ store から削除（store 変更で一覧再描画）。
+        const ok =
+          typeof window !== "undefined" && typeof window.confirm === "function"
+            ? window.confirm(`「${schema.name}」を削除しますか？この操作は元に戻せません。`)
+            : true;
+        if (ok)
+          void CharacterStore.delete(schema.id).catch((error) =>
+            showError("削除に失敗しました。", error)
+          );
       }
     );
 

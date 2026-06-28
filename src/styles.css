@@ -775,6 +775,40 @@ body {
   height: 14px;
 }
 
+/* 削除ボタン（破壊的操作は危険色でホバー明示） */
+.character-panel__delete-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.character-panel__delete-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.character-panel__delete-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.character-panel__delete-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
 /* エディタ編集モード表示 */
 .editor__mode-label {
   margin: 0 0 var(--space-1);

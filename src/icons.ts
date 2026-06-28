@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   Pencil,
+  Trash2,
 } from "lucide";
 
 /**
@@ -35,6 +36,7 @@ export function initIcons(): void {
       Sun,
       Moon,
       Pencil,
+      Trash2,
     },
   });
 }
