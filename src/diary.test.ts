@@ -99,6 +99,24 @@ describe("generateTodaysDiary", () => {
     expect(invokeMock.mock.calls.some((c) => c[0] === "save_diary")).toBe(false);
   });
 
+  it("read_history が reject：no_history へ縮退し generate_text/save_diary を呼ばない（守屋レビュー W-2・I/O 失敗の fail-safe）", async () => {
+    getActiveMock.mockReturnValue(activeOn);
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === "read_history")
+        return Promise.reject(new Error("io error: read failed"));
+      return Promise.resolve();
+    });
+
+    const { generateTodaysDiary } = await import("./diary");
+    const result = await generateTodaysDiary();
+
+    // 失敗は「空履歴」と同等扱い（throw を握り潰さず no_history で返す）
+    expect(result.status).toBe("no_history");
+    expect(invokeMock.mock.calls.some((c) => c[0] === "read_history")).toBe(true);
+    expect(invokeMock.mock.calls.some((c) => c[0] === "generate_text")).toBe(false);
+    expect(invokeMock.mock.calls.some((c) => c[0] === "save_diary")).toBe(false);
+  });
+
   it("正常時：生成→表示→save_diary を内容改変なしで呼ぶ（要件 5.1, 5.2, 5.4）", async () => {
     getActiveMock.mockReturnValue(activeOn);
     const history = [

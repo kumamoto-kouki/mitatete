@@ -93,11 +93,14 @@ describe("buildDiaryPrompt (要件 4.1〜4.4)", () => {
   );
 
   it.each(levels)(
-    "詳細度 %s: 評価・断定の禁止制約を含む（要件 4.1）",
+    "詳細度 %s: 評価・断定・感情模倣の禁止制約を個別に含む（要件 4.1）",
     (level) => {
       const prompt = buildDiaryPrompt("テストキャラ", level);
-      // 観察のみ・評価・断定禁止の制約が含まれること
-      expect(prompt).toMatch(/評価|断定|観察/);
+      // 守屋レビュー: /評価|断定|観察/ は「観察」だけで通る偽陰性 →
+      // 禁止制約（評価・断定・感情）を個別に明示検証する。
+      expect(prompt).toContain("評価");
+      expect(prompt).toContain("断定");
+      expect(prompt).toContain("感情"); // 感情の模倣・感情的表現の禁止
     }
   );
 
