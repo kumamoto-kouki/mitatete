@@ -72,14 +72,19 @@ function avatarColor(id: string): string {
 /**
  * プリセット一覧を container に描画する。(要件 1.1, 1.4)
  *
- * 各項目はクリック可能で、選択時に onSelect(preset) を発火する。選択項目には
- * 選択状態のスタイル（.is-selected）を付与する。
+ * 各項目はクリック可能で、選択時に onSelect(preset) を発火する。選択状態（.is-selected）は
+ * **唯一の真実 activeId から導出**する（描画ごとに再計算）。クリック起点の即時トグルも残すが、
+ * 確定的な選択状態は store 変更時の再描画で activeId に揃う。これによりプリセット↔カスタムを
+ * 跨いだ選択ハイライトの残留（M2 回帰）を防ぐ。
  * 各カードは mtt-char + mtt-avt アバター体裁（D-1）。
+ *
+ * @param activeId 現在アクティブなキャラクターID。一致するプリセットに .is-selected を付ける。
  */
 export function renderPresetList(
   container: HTMLElement,
   presets: CharacterSchema[],
-  onSelect: (preset: CharacterSchema) => void
+  onSelect: (preset: CharacterSchema) => void,
+  activeId: string | null = null
 ): void {
   container.replaceChildren();
 
@@ -101,6 +106,8 @@ export function renderPresetList(
     // 後方互換: character-panel__item (E2E セレクター) + mtt-char (新体裁)
     button.className = "character-panel__item mtt-char";
     button.dataset.presetId = preset.id;
+    // 選択状態は activeId から導出する（描画ごとに再計算＝残留しない）。
+    if (preset.id === activeId) button.classList.add("is-selected");
 
     // アバター
     const avt = document.createElement("span");
@@ -364,6 +371,17 @@ export async function initCharacterUI(
   // 別ウィンドウ放送を接続してから store を復元する（init の初回通知も放送される）。
   connectCrossWindow();
 
+  // プリセット一覧の再描画（選択ハイライトは activeId から導出・M2）。
+  // 読み込んだプリセットは loadPresets 後に格納し、store 変更のたびに再描画する。
+  let loadedPresets: CharacterSchema[] = [];
+  const renderCurrentPresetList = (): void =>
+    renderPresetList(
+      listContainer,
+      loadedPresets,
+      handleSelect,
+      CharacterStore.getActive()?.id ?? null
+    );
+
   const renderCurrentSwitcher = (): void =>
     renderSwitcher(
       switcherContainer,
@@ -400,8 +418,10 @@ export async function initCharacterUI(
 
   await CharacterStore.init();
 
-  const presets = await loadPresets(showError);
-  renderPresetList(listContainer, presets, handleSelect);
+  // プリセット読込後に購読を登録する（loadedPresets 確定後に再描画させるため）。
+  loadedPresets = await loadPresets(showError);
+  CharacterStore.subscribeChange(renderCurrentPresetList);
+  renderCurrentPresetList();
   renderCurrentSwitcher();
   renderCurrentCustomList();
 

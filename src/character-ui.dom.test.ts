@@ -2,7 +2,7 @@
 // E2: renderCustomList DOM テスト — カスタムカード描画・選択・編集ボタンの動作を検証する。
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderCustomList } from "./character-ui";
+import { renderCustomList, renderPresetList } from "./character-ui";
 import { CharacterStore } from "./character-store";
 import { AI_DISCLOSURE, type CharacterSchema } from "./character-validator";
 
@@ -155,5 +155,39 @@ describe("renderCustomList (E2: カスタムカード描画・選択・編集)",
     const heading = container.querySelector(".character-panel__section-heading");
     expect(heading).not.toBeNull();
     expect(heading?.textContent).toContain("あなたのキャラクター");
+  });
+});
+
+describe("renderPresetList の選択ハイライト (M2: activeId から導出・残留しない)", () => {
+  const presetY: CharacterSchema = { ...presetX, id: "preset-y", name: "プリセットY" };
+
+  function selectedIds(container: HTMLElement): string[] {
+    return [...container.querySelectorAll(".character-panel__item.is-selected")].map(
+      (el) => (el as HTMLElement).dataset.presetId ?? ""
+    );
+  }
+
+  it("activeId に一致するプリセットだけに is-selected が付く", () => {
+    const container = document.createElement("div");
+    renderPresetList(container, [presetX, presetY], vi.fn(), "preset-x");
+
+    expect(selectedIds(container)).toEqual(["preset-x"]);
+  });
+
+  it("activeId=null なら誰も選択されない", () => {
+    const container = document.createElement("div");
+    renderPresetList(container, [presetX, presetY], vi.fn(), null);
+
+    expect(selectedIds(container)).toEqual([]);
+  });
+
+  it("別の activeId で再描画すると前の選択が残らない（M2 回帰ガード）", () => {
+    const container = document.createElement("div");
+    renderPresetList(container, [presetX, presetY], vi.fn(), "preset-x");
+    expect(selectedIds(container)).toEqual(["preset-x"]);
+
+    // カスタム選択に切り替わった想定（プリセットに一致しない activeId）で再描画。
+    renderPresetList(container, [presetX, presetY], vi.fn(), "custom-a");
+    expect(selectedIds(container)).toEqual([]); // プリセット側のハイライトは残留しない
   });
 });
