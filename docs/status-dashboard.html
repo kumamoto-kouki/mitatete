@@ -363,8 +363,9 @@
         <!-- 現在＋レーン凡例（1行で要点） -->
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
-            <span class="h-2.5 w-2.5 rounded-full bg-ok"></span>
-            進行中タスクなし（E2 カスタムキャラ表示＋編集を受理・統合）
+            <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
+            繰越4件（M1/M2/L1/削除UI）を実装し、🛡️
+            守屋の独立レビュー（受理）待ち
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -472,7 +473,11 @@
             >
               🔨 進行中
             </div>
-            <div class="p-2 text-center text-[11px] text-muted">—</div>
+            <div class="p-2 text-[10px] leading-relaxed text-muted">
+              <div class="mb-1 text-center">—</div>
+              タスクは1件ずつ着手→実装→コミットし、直ちに「レビュー中（受理待ち）」へ送るため、この列は普段は空です（仕掛り在庫を持たない＝WIP
+              を絞る運用）。
+            </div>
           </div>
           <!-- レビュー中 -->
           <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
@@ -482,7 +487,79 @@
             >
               🔍 レビュー中
             </div>
-            <div class="p-2 text-center text-[11px] text-muted">—</div>
+            <div class="space-y-1.5 p-2">
+              <!-- M1 -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="非アクティブなキャラの編集/削除で一覧が更新されない不具合 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >M1</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >一覧更新</span
+                >
+                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
+                  >👨🏼‍💼👨🏼‍🔬</span
+                >
+              </div>
+              <!-- M2 -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="プリセット↔カスタムの選択ハイライト残留 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >M2</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >選択ハイライト</span
+                >
+                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
+                  >👨🏼‍💼👨🏼‍🔬</span
+                >
+              </div>
+              <!-- L1 -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="編集保存でアバターが失われる/化けるデータ損失 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >L1</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >visual復元</span
+                >
+                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
+                  >👨🏼‍💼👨🏼‍🔬</span
+                >
+              </div>
+              <!-- 削除UI -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="カスタムキャラ削除ボタン＋確認ダイアログ配線 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >UI</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >削除UI</span
+                >
+                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
+                  >👨🏼‍💼👨🏼‍🔬</span
+                >
+              </div>
+              <div class="px-1 pt-0.5 text-[10px] text-muted">
+                実装済み・🛡️ 守屋の独立レビュー（受理判定）待ち
+              </div>
+            </div>
           </div>
           <!-- 完了・受理 -->
           <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
