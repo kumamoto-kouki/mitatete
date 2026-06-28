@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mitatete 開発ダッシュボード — PDCA / ループエンジニアリング</title>
+    <title>Mitatete 開発ダッシュボード</title>
     <style>
       :root {
         --bg: #faf8f4;
@@ -16,6 +16,8 @@
         --warn: #d9a441;
         --bad: #b00020;
         --blue: #3a6ea5;
+        --new: #2f6f9f;
+        --new-bg: #eaf3fa;
         --p: #6a8caf;
       }
       * {
@@ -27,7 +29,7 @@
         color: var(--fg);
         font-family:
           system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-        line-height: 1.6;
+        line-height: 1.65;
       }
       .wrap {
         max-width: 1040px;
@@ -35,18 +37,29 @@
         padding: 24px 20px 64px;
       }
       header h1 {
-        font-size: 22px;
-        margin: 0 0 2px;
+        font-size: 23px;
+        margin: 0 0 3px;
       }
       header .sub {
         color: var(--muted);
         font-size: 13px;
       }
+      header .sub b {
+        color: var(--fg);
+      }
       h2 {
         font-size: 16px;
-        margin: 32px 0 12px;
+        margin: 34px 0 12px;
         padding-bottom: 6px;
         border-bottom: 2px solid var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h2 .note {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--muted);
       }
       .grid {
         display: grid;
@@ -73,6 +86,15 @@
       .card h3 {
         margin: 0 0 8px;
         font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      /* この版で更新された箇所を視覚的に強調（左に青帯） */
+      .is-updated {
+        border-left: 4px solid var(--new);
+        background: linear-gradient(90deg, var(--new-bg), var(--card) 60%);
       }
       table {
         width: 100%;
@@ -113,6 +135,11 @@
       .b-blue {
         background: var(--blue);
       }
+      /* 「この版で更新」を示すピル */
+      .b-upd {
+        background: var(--new);
+        font-weight: 600;
+      }
       .bar {
         height: 8px;
         background: var(--line);
@@ -132,6 +159,47 @@
         font-size: 12px;
         color: var(--muted);
         font-weight: 400;
+      }
+      /* 更新ハイライトのバナー */
+      .changelog {
+        background: var(--new-bg);
+        border: 1px solid #cfe2f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-top: 16px;
+      }
+      .changelog h2 {
+        border: none;
+        margin: 0 0 8px;
+        padding: 0;
+        color: var(--new);
+      }
+      .changelog ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .changelog li {
+        margin: 3px 0;
+      }
+      .changelog .prev {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      /* バッジ凡例 */
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--muted);
+        align-items: center;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
       }
       .pdca {
         display: flex;
@@ -154,7 +222,7 @@
         min-width: 58px;
       }
       .tag {
-        font-size: 11px;
+        font-size: 12px;
         color: var(--muted);
       }
       ul.tight {
@@ -168,6 +236,22 @@
       .l-tier {
         border-left: 4px solid var(--p);
         padding-left: 10px;
+      }
+      /* 用語集 */
+      dl.glossary {
+        margin: 0;
+        font-size: 13px;
+      }
+      dl.glossary dt {
+        font-weight: 700;
+        margin-top: 10px;
+      }
+      dl.glossary dt:first-child {
+        margin-top: 0;
+      }
+      dl.glossary dd {
+        margin: 2px 0 0;
+        color: #5b534c;
       }
       .foot {
         color: var(--muted);
@@ -189,142 +273,205 @@
       <header>
         <h1>Mitatete 開発ダッシュボード</h1>
         <div class="sub">
-          スナップショット: 2026-06-27 ／ ブランチ
-          <code>chore/sdlc-bootstrap</code> ／ 体制:
-          コンダクター・オーケストレーション（PDCA / ループエンジニアリング）
+          スナップショット: <b>2026-06-28</b> ／ ブランチ
+          <code>chore/sdlc-bootstrap</code> ／ 進め方:
+          計画→実行→確認→改善のくり返し（PDCA）で、AI が下書き・人が承認
         </div>
       </header>
 
-      <!-- ===== 健全性 KPI ===== -->
-      <h2>健全性（本日再実行の証拠）</h2>
-      <div class="grid cols-3">
-        <div class="card">
-          <div class="kpi">81 <small>Rust テスト pass</small></div>
-          <div class="tag">cargo test ／ insta スナップショット +1・警告0</div>
+      <!-- ===== ① この版の更新（変更点を毎回ここで明示） ===== -->
+      <section class="changelog">
+        <h2>🔵 この版の更新（2026-06-28）</h2>
+        <ul>
+          <li>
+            <b>実アプリの自動テスト（E2E）が動くようになりました。</b
+            >アプリを実際に起動して画面が出るかを機械が確認します（<code
+              >pnpm e2e</code
+            >
+            → 1件 合格）。
+          </li>
+          <li>
+            <b>ダッシュボードを読みやすく作り直しました。</b
+            >専門用語をふだんの言葉に書き換え、巻末に「用語集」を追加。
+          </li>
+          <li>
+            <b>更新箇所が一目でわかるようにしました。</b>変わったカードに
+            <span class="badge b-upd">更新 6/28</span>
+            を付け、左を青帯で強調しています。
+          </li>
+        </ul>
+        <div class="prev">
+          以降、ダッシュボードを更新するたびに、ここに日付つきで「何が変わったか」を残します（古い版との差分がわかるように）。
         </div>
-        <div class="card">
-          <div class="kpi">61 <small>frontend テスト pass</small></div>
-          <div class="tag">vitest ／ happy-dom DOM +1・tsc 0・build OK</div>
-        </div>
-        <div class="card">
-          <div class="kpi">0 <small>semgrep findings</small></div>
-          <div class="tag">CSP 設定済 ／ 実機 smoke 違反0</div>
+      </section>
+
+      <!-- ===== 凡例 ===== -->
+      <h2>色の意味（凡例）</h2>
+      <div class="card">
+        <div class="legend">
+          <span><span class="badge b-ok">緑</span> 完了・問題なし</span>
+          <span><span class="badge b-warn">黄</span> 途中・要注意</span>
+          <span><span class="badge b-bad">赤</span> 未着手・最優先</span>
+          <span><span class="badge b-mute">灰</span> これから</span>
+          <span><span class="badge b-upd">青</span> この版で更新した箇所</span>
         </div>
       </div>
 
-      <!-- ===== 検証自動化 ===== -->
-      <h2>検証自動化ライブラリ（導入状況）</h2>
+      <!-- ===== 健全性 KPI ===== -->
+      <h2>
+        今の健全性
+        <span class="note">（数値は本日コマンドを実行し直して確認）</span>
+      </h2>
       <div class="grid cols-3">
         <div class="card">
-          <h3>happy-dom <span class="badge b-ok">導入・検証済</span></h3>
+          <div class="kpi">81 <small>Rust テスト 合格</small></div>
           <div class="tag">
-            vitest の DOM 環境。<code>initVisualEditor</code>
-            描画を自動テスト（手動確認を自動化）。
+            裏側（Rust）の自動テスト。スナップショット検査 +1・警告0。
           </div>
         </div>
         <div class="card">
-          <h3>insta <span class="badge b-ok">導入・検証済</span></h3>
+          <div class="kpi">61 <small>画面側テスト 合格</small></div>
           <div class="tag">
-            Rust スナップショット。<code>build_system_prompt</code>
-            の構造を回帰検出。
+            画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
           </div>
         </div>
         <div class="card">
+          <div class="kpi">0 <small>脆弱性の指摘</small></div>
+          <div class="tag">
+            コード脆弱性スキャナー（semgrep）で指摘0。通信先を絞る設定（CSP）も済。
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 検証の自動化 ===== -->
+      <h2>
+        テストを自動で回す道具（3種そろいました）
+        <span class="note">手で確認していた作業を機械にやらせる</span>
+      </h2>
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>画面部品テスト <span class="badge b-ok">導入・確認済</span></h3>
+          <div class="tag">
+            道具:
+            happy-dom。ブラウザを起動せず画面部品の組み立てだけを高速に検査。キャラ編集画面の描画を自動チェック。
+          </div>
+        </div>
+        <div class="card">
+          <h3>出力の固定検査 <span class="badge b-ok">導入・確認済</span></h3>
+          <div class="tag">
+            道具: insta。AI
+            への指示文の組み立て結果を「お手本」と突き合わせ、意図しない変化を自動検出。
+          </div>
+        </div>
+        <div class="card is-updated">
           <h3>
-            tauri-driver + WebdriverIO
-            <span class="badge b-ok">導入・検証済</span>
+            実アプリ起動テスト
+            <span class="badge b-ok">導入・確認済</span>
+            <span class="badge b-upd">更新 6/28</span>
           </h3>
           <div class="tag">
-            実アプリ起動 E2E。<code>pnpm e2e</code> →
-            <strong>1 passed</strong>。
-            WebKitWebDriver(apt)＋tauri-driver(cargo)＋classic WebDriver で
-            本番ビルドを起動し主要 UI を検証（<code>docs/e2e-setup.md</code>）。
+            道具: tauri-driver ＋
+            WebdriverIO。本物のアプリを起動し、画面に主要パーツが出るかを確認。<code
+              >pnpm e2e</code
+            >
+            → <strong>1件 合格</strong>（手順は
+            <code>docs/e2e-setup.md</code>）。
           </div>
         </div>
       </div>
 
       <!-- ===== spec 状態 ===== -->
-      <h2>spec / 実装状態</h2>
+      <h2>
+        機能ごとの状態
+        <span class="note">spec＝機能の仕様書。4機能を段階管理</span>
+      </h2>
       <div class="card">
         <table>
           <tr>
-            <th>spec</th>
-            <th>フェーズ</th>
+            <th>機能（spec）</th>
+            <th>仕様の段階</th>
             <th>実装</th>
             <th>テスト</th>
             <th>状態</th>
           </tr>
           <tr>
-            <td>storage-manager</td>
-            <td>tasks-approved</td>
-            <td>全23</td>
+            <td>保存まわり（storage-manager）</td>
+            <td>仕様確定</td>
+            <td>全23項目</td>
             <td>Rust 56</td>
             <td><span class="badge b-ok">完了</span></td>
           </tr>
           <tr>
-            <td>character-layer</td>
-            <td>tasks-approved</td>
-            <td>全18（フェーズ2含む）</td>
-            <td>vitest 54</td>
+            <td>キャラ表示（character-layer）</td>
+            <td>仕様確定</td>
+            <td>全18項目</td>
+            <td>画面側 54</td>
             <td><span class="badge b-ok">完了</span></td>
           </tr>
           <tr>
-            <td>model-router</td>
-            <td>tasks-generated</td>
-            <td>全18 ＋ generate_text</td>
-            <td>Rust 22 / vitest 6</td>
+            <td>モデル切替・対話（model-router）</td>
+            <td>タスク化済</td>
+            <td>全18 ＋ 汎用生成コマンド</td>
+            <td>Rust 22 / 画面側 6</td>
             <td><span class="badge b-ok">完了</span></td>
           </tr>
           <tr>
-            <td>diary-engine</td>
-            <td>tasks-generated</td>
-            <td>未着手（前提解消済）</td>
+            <td>観察日記（diary-engine）</td>
+            <td>タスク化済</td>
+            <td>未着手（前提は解消済）</td>
             <td>—</td>
-            <td><span class="badge b-warn">spec のみ</span></td>
+            <td><span class="badge b-warn">仕様のみ</span></td>
           </tr>
         </table>
       </div>
 
       <!-- ===== マイルストーン ===== -->
-      <h2>マイルストーン（M1→M5）</h2>
+      <h2>節目（M1→M5）<span class="note">作りたいものへの到達段階</span></h2>
       <div class="grid cols-2">
         <div class="card">
-          <h3>M1 アプリ起動+2窓 <span class="badge b-ok">達成</span></h3>
+          <h3>
+            M1 アプリが起動し2つの窓が出る <span class="badge b-ok">達成</span>
+          </h3>
           <div class="bar"><span style="width: 100%"></span></div>
         </div>
         <div class="card">
           <h3>
-            M2 キャラ選択がUI反映 <span class="badge b-ok">サインオフ済</span>
+            M2 キャラ選択が画面に反映 <span class="badge b-ok">確認済</span>
           </h3>
           <div class="bar"><span style="width: 100%"></span></div>
-          <div class="tag">実機ログで character window 描画を実証</div>
+          <div class="tag">実機ログでキャラ窓の描画を確認済み</div>
         </div>
         <div class="card">
-          <h3>M3 モデルと実対話 <span class="badge b-warn">未</span></h3>
+          <h3>
+            M3 モデルと実際に会話 <span class="badge b-warn">あと一歩</span>
+          </h3>
           <div class="bar"><span style="width: 70%"></span></div>
           <div class="tag">
-            実装完了・実APIキー＋GUI目視が残（人間ブロック）
+            実装は完了。本物の API キー＋目視確認が残り（人の作業待ち）
           </div>
         </div>
         <div class="card">
           <h3>
-            M4 観察日記 / M5 GDrive同期 <span class="badge b-mute">未着手</span>
+            M4 観察日記 / M5 クラウド同期
+            <span class="badge b-mute">これから</span>
           </h3>
           <div class="bar"><span style="width: 15%"></span></div>
-          <div class="tag">diary-engine / OAuth 実資格情報</div>
+          <div class="tag">日記機能 / Google ドライブ連携の本番資格情報</div>
         </div>
       </div>
 
       <!-- ===== PDCA 実践 ===== -->
-      <h2>ループエンジニアリング＝PDCA の実践と検証（証跡）</h2>
+      <h2>
+        進め方の実例（計画→実行→確認→改善）
+        <span class="note">＝PDCA。回した証拠を2件掲載</span>
+      </h2>
       <div class="pdca">
-        <!-- PDCA cycle SVG -->
         <svg
           width="150"
           height="150"
           viewBox="0 0 150 150"
           role="img"
-          aria-label="PDCAサイクル"
+          aria-label="計画・実行・確認・改善のサイクル"
         >
           <circle
             cx="75"
@@ -352,7 +499,7 @@
             font-size="11"
             fill="#2b2622"
           >
-            Plan
+            計画
           </text>
           <text
             x="121"
@@ -361,7 +508,7 @@
             font-size="11"
             fill="#2b2622"
           >
-            Do
+            実行
           </text>
           <text
             x="75"
@@ -370,7 +517,7 @@
             font-size="11"
             fill="#2b2622"
           >
-            Check
+            確認
           </text>
           <text
             x="29"
@@ -379,13 +526,13 @@
             font-size="11"
             fill="#2b2622"
           >
-            Act
+            改善
           </text>
           <text
             x="75"
-            y="78"
+            y="80"
             text-anchor="middle"
-            font-size="13"
+            font-size="12"
             font-weight="700"
             fill="#b08968"
           >
@@ -394,150 +541,188 @@
         </svg>
         <div class="steps">
           <div class="card" style="margin-bottom: 10px">
-            <h3>
-              ループ① 品質（精査→検証→是正）
-              <span class="badge b-ok">クローズ</span>
-            </h3>
+            <h3>例① 品質の点検 <span class="badge b-ok">完了</span></h3>
             <div class="step">
-              <b>Plan</b><span>プロダクト精査・検証・記録を計画</span>
+              <b>計画</b
+              ><span>プロダクトを点検・検証・記録する計画を立てる</span>
             </div>
             <div class="step">
-              <b>Do</b><span>実装・記録、独立QAペルソナで再検証</span>
+              <b>実行</b
+              ><span>実装と記録のあと、別の担当役（独立チェック）で再点検</span>
             </div>
             <div class="step">
-              <b>Check</b
+              <b>確認</b
               ><span
-                >QA が
-                <b>実バグ(chat.ts)</b
-                >・CSP無効・設計乖離を検出（証拠で受理）</span
+                >チェック役が
+                <b>本物のバグ（chat.ts）</b
+                >・通信制限の未設定・仕様の食い違いを発見</span
               >
             </div>
             <div class="step">
-              <b>Act</b
+              <b>改善</b
               ><span
-                >R1/R2/R3 是正 → 再検証
-                <span class="badge b-ok">green</span>（コミット
-                <code>68ae134</code>/<code>e47a74a</code>）</span
+                >3件を修正 → 再テストで
+                <span class="badge b-ok">全合格</span></span
               >
             </div>
           </div>
           <div class="card">
-            <h3>
-              ループ② 体制（委譲の試行）
-              <span class="badge b-ok">クローズ</span>
-            </h3>
+            <h3>例② 作業の任せ方の試行 <span class="badge b-ok">完了</span></h3>
             <div class="step">
-              <b>Plan</b><span>generate_text を実装エージェントへ委譲</span>
+              <b>計画</b
+              ><span>新コマンドの実装を別の作業役（AI）に任せてみる</span>
             </div>
             <div class="step">
-              <b>Do</b><span>worktree 隔離で実装→feat ブランチへコミット</span>
+              <b>実行</b
+              ><span>作業用の別コピーで実装し、専用ブランチに記録</span>
             </div>
             <div class="step">
-              <b>Check</b
+              <b>確認</b
               ><span
-                >独立レビュー <span class="badge b-ok">PASS</span> ＋
-                コンダクター自身が80テスト再実行</span
+                >別のチェック役が <span class="badge b-ok">合格</span> 判定。
+                取りまとめ役も80件のテストを自分で実行し直して確認</span
               >
             </div>
             <div class="step">
-              <b>Act</b
-              ><span
-                >統合 <code>ba8aa08</code> ＋ worktree起点問題を
-                orchestration.md 是正 <code>7eec6ee</code></span
-              >
+              <b>改善</b
+              ><span>本体に統合し、つまずいた点を運用ルールに反映</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- ===== 自律ティア ===== -->
-      <h2>自律ティア（L1→L2→L3）と安全装置</h2>
+      <h2>
+        AI にどこまで任せるか（3段階）<span class="note"
+          >段階を上げるほど自動、下げるほど人が関与</span
+        >
+      </h2>
       <div class="grid cols-3">
         <div class="card l-tier">
-          <h3>L1 レポートのみ</h3>
+          <h3>段階1: 報告だけ</h3>
           <div class="tag">
-            triage して所見を STATE.md に集約。コード変更なし。
+            状況を仕分け（優先度づけ）してメモに残す。コードは変えない。
           </div>
-          <ul class="tight">
-            <li>今サイクルで実施（<code>.orchestration/STATE.md</code>）</li>
-          </ul>
         </div>
         <div class="card l-tier">
-          <h3>L2 補助 <span class="badge b-blue">現行</span></h3>
+          <h3>段階2: 補助 <span class="badge b-blue">いまここ</span></h3>
           <div class="tag">
-            Maker(実装)＋Checker(独立レビュー)で修正。マージ/公開は人間。
+            作る役とチェックする役を分けて修正。本体への取り込み・公開は人が判断。
           </div>
-          <ul class="tight">
-            <li>generate_text 試行はこのティア</li>
-          </ul>
         </div>
         <div class="card l-tier">
-          <h3>L3 無人</h3>
+          <h3>段階3: 無人</h3>
           <div class="tag">
-            denylist 外を自動。予算・metrics・denylist 整備後の選択肢。
+            禁止事項以外を自動。予算・計測・禁止リストを整えてから検討（当面は段階2まで）。
           </div>
-          <ul class="tight">
-            <li>未整備 → 当面 L2 まで</li>
-          </ul>
         </div>
       </div>
       <div class="card" style="margin-top: 12px">
-        <h3>安全装置</h3>
+        <h3>暴走を防ぐ仕組み</h3>
         <ul class="tight">
           <li>
-            <b>Maker-Checker 分離</b>:
-            実装と独立レビューを別エージェントに（自己採点バイアス排除）。Verifier
-            Theater 対策＝テスト出力必須。
+            <b>作る役とチェックする役を分ける</b>:
+            自分で作って自分で合格を出すと甘くなるため、別の役が点検。テスト結果の提示を必須にし「やった体」の偽装を防ぐ。
           </li>
           <li>
-            <b>停止条件 first-class</b>: ゴール達成／人間ハンドオフ／attempt
-            上限／予算超過。
+            <b>止めどきを最初に決める</b>:
+            目標達成／人へ引き継ぎ／試行回数の上限／予算超過。
           </li>
           <li>
-            <b>トークン予算</b>:
-            軽微は委譲せず直接（コスト・可視性のバランス）。
+            <b>使う費用に上限</b>:
+            軽い作業は任せず直接やる（費用と見えやすさのバランス）。
           </li>
           <li>
-            <b>理解負債対策</b>:
-            節目で要約（reports）・読み直し・「スループットでなく判断レバレッジの移動」。
+            <b>中身の理解を置き去りにしない</b>:
+            節目ごとに要約と読み直しを行い、AI
+            に作業量を渡すのでなく「判断」を渡す。
           </li>
-          <li><b>並行衝突</b>: worktree 隔離＋<code>acting_on</code> 確認。</li>
+          <li><b>同時作業の衝突を防ぐ</b>: 作業用の別コピーに分けて進める。</li>
         </ul>
       </div>
 
-      <!-- ===== 次アクション（L1 triage） ===== -->
-      <h2>次アクション（L1 triage の出力）</h2>
+      <!-- ===== 次アクション ===== -->
+      <h2>次にやること</h2>
       <div class="grid cols-2">
         <div class="card">
-          <h3>High Priority <span class="badge b-bad">優先</span></h3>
+          <h3>優先 <span class="badge b-bad">高</span></h3>
           <ul class="tight">
             <li>
-              検証自動化ライブラリ（happy-dom / insta / tauri-driver）—
-              <strong>3種とも導入・検証済（E2E 1 passed）</strong>
+              テスト自動化の道具3種 —
+              <strong>導入・確認すべて完了（実アプリ E2E も1件合格）</strong>
             </li>
             <li>
-              diary-engine 実装（前提 generate_text 解消済・ユーザー承認待ち）
+              観察日記（diary-engine）の実装 — 前提は解消済・あなたの承認待ち
             </li>
-            <li>push — 公開は人間判断</li>
+            <li>公開（push）— 出すかどうかは人の判断</li>
           </ul>
         </div>
         <div class="card">
-          <h3>Watch List <span class="badge b-warn">監視</span></h3>
+          <h3>見守り <span class="badge b-warn">中</span></h3>
           <ul class="tight">
-            <li>M3 実機サインオフ（実APIキー必須）</li>
-            <li>OpenAI max_tokens（将来 provider 別分岐）</li>
-            <li>GDrive サブフォルダ / OAuth 実資格情報</li>
-            <li>GitHub Project に Wave2 未反映 / ストリーミング(4.3) 繰越</li>
+            <li>M3 の実機確認（本物の API キーが必要）</li>
+            <li>OpenAI の上限指定（将来モデル別に分岐）</li>
+            <li>Google ドライブのサブフォルダー / 本番ログイン疎通</li>
+            <li>進捗管理ツールへの第2陣の反映 / 逐次表示は後回し</li>
           </ul>
+        </div>
+      </div>
+
+      <!-- ===== 用語集 ===== -->
+      <h2>
+        用語集（固有名詞のかんたん解説）<span class="note"
+          >③ふだんの言葉で言い換え</span
+        >
+      </h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <dl class="glossary">
+            <dt>Tauri（タウリ）</dt>
+            <dd>Web 技術でパソコン用アプリを作る仕組み。本アプリの土台。</dd>
+            <dt>spec（スペック）</dt>
+            <dd>機能ごとの仕様書。要件→設計→タスクの順に固めていく。</dd>
+            <dt>E2E テスト</dt>
+            <dd>
+              End to
+              End＝端から端まで。アプリを実際に起動して通しで動くか確かめる自動テスト。
+            </dd>
+            <dt>PDCA</dt>
+            <dd>計画(Plan)→実行(Do)→確認(Check)→改善(Act)のくり返し。</dd>
+            <dt>CSP</dt>
+            <dd>
+              Content Security
+              Policy。アプリの通信先や読み込み先を必要な範囲に絞るセキュリティ設定。
+            </dd>
+          </dl>
+        </div>
+        <div class="card">
+          <dl class="glossary">
+            <dt>semgrep（セムグレップ）</dt>
+            <dd>コードの危険な書き方や脆弱性を自動で探すスキャナー。</dd>
+            <dt>happy-dom / insta / WebdriverIO</dt>
+            <dd>
+              テスト用の道具。順に「画面部品の検査」「出力の固定検査」「実アプリ操作」。
+            </dd>
+            <dt>worktree（ワークツリー）</dt>
+            <dd>
+              リポジトリの作業用の別コピー。同時編集の衝突を避けるために使う。
+            </dd>
+            <dt>push（プッシュ）</dt>
+            <dd>手元の変更を共有サーバー（GitHub）へ反映＝公開する操作。</dd>
+            <dt>コンダクター・オーケストレーション</dt>
+            <dd>
+              本プロジェクトの進め方の呼び名。取りまとめ役が作業を任せ、別の役がチェックし、証拠で受け入れる体制。
+            </dd>
+          </dl>
         </div>
       </div>
 
       <div class="foot">
-        正本: <code>.kiro/steering/orchestration.md</code>（体制） ／ 詳細記録:
+        体制の正式版: <code>.kiro/steering/orchestration.md</code> ／
+        詳しい記録:
         <code>.claude/reports/2026-06-27-product-state-and-handoff.md</code> ／
-        ループ状態: <code>.orchestration/STATE.md</code>。
-        本HTMLは自己完結（外部依存なし）。VSCode
-        のプレビューまたはブラウザで開けます。
+        この HTML は外部依存なしで完結。VSCode
+        のプレビューかブラウザで開けます。
       </div>
     </div>
   </body>
