@@ -30,6 +30,9 @@ body {
 }
 
 .chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
@@ -40,6 +43,72 @@ body {
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
+}
+
+/* ===== ライト/ダーク切替トグル ===== */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--font-base);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.theme-toggle__icon svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+.theme-toggle__label {
+  line-height: 1;
+}
+
+/* ライトテーマ時: 太陽アイコンを非表示、月アイコンを表示（ダークへの誘導） */
+[data-theme="light"] .theme-toggle__icon--light {
+  display: none;
+}
+
+[data-theme="light"] .theme-toggle__icon--dark {
+  display: inline-flex;
+}
+
+/* ダークテーマ時: 月アイコンを非表示、太陽アイコンを表示（ライトへの誘導） */
+[data-theme="dark"] .theme-toggle__icon--light {
+  display: inline-flex;
+}
+
+[data-theme="dark"] .theme-toggle__icon--dark {
+  display: none;
+}
+
+/* data-theme 未設定時のデフォルト（light と同じ） */
+:root:not([data-theme]) .theme-toggle__icon--light {
+  display: none;
+}
+
+:root:not([data-theme]) .theme-toggle__icon--dark {
+  display: inline-flex;
 }
 
 /* ===== 原則8 AI 開示バナー ===== */
@@ -804,10 +873,8 @@ body {
   height: 15px;
 }
 
-/* 既存 model-ui__ セレクターを mtt- 体裁の入力として継承 */
+/* mtt- 体裁の入力フィールド共通スタイル */
 .character-switcher__select,
-.model-ui__select,
-.model-ui__model,
 .model-ui__key-input,
 .editor__input {
   padding: var(--space-2) var(--space-3);
@@ -820,8 +887,6 @@ body {
 }
 
 .character-switcher__select:focus-visible,
-.model-ui__select:focus-visible,
-.model-ui__model:focus-visible,
 .model-ui__key-input:focus-visible,
 .editor__input:focus-visible {
   outline: none;

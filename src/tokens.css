@@ -74,9 +74,46 @@
   --ring: var(--c-brown-500);
 }
 
-/* ===== Color : dark（OS 追従） ===== */
+/* ===== Color : dark（data-theme="dark" 明示切替） ===== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #191614;
+  --surface: #221e1b;
+  --surface-2: #2b2622;
+  --text: #f3efe9;
+  --text-muted: #b3a99e;
+  --text-subtle: #887e72;
+  --border: #3a342e;
+  --border-strong: #4c453d;
+
+  --accent: #cda482;
+  --accent-ink: #f1ddc9;
+  --accent-soft: #33291f;
+  --accent-strong: #cda482;
+  --accent-strong-hover: #dab592;
+  --on-accent: #211d1a;
+
+  --info: #82add8;
+  --info-ink: #cfe2f2;
+  --info-soft: #233140;
+  --success: #5cba86;
+  --success-soft: #1d2a22;
+  --warning: #e0bd72;
+  --warning-soft: #2f2818;
+  --danger: #f0908f;
+  --danger-soft: #3a2320;
+
+  --ring: #cda482;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Color : dark（OS 追従 — data-theme 未設定時のフォールバック） ===== */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     color-scheme: dark;
 
     --bg: #191614;
@@ -158,7 +195,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
     --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.32);
     --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
