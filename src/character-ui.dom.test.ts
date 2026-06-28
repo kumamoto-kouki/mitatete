@@ -2,7 +2,11 @@
 // E2: renderCustomList DOM テスト — カスタムカード描画・選択・編集ボタンの動作を検証する。
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderCustomList, renderPresetList } from "./character-ui";
+import {
+  renderCustomList,
+  renderPresetList,
+  renderSwitcher,
+} from "./character-ui";
 import { CharacterStore } from "./character-store";
 import { AI_DISCLOSURE, type CharacterSchema } from "./character-validator";
 
@@ -202,6 +206,58 @@ describe("renderCustomList (E2: カスタムカード描画・選択・編集)",
     const heading = container.querySelector(".character-panel__section-heading");
     expect(heading).not.toBeNull();
     expect(heading?.textContent).toContain("あなたのキャラクター");
+  });
+});
+
+describe("renderSwitcher の全隠し (切り替え対象が1件以下なら隠す)", () => {
+  const charB: CharacterSchema = { ...customA, id: "char-b", name: "B" };
+
+  it("0件のときコンテナを hidden にし、何も描画しない", () => {
+    const container = document.createElement("div");
+    renderSwitcher(container, [], null, vi.fn());
+
+    expect(container.hidden).toBe(true);
+    expect(container.querySelector("select")).toBeNull();
+  });
+
+  it("1件のときも hidden（選択肢が1つなら切り替え不要＝全隠し）", () => {
+    const container = document.createElement("div");
+    renderSwitcher(container, [customA], "custom-a", vi.fn());
+
+    expect(container.hidden).toBe(true);
+    expect(container.querySelector("select")).toBeNull();
+  });
+
+  it("2件以上のとき表示し、select に件数分の option と activeId 選択を反映する", () => {
+    const container = document.createElement("div");
+    renderSwitcher(container, [customA, charB], "char-b", vi.fn());
+
+    expect(container.hidden).toBe(false);
+    const select = container.querySelector<HTMLSelectElement>("select")!;
+    expect(select.querySelectorAll("option").length).toBe(2);
+    expect(select.value).toBe("char-b");
+  });
+
+  it("2件→1件に減った再描画で隠れる（残留しない）", () => {
+    const container = document.createElement("div");
+    renderSwitcher(container, [customA, charB], "char-b", vi.fn());
+    expect(container.hidden).toBe(false);
+
+    renderSwitcher(container, [customA], "custom-a", vi.fn());
+    expect(container.hidden).toBe(true);
+    expect(container.querySelector("select")).toBeNull();
+  });
+
+  it("change で onSwitch(id) が発火する", () => {
+    const container = document.createElement("div");
+    const onSwitch = vi.fn();
+    renderSwitcher(container, [customA, charB], "custom-a", onSwitch);
+
+    const select = container.querySelector<HTMLSelectElement>("select")!;
+    select.value = "char-b";
+    select.dispatchEvent(new Event("change"));
+
+    expect(onSwitch).toHaveBeenCalledWith("char-b");
   });
 });
 

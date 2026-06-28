@@ -364,7 +364,7 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
             <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
-            繰越4件（K1〜K4）を実装し、🛡️ 守屋の独立レビュー（受理）待ち
+            繰越5件（K1〜K5）を実装し、🛡️ 守屋の独立レビュー（受理）待ち
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -563,6 +563,23 @@
                 >
                 <span class="min-w-0 flex-1 text-[11px] font-semibold"
                   >削除UI</span
+                >
+                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
+                  >👨🏼‍💼👨🏼‍🔬</span
+                >
+              </div>
+              <!-- K5 switcher全隠し -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="切り替え対象が1件以下ならスイッチャーを全隠し / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >K5</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >switcher全隠し</span
                 >
                 <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
                   >👨🏼‍💼👨🏼‍🔬</span
@@ -816,8 +833,8 @@
           <tr>
             <td>キャラ表示（character-layer）</td>
             <td>仕様確定</td>
-            <td>全18項目＋繰越K1〜K4</td>
-            <td>画面側 67</td>
+            <td>全18項目＋繰越K1〜K5</td>
+            <td>画面側 72</td>
             <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
@@ -850,7 +867,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="kpi text-info">168 <small>画面側テスト 合格</small></div>
+          <div class="kpi text-info">173 <small>画面側テスト 合格</small></div>
           <div class="tag">
             画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
           </div>
@@ -1024,8 +1041,15 @@
 
       <!-- ===== ① この版の更新（変更点を毎回ここで明示） ===== -->
       <section class="changelog">
-        <h2>🔵 この版の更新（2026-06-28）</h2>
+        <h2>🔵 この版の更新（2026-06-29）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+          <li>
+            <b>K5（switcher 全隠し）を実装しました。</b
+            >切り替え対象が1件以下のときはスイッチャーを要素ごと隠す（選択肢1つでの切り替えは無意味＋空要素の余白も出さない）。回帰テスト5本追加・画面側173。実装＝👨🏼‍💼
+            神谷＋👨🏼‍🔬 安西（QA）→ 🛡️
+            守屋の受理待ち。<b>整合ルールの初適用</b>として
+            KPI・spec表・ボードを同一整合で更新。
+          </li>
           <li>
             <b
               >ダッシュボード全体の整合を取り、整合の仕組みを強化しました（PO
@@ -1044,19 +1068,19 @@
               >候補ペルソナ（設計・セキュリティ監査・パフォーマンス監査・ライター）を「チーム」名簿へ合流させました。</b
             >配役済（実線）と候補（破線）を同じ名簿に並べ、これまで投入すべきだった役／これから投入する役を凡例で区別。あわせて体制図下の注記リストを<b>テーブル表記</b>へ変更。
           </li>
-          <li>
-            <b
-              >作業ボードの更新タイミングを「状態遷移トリガー」で明文化しました（PO
-              承認）。</b
-            >これまで更新タイミングが未定義で「実装→コミットしたがカードを動かさない」ドリフトが発生（仕組みの弱さ・blameless）。<b>コミット→🔍レビュー中／受理→✅完了</b>を遷移の瞬間に反映し、👩🏼‍💼
-            橘が「ボード＝実態」を開示の健全性として監視。繰越4件（K1〜K4）をレビュー中へ反映済み。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b
+                >作業ボードの更新タイミングを「状態遷移トリガー」で明文化しました（PO
+                承認）。</b
+              >これまで更新タイミングが未定義で「実装→コミットしたがカードを動かさない」ドリフトが発生（仕組みの弱さ・blameless）。<b>コミット→🔍レビュー中／受理→✅完了</b>を遷移の瞬間に反映し、👩🏼‍💼
+              橘が「ボード＝実態」を開示の健全性として監視。
+            </li>
             <li>
               <b
                 >心理的安全性／開示の健全性の観測を 👩🏼‍💼

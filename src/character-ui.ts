@@ -211,7 +211,13 @@ export function renderSwitcher(
   onSwitch: (id: string) => void
 ): void {
   container.replaceChildren();
-  if (characters.length === 0) return;
+  // 切り替え対象が1件以下のときはスイッチャーごと隠す（選択肢が1つなら切り替えは無意味＝全隠し）。
+  // container.hidden で display:none にし、空要素の margin による余白も出さない。
+  if (characters.length <= 1) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
 
   const select = document.createElement("select");
   select.className = "character-switcher__select";
