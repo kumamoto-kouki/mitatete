@@ -210,6 +210,10 @@
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b>ペルソナを絵文字で擬人化し、専門性とチーム文化を明示しました。</b
+            >各担当に絵文字アバターと得意分野（専門性）を付与。<b>心理的安全性</b>を担保し、レビューは人格でなく成果物に向ける「チームの約束」を掲示。
+          </li>
+          <li>
             <b>担当を「人」に見立てて表示するようにしました。</b
             >体制図と作業ボードに役割ペルソナ（司・彩・澪・拓・健）を割り当て、誰が何を持つかを明確化（実在の個人ではなく
             AI エージェントの役割）。
@@ -313,43 +317,105 @@
           <span><span class="badge badge-mute">次</span> 後続で着手</span>
         </div>
 
-        <!-- チーム名簿（役割ペルソナ） -->
+        <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
+        <div class="mb-3 text-xs font-bold text-muted">
+          チーム（担当ペルソナ）
+        </div>
         <div
-          class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[#f4efe7] px-4 py-2.5 text-xs"
+          class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
         >
-          <b class="text-muted">チーム:</b>
-          <span class="inline-flex items-center gap-1.5"
-            ><span
-              class="grid h-5 w-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-white"
-              >司</span
-            >司 — 統括コンダクター</span
+          <!-- 司 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-          <span class="inline-flex items-center gap-1.5"
-            ><span
-              class="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white"
-              style="background: #946f50"
-              >彩</span
-            >彩 — デザイン実施者</span
+            <span class="text-2xl leading-none" aria-hidden="true">🧭</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">司（つかさ）</div>
+              <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: 計画分解・委譲設計・証拠ベースの受理
+              </div>
+            </div>
+          </div>
+          <!-- 彩 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-          <span class="inline-flex items-center gap-1.5"
-            ><span
-              class="grid h-5 w-5 place-items-center rounded-full bg-info text-[10px] font-bold text-white"
-              >澪</span
-            >澪 — デザイン・レビュアー</span
+            <span class="text-2xl leading-none" aria-hidden="true">🎨</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">彩（あや）</div>
+              <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: デザインシステム・UI ビジュアル・トークン設計・a11y
+              </div>
+            </div>
+          </div>
+          <!-- 澪 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-          <span class="inline-flex items-center gap-1.5"
-            ><span
-              class="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white"
-              style="background: #6a8caf"
-              >拓</span
-            >拓 — 実装エンジニア</span
+            <span class="text-2xl leading-none" aria-hidden="true">🔍</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">澪（みお）</div>
+              <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: コントラスト・状態網羅・原則8 の視覚監査
+              </div>
+            </div>
+          </div>
+          <!-- 拓 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-          <span class="inline-flex items-center gap-1.5"
-            ><span
-              class="grid h-5 w-5 place-items-center rounded-full bg-ok text-[10px] font-bold text-white"
-              >健</span
-            >健 — エンジニア・レビュアー</span
+            <span class="text-2xl leading-none" aria-hidden="true">⚙️</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">拓（たく）</div>
+              <div class="text-xs text-[#6f4e37]">
+                実装エンジニア（Rust/Tauri）
+              </div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: trait シーム設計・TDD・バックエンド
+              </div>
+            </div>
+          </div>
+          <!-- 玲 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
+            <span class="text-2xl leading-none" aria-hidden="true">🧩</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">玲（れい）</div>
+              <div class="text-xs text-[#6f4e37]">
+                実装エンジニア（TypeScript）
+              </div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: フロント状態管理・Tauri 配線・DOM テスト
+              </div>
+            </div>
+          </div>
+          <!-- 健 -->
+          <div
+            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+          >
+            <span class="text-2xl leading-none" aria-hidden="true">🛡️</span>
+            <div class="min-w-0">
+              <div class="text-[13px] font-bold">健（けん）</div>
+              <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
+              <div class="mt-0.5 text-[11px] text-muted">
+                専門: 敵対的レビュー・証拠再実行・回帰/セキュリティ確認
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- チームの約束（心理的安全性） -->
+        <div
+          class="mb-4 rounded-xl bg-[#e9f0ea] px-4 py-3 text-[12.5px] ring-1 ring-[#cfe2d6]"
+        >
+          <b>💬 チームの約束 — 心理的安全性</b>
+          <div class="mt-1 text-muted">
+            このチームは心理的安全性を常に担保しています。失敗・不明点・反対意見を安心して出せ、レビューは<b>人格ではなく成果物</b>に向けます。「分からない」「やり直したい」と言える率直さと、互いへの敬意を両立し、円滑なコミュニケーションを保ちます（健の指摘は拓を責めるためでなく、品質を一緒に上げるためのものです）。
+          </div>
         </div>
 
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
