@@ -364,7 +364,8 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
             <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
-            繰越5件（K1〜K5）を実装し、🛡️ 守屋の独立レビュー（受理）待ち
+            繰越5件（K1〜K5）を 🛡️
+            守屋の独立レビューで受理・完了（必須是正なし）
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -499,96 +500,7 @@
             >
               🔍 レビュー中
             </div>
-            <div class="space-y-1.5 p-2">
-              <!-- K1 一覧更新 -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="非アクティブなキャラの編集/削除で一覧が更新されない不具合 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >K1</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >一覧更新</span
-                >
-                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
-                  >👨🏼‍💼👨🏼‍🔬</span
-                >
-              </div>
-              <!-- K2 選択ハイライト -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="プリセット↔カスタムの選択ハイライト残留 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >K2</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >選択ハイライト</span
-                >
-                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
-                  >👨🏼‍💼👨🏼‍🔬</span
-                >
-              </div>
-              <!-- K3 visual復元 -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="編集保存でアバターが失われる/化けるデータ損失 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >K3</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >visual復元</span
-                >
-                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
-                  >👨🏼‍💼👨🏼‍🔬</span
-                >
-              </div>
-              <!-- K4 削除UI -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="カスタムキャラ削除ボタン＋確認ダイアログ配線 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >K4</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >削除UI</span
-                >
-                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
-                  >👨🏼‍💼👨🏼‍🔬</span
-                >
-              </div>
-              <!-- K5 switcher全隠し -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="切り替え対象が1件以下ならスイッチャーを全隠し / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >K5</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >switcher全隠し</span
-                >
-                <span class="text-[10px]" title="神谷(実装)＋安西(QA)"
-                  >👨🏼‍💼👨🏼‍🔬</span
-                >
-              </div>
-              <div class="px-1 pt-0.5 text-[10px] text-muted">
-                実装済み・🛡️ 守屋の独立レビュー（受理判定）待ち
-              </div>
-            </div>
+            <div class="p-2 text-center text-[11px] text-muted">—</div>
           </div>
           <!-- 完了・受理 -->
           <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
@@ -599,6 +511,23 @@
               ✅ 完了・受理
             </div>
             <div class="space-y-1.5 p-2">
+              <!-- K1〜K5 繰越5件 -->
+              <div
+                class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="繰越5件 K1一覧更新/K2選択ハイライト/K3visual復元/K4削除UI/K5switcher全隠し。神谷(実装)＋安西(QA) → 守屋 APPROVED(独立レビュー・必須是正なし)"
+              >
+                <span
+                  class="grid h-6 w-7 flex-none place-items-center rounded-md text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >K1-5</span
+                >
+                <span class="min-w-0 flex-1 text-[11.5px] font-semibold"
+                  >繰越5件</span
+                >
+                <span class="text-[11px]" title="神谷＋安西(QA) → 守屋 APPROVED"
+                  >👨🏼‍💼👨🏼‍🔬🛡️</span
+                >
+              </div>
               <!-- E2 -->
               <div
                 class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -947,8 +876,8 @@
           <!-- レビュー判定の内訳 -->
           <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
             <span
-              ><b>レビュー判定</b>：APPROVED 1（D1）／PASS 1（A4）／条件付きPASS
-              5（A・A2・A3・C・E2）</span
+              ><b>レビュー判定</b>：APPROVED 2（D1・K1〜K5）／PASS
+              1（A4）／条件付きPASS 5（A・A2・A3・C・E2）</span
             >
           </div>
 
@@ -991,6 +920,10 @@
             <tr>
               <td>作業ボード＝実態の一致（状態遷移トリガーで更新）</td>
               <td>✅ トリガー明文化・ドリフト是正済</td>
+            </tr>
+            <tr>
+              <td>レビュー滞留（WIP上限3・受理まで流れているか）</td>
+              <td>✅ 上限ルール追加・K1〜K5 を独立レビューで解消</td>
             </tr>
           </table>
           <div class="mt-1.5 text-[11px] text-muted">
@@ -1044,6 +977,17 @@
         <h2>🔵 この版の更新（2026-06-29）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b
+              >繰越5件（K1〜K5）を 🛡️
+              守屋の独立レビューで受理・完了し、レビュー滞留の再発防止策を追加しました（PO
+              承認）。</b
+            >守屋が証拠再生成（画面側173・tsc0・build OK・原則8 差分ゼロ）で
+            <b>APPROVED・必須是正なし</b
+            >。滞留の原因は<b>統括が実装を5件積み上げつつ独立レビューを回す契機が未定義</b>だったこと（仕組みの弱さ・blameless）→
+            <b>レビュー中 WIP 上限＝3</b
+            >を設け、橘が「レビュー滞留」を開示の健全性で監視する。
+          </li>
+          <li>
             <b>K5（switcher 全隠し）を実装しました。</b
             >切り替え対象が1件以下のときはスイッチャーを要素ごと隠す（選択肢1つでの切り替えは無意味＋空要素の余白も出さない）。回帰テスト5本追加・画面側173。実装＝👨🏼‍💼
             神谷＋👨🏼‍🔬 安西（QA）→ 🛡️
@@ -1063,17 +1007,17 @@
             >が全セクションを一括整合、<b>担当＝👩🏼‍💼 橘</b
             >が整合を監視（整合チェックリストを steering に明文化）。
           </li>
-          <li>
-            <b
-              >候補ペルソナ（設計・セキュリティ監査・パフォーマンス監査・ライター）を「チーム」名簿へ合流させました。</b
-            >配役済（実線）と候補（破線）を同じ名簿に並べ、これまで投入すべきだった役／これから投入する役を凡例で区別。あわせて体制図下の注記リストを<b>テーブル表記</b>へ変更。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b
+                >候補ペルソナ（設計・セキュリティ監査・パフォーマンス監査・ライター）を「チーム」名簿へ合流させました。</b
+              >配役済（実線）と候補（破線）を同じ名簿に並べ、これまで投入すべきだった役／これから投入する役を凡例で区別。あわせて体制図下の注記リストを<b>テーブル表記</b>へ変更。
+            </li>
             <li>
               <b
                 >作業ボードの更新タイミングを「状態遷移トリガー」で明文化しました（PO
