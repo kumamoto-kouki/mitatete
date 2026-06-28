@@ -41,6 +41,8 @@ export interface CustomCharacterInput {
   visual?: string;
   /** フェーズ2：レイヤーテンプレート／アップロード画像のビジュアル設定（要件 6.2, 6.5）。 */
   visualConfig?: VisualConfig;
+  /** 観察日記（原則9）を有効にするか。未指定は false（無効）。 */
+  diaryEnabled?: boolean;
 }
 
 /**
@@ -82,6 +84,7 @@ export function buildCustomCharacter(
     tone: input.tone,
     visual,
     isPreset: false,
+    diaryEnabled: input.diaryEnabled ?? false,
     ...(input.visualConfig ? { visualConfig: input.visualConfig } : {}),
   });
 }
@@ -154,6 +157,31 @@ export function initCharacterEditor(): void {
     }
   });
 
+  // 原則9: 観察日記 ON/OFF トグル（タスク D1）。既定 OFF。
+  const diaryRow = document.createElement("div");
+  diaryRow.className = "editor__diary-row";
+
+  const diaryCheckbox = document.createElement("input");
+  diaryCheckbox.type = "checkbox";
+  diaryCheckbox.id = "editor-diary-enabled";
+  diaryCheckbox.className = "editor__diary-checkbox";
+  diaryCheckbox.checked = false;
+
+  const diaryLabel = document.createElement("label");
+  diaryLabel.htmlFor = "editor-diary-enabled";
+  diaryLabel.className = "editor__diary-label";
+  diaryLabel.textContent = "観察日記を有効にする（原則9）";
+
+  const diaryHint = document.createElement("p");
+  diaryHint.className = "editor__diary-hint";
+  diaryHint.id = "editor-diary-hint";
+  diaryHint.textContent =
+    "会話の観察記録をAIが生成します。いつでも切り替えられます。";
+  // 守屋レビュー#2: ヒントをチェックボックスへ関連付け（スクリーンリーダー）。
+  diaryCheckbox.setAttribute("aria-describedby", "editor-diary-hint");
+
+  diaryRow.append(diaryCheckbox, diaryLabel);
+
   // 原則8: aiDisclosure は固定・編集不可。読み取り専用テキストで明示する（要件 2.3）。
   const disclosure = document.createElement("p");
   disclosure.className = "editor__disclosure";
@@ -173,6 +201,8 @@ export function initCharacterEditor(): void {
     toneInput,
     visualEditorContainer,
     fileInput,
+    diaryRow,
+    diaryHint,
     disclosure,
     saveButton,
     message
@@ -194,9 +224,11 @@ export function initCharacterEditor(): void {
         name: nameInput.value,
         tone: toneInput.value,
         visualConfig,
+        diaryEnabled: diaryCheckbox.checked,
       });
       showMessage(`「${schema.name}」を保存しました。`, false);
       form.reset();
+      diaryCheckbox.checked = false;
       uploadConfig = undefined;
     } catch (error) {
       console.error(error);
