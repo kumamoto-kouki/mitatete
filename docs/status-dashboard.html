@@ -299,6 +299,10 @@
             <span class="badge b-upd">更新 6/28</span>
             を付け、左を青帯で強調しています。
           </li>
+          <li>
+            <b>開発体制に「デザイン」職能を追加しました。</b
+            >エンジニアリングと並ぶレーンとして、作る役とチェック役を分けた体制を新設（下の「開発体制」図）。
+          </li>
         </ul>
         <div class="prev">
           以降、ダッシュボードを更新するたびに、ここに日付つきで「何が変わったか」を残します（古い版との差分がわかるように）。
@@ -315,6 +319,297 @@
           <span><span class="badge b-mute">灰</span> これから</span>
           <span><span class="badge b-upd">青</span> この版で更新した箇所</span>
         </div>
+      </div>
+
+      <!-- ===== 開発体制（体制図） ===== -->
+      <h2>
+        開発体制（だれが作り・だれが確認するか）
+        <span class="badge b-upd">更新 6/28</span>
+        <span class="note">作る役とチェック役を必ず分ける</span>
+      </h2>
+      <div class="card is-updated">
+        <svg
+          viewBox="0 0 760 360"
+          width="100%"
+          role="img"
+          aria-label="開発体制の図。人間の下に統括コンダクター、その下にエンジニアリングとデザインの2レーン、各レーンに実施者とレビュアー"
+          style="max-width: 760px; display: block; margin: 0 auto"
+          font-family="system-ui, sans-serif"
+        >
+          <!-- 接続線 -->
+          <g stroke="#d6cabb" stroke-width="2" fill="none">
+            <line x1="380" y1="56" x2="380" y2="84" />
+            <line x1="380" y1="120" x2="200" y2="160" />
+            <line x1="380" y1="120" x2="560" y2="160" />
+            <line x1="200" y1="196" x2="200" y2="226" />
+            <line x1="120" y1="262" x2="120" y2="290" />
+            <line x1="280" y1="262" x2="280" y2="290" />
+            <line x1="200" y1="226" x2="120" y2="262" />
+            <line x1="200" y1="226" x2="280" y2="262" />
+            <line x1="560" y1="196" x2="560" y2="226" />
+            <line x1="560" y1="226" x2="480" y2="262" />
+            <line x1="560" y1="226" x2="640" y2="262" />
+            <line x1="480" y1="262" x2="480" y2="290" />
+            <line x1="640" y1="262" x2="640" y2="290" />
+          </g>
+
+          <!-- 人間 -->
+          <g>
+            <rect
+              x="300"
+              y="24"
+              width="160"
+              height="34"
+              rx="8"
+              fill="#fff"
+              stroke="#b08968"
+              stroke-width="2"
+            />
+            <text
+              x="380"
+              y="46"
+              text-anchor="middle"
+              font-size="13"
+              fill="#2b2622"
+            >
+              人間（承認・公開判断）
+            </text>
+          </g>
+
+          <!-- 統括コンダクター -->
+          <g>
+            <rect
+              x="285"
+              y="86"
+              width="190"
+              height="36"
+              rx="8"
+              fill="#b08968"
+            />
+            <text
+              x="380"
+              y="109"
+              text-anchor="middle"
+              font-size="13"
+              font-weight="700"
+              fill="#fff"
+            >
+              統括コンダクター（取りまとめ）
+            </text>
+          </g>
+
+          <!-- エンジニアリング・レーン見出し -->
+          <g>
+            <rect
+              x="110"
+              y="162"
+              width="180"
+              height="34"
+              rx="8"
+              fill="#eef3f7"
+              stroke="#6a8caf"
+              stroke-width="1.5"
+            />
+            <text
+              x="200"
+              y="184"
+              text-anchor="middle"
+              font-size="13"
+              fill="#2b2622"
+            >
+              エンジニアリング・レーン
+            </text>
+          </g>
+          <!-- デザイン・レーン見出し -->
+          <g>
+            <rect
+              x="470"
+              y="162"
+              width="180"
+              height="34"
+              rx="8"
+              fill="#eaf3fa"
+              stroke="#2f6f9f"
+              stroke-width="1.5"
+            />
+            <text
+              x="560"
+              y="184"
+              text-anchor="middle"
+              font-size="13"
+              fill="#2b2622"
+            >
+              デザイン・レーン
+            </text>
+          </g>
+
+          <!-- 各レーンのコンダクター注記 -->
+          <text
+            x="200"
+            y="220"
+            text-anchor="middle"
+            font-size="11"
+            fill="#8a817a"
+          >
+            レーン・コンダクター
+          </text>
+          <text
+            x="560"
+            y="220"
+            text-anchor="middle"
+            font-size="11"
+            fill="#8a817a"
+          >
+            レーン・コンダクター
+          </text>
+
+          <!-- エンジニアリング: 実施者 / レビュアー -->
+          <g>
+            <rect
+              x="44"
+              y="290"
+              width="152"
+              height="50"
+              rx="8"
+              fill="#fff"
+              stroke="#6a8caf"
+              stroke-width="1.5"
+            />
+            <text
+              x="120"
+              y="311"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="700"
+              fill="#2b2622"
+            >
+              実施者（Maker）
+            </text>
+            <text
+              x="120"
+              y="328"
+              text-anchor="middle"
+              font-size="10.5"
+              fill="#8a817a"
+            >
+              実装エージェント
+            </text>
+          </g>
+          <g>
+            <rect
+              x="204"
+              y="290"
+              width="152"
+              height="50"
+              rx="8"
+              fill="#fff"
+              stroke="#2e7d52"
+              stroke-width="1.5"
+            />
+            <text
+              x="280"
+              y="311"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="700"
+              fill="#2b2622"
+            >
+              レビュアー（Checker）
+            </text>
+            <text
+              x="280"
+              y="328"
+              text-anchor="middle"
+              font-size="10.5"
+              fill="#8a817a"
+            >
+              独立レビュー
+            </text>
+          </g>
+
+          <!-- デザイン: 実施者 / レビュアー -->
+          <g>
+            <rect
+              x="404"
+              y="290"
+              width="152"
+              height="50"
+              rx="8"
+              fill="#fff"
+              stroke="#2f6f9f"
+              stroke-width="1.5"
+            />
+            <text
+              x="480"
+              y="311"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="700"
+              fill="#2b2622"
+            >
+              実施者（Maker）
+            </text>
+            <text
+              x="480"
+              y="328"
+              text-anchor="middle"
+              font-size="10.5"
+              fill="#8a817a"
+            >
+              Claude Design＋同期
+            </text>
+          </g>
+          <g>
+            <rect
+              x="564"
+              y="290"
+              width="152"
+              height="50"
+              rx="8"
+              fill="#fff"
+              stroke="#2e7d52"
+              stroke-width="1.5"
+            />
+            <text
+              x="640"
+              y="311"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="700"
+              fill="#2b2622"
+            >
+              レビュアー（Checker）
+            </text>
+            <text
+              x="640"
+              y="328"
+              text-anchor="middle"
+              font-size="10.5"
+              fill="#8a817a"
+            >
+              デザイン独立レビュー
+            </text>
+          </g>
+        </svg>
+        <ul class="tight" style="margin-top: 12px">
+          <li>
+            <b>2つのレーン</b
+            >：エンジニアリング（実装）とデザイン。どちらも同じ三役（コンダクター・実施者・レビュアー）。
+          </li>
+          <li>
+            <b>作る役とチェック役は必ず別</b
+            >：自分で作って自分で合格を出さない（甘い判定を防ぐ）。受理は「証拠」で行う。
+          </li>
+          <li>
+            <b>デザインの証拠</b
+            >：見た目の好みでなく、コントラスト比（読みやすさ）・状態網羅・原則8（AI開示）の遵守・実装できるか、で判定。
+          </li>
+          <li>
+            <b>デザインの作り方</b>：claude.ai/design で生成（文面は
+            <code>docs/design-brief.md</code>）→ レビュー →
+            <code>/design-sync</code> で1部品ずつコードへ取り込み → 公開は人間。
+          </li>
+        </ul>
       </div>
 
       <!-- ===== 健全性 KPI ===== -->
