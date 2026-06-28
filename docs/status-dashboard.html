@@ -364,8 +364,7 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
             <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
-            繰越4件（M1/M2/L1/削除UI）を実装し、🛡️
-            守屋の独立レビュー（受理）待ち
+            繰越4件（K1〜K4）を実装し、🛡️ 守屋の独立レビュー（受理）待ち
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -378,6 +377,19 @@
           >
           <span class="text-xs text-muted">🔒 人手待ち</span>
           <span class="text-xs text-muted">~Xh＝見積もり時間（参考値）</span>
+        </div>
+        <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span class="text-[11px] font-bold text-muted">ID 体系:</span>
+          <span class="text-[11px] text-muted"
+            ><b>M</b
+            >＝節目（マイルストーン）／<b>K</b>＝繰越バグ修正／<b>D</b>＝デザイン／<b>V</b>＝目視。<b
+              >M 番号は節目専用</b
+            >でタスクには使わない（重複を避ける）。</span
+          >
+          <span class="text-[11px] text-muted"
+            >整合の同期: 実施＝👨🏼‍💼 神谷（チケット移動時に全体を整合）／担当＝👩🏼‍💼
+            橘（整合を監視・起案）</span
+          >
         </div>
 
         <!-- カンバン（ステータス列） -->
@@ -488,7 +500,7 @@
               🔍 レビュー中
             </div>
             <div class="space-y-1.5 p-2">
-              <!-- M1 -->
+              <!-- K1 一覧更新 -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
                 title="非アクティブなキャラの編集/削除で一覧が更新されない不具合 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
@@ -496,7 +508,7 @@
                 <span
                   class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
                   style="background: #6a8caf"
-                  >M1</span
+                  >K1</span
                 >
                 <span class="min-w-0 flex-1 text-[11px] font-semibold"
                   >一覧更新</span
@@ -505,7 +517,7 @@
                   >👨🏼‍💼👨🏼‍🔬</span
                 >
               </div>
-              <!-- M2 -->
+              <!-- K2 選択ハイライト -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
                 title="プリセット↔カスタムの選択ハイライト残留 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
@@ -513,7 +525,7 @@
                 <span
                   class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
                   style="background: #6a8caf"
-                  >M2</span
+                  >K2</span
                 >
                 <span class="min-w-0 flex-1 text-[11px] font-semibold"
                   >選択ハイライト</span
@@ -522,7 +534,7 @@
                   >👨🏼‍💼👨🏼‍🔬</span
                 >
               </div>
-              <!-- L1 -->
+              <!-- K3 visual復元 -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
                 title="編集保存でアバターが失われる/化けるデータ損失 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
@@ -530,7 +542,7 @@
                 <span
                   class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
                   style="background: #6a8caf"
-                  >L1</span
+                  >K3</span
                 >
                 <span class="min-w-0 flex-1 text-[11px] font-semibold"
                   >visual復元</span
@@ -539,7 +551,7 @@
                   >👨🏼‍💼👨🏼‍🔬</span
                 >
               </div>
-              <!-- 削除UI -->
+              <!-- K4 削除UI -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
                 title="カスタムキャラ削除ボタン＋確認ダイアログ配線 / 神谷(実装)＋安西(QA) → 守屋(受理待ち)"
@@ -547,7 +559,7 @@
                 <span
                   class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
                   style="background: #6a8caf"
-                  >UI</span
+                  >K4</span
                 >
                 <span class="min-w-0 flex-1 text-[11px] font-semibold"
                   >削除UI</span
@@ -771,8 +783,12 @@
             M4 観察日記 / M5 クラウド同期
             <span class="badge badge-mute">これから</span>
           </h3>
-          <div class="bar"><span style="width: 15%"></span></div>
-          <div class="tag">日記機能 / Google ドライブ連携の本番資格情報</div>
+          <div class="bar"><span style="width: 20%"></span></div>
+          <div class="tag">
+            M4: 日記 ON/OFF
+            トグル（D1）は実装済・日記エンジン（diary-engine）は仕様のみ。M5:
+            Google ドライブ連携の本番資格情報待ち
+          </div>
         </div>
       </div>
 
@@ -800,8 +816,8 @@
           <tr>
             <td>キャラ表示（character-layer）</td>
             <td>仕様確定</td>
-            <td>全18項目</td>
-            <td>画面側 54</td>
+            <td>全18項目＋繰越K1〜K4</td>
+            <td>画面側 67</td>
             <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
@@ -834,7 +850,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="kpi text-info">61 <small>画面側テスト 合格</small></div>
+          <div class="kpi text-info">168 <small>画面側テスト 合格</small></div>
           <div class="tag">
             画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
           </div>
@@ -1012,6 +1028,19 @@
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
             <b
+              >ダッシュボード全体の整合を取り、整合の仕組みを強化しました（PO
+              承認）。</b
+            >節目（M1→M5）と作業ボードで<b>同じ「M1」が別物を指す ID 衝突</b
+            >を是正＝繰越バグは<b>K 系列（K1〜K4）</b>へ分離し<b
+              >M 番号は節目専用</b
+            >に。健全性 KPI
+            を実数（画面側168・Rust81）へ更新。仕組み＝チケット移動時に<b
+              >実施＝👨🏼‍💼 神谷</b
+            >が全セクションを一括整合、<b>担当＝👩🏼‍💼 橘</b
+            >が整合を監視（整合チェックリストを steering に明文化）。
+          </li>
+          <li>
+            <b
               >候補ペルソナ（設計・セキュリティ監査・パフォーマンス監査・ライター）を「チーム」名簿へ合流させました。</b
             >配役済（実線）と候補（破線）を同じ名簿に並べ、これまで投入すべきだった役／これから投入する役を凡例で区別。あわせて体制図下の注記リストを<b>テーブル表記</b>へ変更。
           </li>
@@ -1020,16 +1049,7 @@
               >作業ボードの更新タイミングを「状態遷移トリガー」で明文化しました（PO
               承認）。</b
             >これまで更新タイミングが未定義で「実装→コミットしたがカードを動かさない」ドリフトが発生（仕組みの弱さ・blameless）。<b>コミット→🔍レビュー中／受理→✅完了</b>を遷移の瞬間に反映し、👩🏼‍💼
-            橘が「ボード＝実態」を開示の健全性として監視。繰越4件（M1/M2/L1/削除UI）をレビュー中へ反映済み。
-          </li>
-          <li>
-            <b
-              >心理的安全性／開示の健全性の観測を 👩🏼‍💼
-              橘（運用マネージャー）の責務に明示しました（PO 承認）。</b
-            >専任の「メンタルケア役」は置かず（ペルソナは AI
-            で内面の感情・疲労は実在しないため）、開示が健全に回っているかを
-            <b>機構で観測</b
-            >（指摘→是正の追跡・詰まり共有率・差し戻しの向き先・リフレッシュが責められたか・振り返りの反映）。運用パネルに兆候表を追加。
+            橘が「ボード＝実態」を開示の健全性として監視。繰越4件（K1〜K4）をレビュー中へ反映済み。
           </li>
         </ul>
         <details class="mt-2">
@@ -1039,10 +1059,19 @@
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
             <li>
               <b
+                >心理的安全性／開示の健全性の観測を 👩🏼‍💼
+                橘（運用マネージャー）の責務に明示しました（PO 承認）。</b
+              >専任の「メンタルケア役」は置かず（ペルソナは AI
+              で内面の感情・疲労は実在しないため）、開示が健全に回っているかを
+              <b>機構で観測</b
+              >（指摘→是正の追跡・詰まり共有率・差し戻しの向き先・リフレッシュが責められたか・振り返りの反映）。運用パネルに兆候表を追加。
+            </li>
+            <li>
+              <b
                 >🧪 QA／テストエンジニア（👨🏼‍🔬 安西）を投入しました（PO
                 承認・スコープ限定）。</b
-              >E2→M2
-              の選択回帰が実観測されたため、回帰/エッジを事前に潰す専任を繰越＋diary-engine
+              >E2→K2（選択ハイライト）
+              の回帰が実観測されたため、回帰/エッジを事前に潰す専任を繰越＋diary-engine
               スプリント限定で投入。境界＝安西はテストを足す（Maker
               寄り・受理権限なし）／🛡️ 守屋は合否を出す（独立
               Checker）。体制名簿・③ 実装ツリー（QA
