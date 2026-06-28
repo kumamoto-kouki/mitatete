@@ -445,7 +445,9 @@ body {
 }
 
 .mtt-field__hint {
-  color: var(--text-subtle);
+  /* B-1: 12.5px の小文字は WCAG AA 4.5:1 が必要。text-subtle(3.60:1) は不可 →
+     text-muted(#6f675f, 5.24:1 on --bg) に。望月レビュー B-1。 */
+  color: var(--text-muted);
 }
 
 /* 後方互換エイリアス（旧クラス名 → mtt- に転送） */
