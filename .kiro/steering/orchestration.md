@@ -61,8 +61,13 @@ Wave 2（並行可）:            model-router         diary-engine
 
 - feature ごとに worktree を分ける。`Agent` の `isolation:"worktree"`（自動）または手動 `git worktree add ../wt-<feature> -b feat/<feature>`。
 - 各ワーカーは自 worktree のブランチ `feat/<feature>` で作業し、`src-tauri/` `src/` 等の共有ファイル衝突を物理的に回避する。
-- 完了 → コンダクターが `kiro-review` でレビュー → pass のみ main へ merge → worktree 撤去。
-- **委譲 worktree は `.gitignore` に `.claude/worktrees/` を入れて追跡しない**。統合時は `git add -A` を避け**対象ファイルを明示 add**する（A3 で `git add -A` が worktree ディレクトリを埋め込みリポジトリとして誤取り込みした。untrack＋gitignore で是正）。受理後は worktree とブランチを撤去し、`pnpm test` の本数で二重カウントが無いことを確認する。
+- **マージ／撤去のタイミング（2026-06-29 締め直し・PO 承認）**：状態遷移に揃える。
+  - **マージ先＝統合ブランチ（現 `chore/sdlc-bootstrap`）**。`main` はリリース/既定ブランチで、**`main` への反映＝push/merge は PO**（公開判断）。worktree の `feat/<feature>` は **2段階**で流れる：① `feat/<feature>` → 統合ブランチ（受理時）、② 統合ブランチ → `main`（リリース時・PO）。
+  - **マージのタイミング＝「受理（独立レビュー PASS）→ ✅完了」の遷移**。ここでの「完了」は受理後を指す（実装完了≠受理。ボードの ✅完了・受理と同義）。
+  - **マージの場所／主体＝メイン作業ディレクトリ（統合ブランチをチェックアウト中）で統括（神谷）が実施**。マージ直後に **worktree とブランチを撤去**（`git worktree remove` ＋ merge 済みブランチを `git branch -d`）。`pnpm test` の本数で二重カウントが無いことを確認。
+  - **破棄（古ベース等で実装を捨てる）も即撤去**：worktree を撤去し、理由を完了報告／`.orchestration/progress.log` に開示（黙って消さない）。
+  - **橘が「滞留 worktree」を監視**：受理も破棄もされず残る worktree／merge 済みなのに撤去されないブランチ（例: 過去の `feat/diary-engine` 残置）を開示の健全性で拾う。
+- **委譲 worktree は `.gitignore` に `.claude/worktrees/` を入れて追跡しない**。統合時は `git add -A` を避け**対象ファイルを明示 add**する（A3 で `git add -A` が worktree ディレクトリを埋め込みリポジトリとして誤取り込みした。untrack＋gitignore で是正）。
 - **同一ファイルを編集する feature は同 wave に入れない**。spec フェーズは `.kiro/specs/<feature>/` がディレクトリ分離されるため worktree 不要。
 - 実装エージェントへ渡すプロンプトには毎回明記する：起動直後 `pwd` で worktree を確認／**起点ブランチを明示**（次項参照）／指定 `feat/<feature>` 以外に commit しない／**push しない・メインへ merge しない**／テスト緑で区切る／完了報告に「pwd・変更ファイル・テスト/build の実出力・コミットしたブランチ/hash・未完の懸念」を含める。
 - **worktree の起点ブランチは明示せよ（試行知見 2026-06-27）**：`Agent` の `isolation:"worktree"` はコンダクターの現在ブランチを自動で引き継がず、別ベース（リポジトリ既定など）から worktree を作ることがある。実際 generate_text 試行で worktree が `chore/sdlc-bootstrap` ではなく古いベースから作られ、エージェントが手作業で起点を張り直した。**プロンプトで「`<作業ブランチ>` を起点に `feat/<feature>` を作って作業せよ」と明示**し、起動時に対象ファイルの存在を確認させる。

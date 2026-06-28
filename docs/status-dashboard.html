@@ -316,9 +316,9 @@
               <td>M4 観察日記</td>
               <td>3/5</td>
               <td>12h</td>
-              <td>85%</td>
-              <td>10.2h</td>
-              <td>1.8h</td>
+              <td>95%</td>
+              <td>11.4h</td>
+              <td>0.6h</td>
             </tr>
             <tr>
               <td>M5 クラウド同期</td>
@@ -340,9 +340,9 @@
               <td><b>合計</b></td>
               <td>—</td>
               <td><b>60h</b></td>
-              <td><b>77%</b></td>
-              <td><b>46.0h</b></td>
-              <td><b>14.0h</b></td>
+              <td><b>79%</b></td>
+              <td><b>47.2h</b></td>
+              <td><b>12.8h</b></td>
             </tr>
           </table>
           <div class="mt-2 text-[11px] text-muted">
@@ -727,13 +727,13 @@
         <div class="card">
           <h3>
             M4 観察日記 / M5 クラウド同期
-            <span class="badge badge-mute">これから</span>
+            <span class="badge badge-warn">M4 実装済・M5 これから</span>
           </h3>
-          <div class="bar"><span style="width: 20%"></span></div>
+          <div class="bar"><span style="width: 55%"></span></div>
           <div class="tag">
             M4: 日記 ON/OFF
-            トグル（D1）は実装済・日記エンジン（diary-engine）は仕様のみ。M5:
-            Google ドライブ連携の本番資格情報待ち
+            トグル（D1）＋日記エンジン（diary-engine・全8タスク・35テスト）とも<b>実装完了</b>。残りは実機での生成確認（実API・人手）。M5:
+            Google ドライブ連携の本番資格情報待ち（これから）
           </div>
         </div>
       </div>
@@ -776,9 +776,9 @@
           <tr>
             <td>観察日記（diary-engine）</td>
             <td>タスク化済</td>
-            <td>未着手（前提は解消済）</td>
-            <td>—</td>
-            <td><span class="badge badge-warn">仕様のみ</span></td>
+            <td>全8タスク（generate_text 経由）</td>
+            <td>画面側 35（diary 9＋prompt 26）</td>
+            <td><span class="badge badge-ok">完了</span></td>
           </tr>
         </table>
       </div>
@@ -956,7 +956,8 @@
               <strong>導入・確認すべて完了（実アプリ E2E も1件合格）</strong>
             </li>
             <li>
-              観察日記（diary-engine）の実装 — 前提は解消済・あなたの承認待ち
+              観察日記（diary-engine）—
+              <strong>実装完了</strong>。残りは実機での生成確認（実API・人手）
             </li>
             <li>公開（push）— 出すかどうかは人の判断</li>
           </ul>
@@ -976,6 +977,18 @@
       <section class="changelog">
         <h2>🔵 この版の更新（2026-06-29）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+          <li>
+            <b
+              >worktree のマージ／撤去タイミングを締め直し、diary-engine
+              の状態不整合を是正しました。</b
+            >マージ先を<b>統合ブランチ（chore/sdlc-bootstrap）</b>と明記（main
+            への push は PO）・「受理→✅完了の遷移で
+            merge＋撤去」と用語統一・破棄ケースの撤去と橘の滞留監視を追記。残置の
+            <code>feat/diary-engine</code>（完全マージ済）を撤去。調査の結果<b
+              >diary-engine は実装完了（全8タスク・35テスト・UI/backend
+              配線済）</b
+            >と判明し、spec表「仕様のみ」→<b>完了</b>・節目M4・見積もりを整合（残りは実機生成確認＝人手）。
+          </li>
           <li>
             <b
               >各レーンに采配リーダーを新設し、統括は実装に着手しない体制にしました（PO
@@ -998,19 +1011,19 @@
             <b>レビュー中 WIP 上限＝3</b
             >を設け、橘が「レビュー滞留」を開示の健全性で監視する。
           </li>
-          <li>
-            <b>K5（switcher 全隠し）を実装しました。</b
-            >切り替え対象が1件以下のときはスイッチャーを要素ごと隠す（選択肢1つでの切り替えは無意味＋空要素の余白も出さない）。回帰テスト5本追加・画面側173。実装＝👨🏼‍💼
-            神谷＋👨🏼‍🔬 安西（QA）→ 🛡️
-            守屋の受理待ち。<b>整合ルールの初適用</b>として
-            KPI・spec表・ボードを同一整合で更新。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b>K5（switcher 全隠し）を実装しました。</b
+              >切り替え対象が1件以下のときはスイッチャーを要素ごと隠す（選択肢1つでの切り替えは無意味＋空要素の余白も出さない）。回帰テスト5本追加・画面側173。実装＝👨🏼‍💼
+              神谷＋👨🏼‍🔬 安西（QA）→ 🛡️
+              守屋の受理。<b>整合ルールの初適用</b>として
+              KPI・spec表・ボードを同一整合で更新。
+            </li>
             <li>
               <b
                 >ダッシュボード全体の整合を取り、整合の仕組みを強化しました（PO
