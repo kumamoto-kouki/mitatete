@@ -61,6 +61,7 @@ Wave 2（並行可）:            model-router         diary-engine
 - feature ごとに worktree を分ける。`Agent` の `isolation:"worktree"`（自動）または手動 `git worktree add ../wt-<feature> -b feat/<feature>`。
 - 各ワーカーは自 worktree のブランチ `feat/<feature>` で作業し、`src-tauri/` `src/` 等の共有ファイル衝突を物理的に回避する。
 - 完了 → コンダクターが `kiro-review` でレビュー → pass のみ main へ merge → worktree 撤去。
+- **委譲 worktree は `.gitignore` に `.claude/worktrees/` を入れて追跡しない**。統合時は `git add -A` を避け**対象ファイルを明示 add**する（A3 で `git add -A` が worktree ディレクトリを埋め込みリポジトリとして誤取り込みした。untrack＋gitignore で是正）。受理後は worktree とブランチを撤去し、`pnpm test` の本数で二重カウントが無いことを確認する。
 - **同一ファイルを編集する feature は同 wave に入れない**。spec フェーズは `.kiro/specs/<feature>/` がディレクトリ分離されるため worktree 不要。
 - 実装エージェントへ渡すプロンプトには毎回明記する：起動直後 `pwd` で worktree を確認／**起点ブランチを明示**（次項参照）／指定 `feat/<feature>` 以外に commit しない／**push しない・メインへ merge しない**／テスト緑で区切る／完了報告に「pwd・変更ファイル・テスト/build の実出力・コミットしたブランチ/hash・未完の懸念」を含める。
 - **worktree の起点ブランチは明示せよ（試行知見 2026-06-27）**：`Agent` の `isolation:"worktree"` はコンダクターの現在ブランチを自動で引き継がず、別ベース（リポジトリ既定など）から worktree を作ることがある。実際 generate_text 試行で worktree が `chore/sdlc-bootstrap` ではなく古いベースから作られ、エージェントが手作業で起点を張り直した。**プロンプトで「`<作業ブランチ>` を起点に `feat/<feature>` を作って作業せよ」と明示**し、起動時に対象ファイルの存在を確認させる。
