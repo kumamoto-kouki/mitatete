@@ -26,58 +26,78 @@
 
       @layer base {
         body {
-          @apply bg-bg text-fg font-sans;
+          @apply bg-bg text-fg font-sans antialiased;
           line-height: 1.65;
+          background-image: radial-gradient(
+            1200px 600px at 100% -10%,
+            #f3ece1 0%,
+            transparent 60%
+          );
         }
         h1 {
-          @apply text-[23px] font-bold;
+          @apply text-2xl font-extrabold tracking-tight;
         }
+        /* セクション見出し: 左にアクセントの縦バー（下線は廃止しモダンに） */
         h2 {
-          @apply mt-8 mb-3 flex flex-wrap items-center gap-2 pb-1.5 text-base font-semibold;
-          border-bottom: 2px solid var(--color-accent);
+          @apply mt-10 mb-4 flex flex-wrap items-center gap-2.5 text-lg font-bold;
+        }
+        h2::before {
+          content: "";
+          @apply h-5 w-1.5 shrink-0 rounded-full bg-accent;
         }
         h3 {
           @apply m-0 mb-2 flex flex-wrap items-center gap-1.5 text-sm font-bold;
         }
         code {
-          @apply rounded px-1 text-xs;
-          background: #f0ece5;
+          @apply rounded-md px-1.5 py-0.5 text-xs;
+          background: #efe9e0;
         }
         table {
-          @apply w-full text-[13px];
+          @apply w-full overflow-hidden text-[13px];
           border-collapse: collapse;
         }
         th {
           @apply text-left font-semibold text-muted;
-          padding: 6px 8px;
+          padding: 9px 10px;
           border-bottom: 1px solid var(--color-line);
         }
         td {
           @apply text-left;
-          padding: 6px 8px;
+          padding: 9px 10px;
           border-bottom: 1px solid var(--color-line);
+        }
+        tr:last-child td {
+          border-bottom: 0;
         }
       }
 
       @layer components {
         .wrap {
-          @apply mx-auto max-w-[1040px] px-5 pt-6 pb-16;
+          @apply mx-auto max-w-[1080px] px-5 pt-7 pb-20;
         }
+        /* ヒーロー: アクセントのグラデーション帯 */
+        .hero {
+          @apply mb-2 rounded-2xl px-6 py-7 text-white shadow-lg;
+          background: linear-gradient(135deg, #b9926e 0%, #8f6b4e 100%);
+        }
+        /* カード: 細いリング＋ソフトシャドウ＋ホバーで浮く */
         .card {
-          @apply rounded-xl bg-card p-4;
-          border: 1px solid var(--color-line);
+          @apply rounded-2xl bg-card p-5 shadow-sm ring-1 ring-line/70 transition duration-200;
+        }
+        .card:hover {
+          @apply -translate-y-0.5 shadow-md;
         }
         .card-updated {
-          @apply border-l-4;
+          @apply border-l-4 ring-0;
           border-left-color: var(--color-upd);
           background: linear-gradient(
-            90deg,
+            92deg,
             var(--color-updbg),
-            var(--color-card) 60%
+            var(--color-card) 55%
           );
         }
         .badge {
-          @apply inline-block whitespace-nowrap rounded-full px-2 text-[11px] leading-5 text-white;
+          @apply inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm ring-1 ring-black/5;
         }
         .badge-ok {
           @apply bg-ok;
@@ -96,43 +116,46 @@
           color: #3a2c00;
         }
         .badge-upd {
-          @apply bg-upd font-semibold;
+          @apply bg-upd;
         }
         .note {
           @apply text-xs font-normal text-muted;
         }
         .tag {
-          @apply text-xs text-muted;
+          @apply mt-1 text-xs leading-relaxed text-muted;
         }
         .kpi {
-          @apply text-[26px] font-bold;
+          @apply text-4xl font-extrabold tracking-tight;
         }
         .kpi small {
-          @apply text-xs font-normal text-muted;
+          @apply ml-1 align-middle text-xs font-medium text-muted;
         }
         .bar {
-          @apply h-2 overflow-hidden rounded-full bg-line;
+          @apply mt-1.5 h-2 overflow-hidden rounded-full bg-line;
         }
         .bar > span {
-          @apply block h-full bg-accent;
+          @apply block h-full rounded-full;
+          background: linear-gradient(90deg, var(--color-accent), #caa988);
         }
         .legend {
-          @apply flex flex-wrap items-center gap-3.5 text-xs text-muted;
+          @apply flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted;
         }
         .legend > span {
           @apply inline-flex items-center gap-1.5;
         }
         .changelog {
-          @apply mt-4 rounded-xl p-4;
-          background: var(--color-updbg);
-          border: 1px solid #cfe2f0;
+          @apply mt-5 rounded-2xl p-5 shadow-sm ring-1 ring-[#cfe2f0];
+          background: linear-gradient(180deg, #eef6fc, #f8fbfe);
         }
         .changelog h2 {
-          @apply m-0 mb-2 border-0 p-0;
+          @apply m-0 mb-2 p-0 text-base;
           color: var(--color-upd);
         }
+        .changelog h2::before {
+          content: none;
+        }
         .pdca {
-          @apply flex flex-wrap items-center gap-3.5;
+          @apply flex flex-wrap items-center gap-4;
         }
         .pdca .steps {
           @apply min-w-[280px] flex-1;
@@ -141,23 +164,20 @@
           @apply flex gap-2 py-1 text-[13px];
         }
         .step b {
-          @apply inline-block min-w-[58px];
+          @apply inline-block min-w-[58px] text-muted;
         }
         .tight {
-          @apply mt-1.5 list-disc pl-[18px] text-[13px];
-        }
-        .tight li {
-          @apply my-0.5;
+          @apply mt-1.5 list-disc space-y-1 pl-[18px] text-[13px] marker:text-accent;
         }
         .l-tier {
-          @apply pl-2.5;
-          border-left: 4px solid #6a8caf;
+          @apply border-l-4 pl-3;
+          border-color: #6a8caf;
         }
         .glossary {
           @apply m-0 text-[13px];
         }
         .glossary dt {
-          @apply mt-2.5 font-bold;
+          @apply mt-3 font-bold text-fg;
         }
         .glossary dt:first-child {
           @apply mt-0;
@@ -167,7 +187,7 @@
           color: #5b534c;
         }
         .foot {
-          @apply mt-7 pt-2.5 text-xs text-muted;
+          @apply mt-10 pt-3 text-xs text-muted;
           border-top: 1px solid var(--color-line);
         }
       }
@@ -175,12 +195,13 @@
   </head>
   <body>
     <div class="wrap">
-      <header>
-        <h1>Mitatete 開発ダッシュボード</h1>
-        <div class="text-[13px] text-muted">
-          スナップショット: <b class="text-fg">2026-06-28</b> ／ ブランチ
-          <code>chore/sdlc-bootstrap</code> ／ 進め方:
-          計画→実行→確認→改善のくり返し（PDCA）で、AI が下書き・人が承認
+      <header class="hero">
+        <h1 class="text-white">Mitatete 開発ダッシュボード</h1>
+        <div class="mt-1.5 text-[13px] text-white/85">
+          スナップショット: <b class="font-bold text-white">2026-06-28</b> ／
+          ブランチ
+          <code class="!bg-white/15 !text-white">chore/sdlc-bootstrap</code> ／
+          進め方: 計画→実行→確認→改善のくり返し（PDCA）で、AI が下書き・人が承認
         </div>
       </header>
 
@@ -189,8 +210,8 @@
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
-            <b>CSS フレームワーク（Tailwind CSS）を導入しました。</b
-            >配色をトークン化し、スタイルを刷新（見た目の意味は維持）。
+            <b>Tailwind CSS でデザインを刷新しました。</b
+            >ヒーロー見出し・影とホバーで浮くカード・大きめの丸み・縦バー見出し・色つき数値など、ライブラリの機能で見た目を更新。
           </li>
           <li>
             <b>実アプリの自動テスト（E2E）が動くようになりました。</b
@@ -894,21 +915,21 @@
         今の健全性
         <span class="note">（数値は本日コマンドを実行し直して確認）</span>
       </h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div class="card">
-          <div class="kpi">81 <small>Rust テスト 合格</small></div>
+          <div class="kpi text-accent">81 <small>Rust テスト 合格</small></div>
           <div class="tag">
             裏側（Rust）の自動テスト。スナップショット検査 +1・警告0。
           </div>
         </div>
         <div class="card">
-          <div class="kpi">61 <small>画面側テスト 合格</small></div>
+          <div class="kpi text-info">61 <small>画面側テスト 合格</small></div>
           <div class="tag">
             画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
           </div>
         </div>
         <div class="card">
-          <div class="kpi">0 <small>脆弱性の指摘</small></div>
+          <div class="kpi text-ok">0 <small>脆弱性の指摘</small></div>
           <div class="tag">
             コード脆弱性スキャナー（semgrep）で指摘0。通信先を絞る設定（CSP）も済。
           </div>
@@ -920,7 +941,7 @@
         テストを自動で回す道具（3種そろいました）
         <span class="note">手で確認していた作業を機械にやらせる</span>
       </h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div class="card">
           <h3>
             画面部品テスト <span class="badge badge-ok">導入・確認済</span>
@@ -1003,7 +1024,7 @@
 
       <!-- ===== マイルストーン ===== -->
       <h2>節目（M1→M5）<span class="note">作りたいものへの到達段階</span></h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="card">
           <h3>
             M1 アプリが起動し2つの窓が出る
@@ -1177,7 +1198,7 @@
           >段階を上げるほど自動、下げるほど人が関与</span
         >
       </h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div class="card l-tier">
           <h3>段階1: 報告だけ</h3>
           <div class="tag">
@@ -1223,7 +1244,7 @@
 
       <!-- ===== 次アクション ===== -->
       <h2>次にやること</h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="card">
           <h3>優先 <span class="badge badge-bad">高</span></h3>
           <ul class="tight">
@@ -1254,7 +1275,7 @@
           >③ふだんの言葉で言い換え</span
         >
       </h2>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="card">
           <dl class="glossary">
             <dt>Tauri（タウリ）</dt>
