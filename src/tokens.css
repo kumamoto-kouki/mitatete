@@ -1,0 +1,165 @@
+/* ============================================================
+   Mitatete アプリ用デザイントークン
+   出所: design/tokens/*（claude.ai/design 生成）。
+   差分: 外部フォント @import（Zen Maru Gothic）はアプリの CSP/
+   オフライン制約のため除外。ローカルバンドル後に追加する。
+   見出しフォントは未バンドル時 system へフォールバックする。
+   ============================================================ */
+
+/* ===== Color : primitives ===== */
+:root {
+  --c-brown-50: #f7f1ea;
+  --c-brown-100: #f0e6da;
+  --c-brown-200: #e3cdb4;
+  --c-brown-300: #d2b291;
+  --c-brown-400: #c19c7d;
+  --c-brown-500: #b08968;
+  --c-brown-600: #946f50;
+  --c-brown-700: #6f4e37;
+  --c-brown-800: #4a3526;
+  --c-brown-900: #2b2622;
+
+  --c-sand-50: #faf8f4;
+  --c-sand-100: #f4efe7;
+  --c-sand-200: #e6e0d8;
+  --c-sand-300: #d8d0c5;
+  --c-sand-400: #b3a99e;
+  --c-sand-500: #8a817a;
+  --c-sand-600: #6f675f;
+
+  --c-white: #ffffff;
+
+  --c-green-600: #2e7d52;
+  --c-green-100: #e4f0ea;
+  --c-amber-600: #b9842a;
+  --c-amber-100: #f6ecd8;
+  --c-red-600: #b00020;
+  --c-red-100: #fbe7e9;
+  --c-blue-600: #3a6ea5;
+  --c-blue-100: #e9f0f7;
+  --c-blue-800: #2c5680;
+}
+
+/* ===== Color : semantic（light = 既定） ===== */
+:root {
+  color-scheme: light;
+
+  --bg: var(--c-sand-50);
+  --surface: var(--c-white);
+  --surface-2: var(--c-sand-100);
+  --text: var(--c-brown-900);
+  --text-muted: var(--c-sand-600);
+  --text-subtle: var(--c-sand-500);
+  --border: var(--c-sand-200);
+  --border-strong: var(--c-sand-300);
+
+  --accent: var(--c-brown-500);
+  --accent-ink: var(--c-brown-700);
+  --accent-soft: var(--c-brown-100);
+  --accent-strong: var(--c-brown-700);
+  --accent-strong-hover: var(--c-brown-800);
+  --on-accent: #ffffff;
+
+  --info: var(--c-blue-600);
+  --info-ink: var(--c-blue-800);
+  --info-soft: var(--c-blue-100);
+  --success: var(--c-green-600);
+  --success-soft: var(--c-green-100);
+  --warning: var(--c-amber-600);
+  --warning-soft: var(--c-amber-100);
+  --danger: var(--c-red-600);
+  --danger-soft: var(--c-red-100);
+
+  --ring: var(--c-brown-500);
+}
+
+/* ===== Color : dark（OS 追従） ===== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #191614;
+    --surface: #221e1b;
+    --surface-2: #2b2622;
+    --text: #f3efe9;
+    --text-muted: #b3a99e;
+    --text-subtle: #887e72;
+    --border: #3a342e;
+    --border-strong: #4c453d;
+
+    --accent: #cda482;
+    --accent-ink: #f1ddc9;
+    --accent-soft: #33291f;
+    --accent-strong: #cda482;
+    --accent-strong-hover: #dab592;
+    --on-accent: #211d1a;
+
+    --info: #82add8;
+    --info-ink: #cfe2f2;
+    --info-soft: #233140;
+    --success: #5cba86;
+    --success-soft: #1d2a22;
+    --warning: #e0bd72;
+    --warning-soft: #2f2818;
+    --danger: #f0908f;
+    --danger-soft: #3a2320;
+
+    --ring: #cda482;
+  }
+}
+
+/* ===== Typography（外部 @import は除外） ===== */
+:root {
+  --font-base:
+    system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  --font-display:
+    "Zen Maru Gothic", system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+    sans-serif;
+  --font-mono:
+    ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+
+  --text-xs: 13px;
+  --text-sm: 14.5px;
+  --text-base: 15.5px;
+  --text-md: 17.5px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 28.5px;
+
+  --leading-tight: 1.3;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  --weight-bold: 700;
+  --tracking-caps: 0.1em;
+}
+
+/* ===== Spacing / Radius / Shadow ===== */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --radius-bubble: 18px;
+
+  --shadow-sm: 0 1px 3px rgba(70, 52, 36, 0.06);
+  --shadow-card: 0 2px 10px rgba(70, 52, 36, 0.07);
+  --shadow-md: 0 6px 18px rgba(70, 52, 36, 0.1);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--ring) 42%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.32);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+}

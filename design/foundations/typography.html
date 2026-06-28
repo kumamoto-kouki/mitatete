@@ -1,0 +1,204 @@
+<!-- @dsCard group="Foundations" viewport="780x460" name="Typography" subtitle="日本語前提 / 見出しは丸ゴシック・本文は system+Noto Sans JP" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Typography</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 720px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+      .group-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 14px;
+      }
+      .row + .group-label {
+        margin-top: 26px;
+      }
+
+      .spec {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        padding: 9px 0;
+        border-bottom: 1px dashed var(--border);
+      }
+      .spec:last-child {
+        border-bottom: 0;
+      }
+      .spec .meta {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+        width: 150px;
+        flex: none;
+      }
+      .display {
+        font-family: var(--font-display);
+        font-weight: 700;
+      }
+      .s3 {
+        font-size: var(--text-3xl);
+      }
+      .s2 {
+        font-size: var(--text-2xl);
+      }
+      .s1 {
+        font-size: var(--text-xl);
+      }
+      .body {
+        font-size: var(--text-base);
+        line-height: var(--leading-relaxed);
+      }
+      .cap {
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+      }
+      .fams {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .fam {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+      }
+      .fam .nm {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+      .fam .big {
+        font-size: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Typography</p>
+          <span class="board-sub">あいうえお / 見立て / Mitatete 0123</span>
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <p class="group-label">Scale</p>
+      <div>
+        <div class="spec">
+          <span class="meta">--text-3xl / display</span
+          ><span class="display s3">見立てで、やさしく</span>
+        </div>
+        <div class="spec">
+          <span class="meta">--text-2xl / display</span
+          ><span class="display s2">こんにちは、クロです</span>
+        </div>
+        <div class="spec">
+          <span class="meta">--text-xl / display</span
+          ><span class="display s1">今日はどうされました？</span>
+        </div>
+        <div class="spec">
+          <span class="meta">--text-base / body</span
+          ><span class="body"
+            >本文標準。やわらかな語り口でも、相手が AI
+            であることはいつも誠実に伝えます。</span
+          >
+        </div>
+        <div class="spec">
+          <span class="meta">--text-xs / caption</span
+          ><span class="cap">CAPTION — 補助テキスト・タイムスタンプ等</span>
+        </div>
+      </div>
+
+      <p class="group-label">Font family</p>
+      <div class="fams">
+        <div class="fam">
+          <div class="nm">--font-display · Zen Maru Gothic</div>
+          <div class="display big">ぬくもりの丸ゴシック</div>
+        </div>
+        <div class="fam">
+          <div class="nm">--font-base · system-ui + Noto Sans JP</div>
+          <div class="big">読みやすい本文ゴシック</div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

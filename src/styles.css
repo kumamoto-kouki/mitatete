@@ -1,8 +1,9 @@
+@import "./tokens.css";
+
+/* 旧来の別名（既存クラスが参照していた変数をトークンへ橋渡し） */
 :root {
-  --bg: #faf8f4;
-  --fg: #2b2622;
-  --muted: #8a817a;
-  --accent: #b08968;
+  --fg: var(--text);
+  --muted: var(--text-muted);
 }
 
 * {
@@ -11,13 +12,10 @@
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Hiragino Kaku Gothic ProN",
-    "Noto Sans JP",
-    sans-serif;
-  color: var(--fg);
+  font-family: var(--font-base);
+  font-size: var(--text-sm);
+  color: var(--text);
+  background: var(--bg);
 }
 
 /* ===== チャットUI（main ウィンドウ） ===== */
@@ -29,86 +27,132 @@ body {
 }
 
 .chat__header {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .chat__title {
   margin: 0;
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
 }
 
 .chat__disclosure {
   margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .chat__messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .chat__composer {
   display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #e6e0d8;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 .chat__input {
   flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-base);
+  font-size: var(--text-base);
 }
 
-.chat__send {
-  padding: 8px 14px;
+.chat__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+/* ボタン: 文字を載せる塗りは深いコーヒー（白文字で AA 通過） */
+.chat__send,
+.editor__save {
+  padding: var(--space-2) var(--space-4);
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  border-radius: var(--radius-sm);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-family: var(--font-base);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
   cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+
+.chat__send:hover,
+.editor__save:hover {
+  background: var(--accent-strong-hover);
+}
+
+.chat__send:focus-visible,
+.editor__save:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* ===== キャラクター選択パネル（プリセット一覧） ===== */
 .character-panel {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .character-panel__message {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: #b00020;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--danger);
 }
 
 .character-panel__empty {
   margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .character-switcher {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
-.character-switcher__select {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 13px;
-  background: #fff;
+.character-switcher__select,
+.model-ui__select,
+.model-ui__model,
+.model-ui__key-input,
+.editor__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-base);
+  font-size: var(--text-sm);
+}
+
+.character-switcher__select:focus-visible,
+.model-ui__select:focus-visible,
+.model-ui__model:focus-visible,
+.model-ui__key-input:focus-visible,
+.editor__input:focus-visible,
+.chat__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 .character-panel__list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -118,27 +162,37 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  background: #fff;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   text-align: left;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.character-panel__item:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
 }
 
 .character-panel__item.is-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: var(--accent-soft);
 }
 
 .character-panel__name {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .character-panel__tone {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 /* ===== モデル選択・API キー設定 ===== */
@@ -146,17 +200,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px 16px;
-  border-bottom: 1px solid #e6e0d8;
-}
-
-.model-ui__select,
-.model-ui__model,
-.model-ui__key-input {
-  padding: 6px 8px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .model-ui__keys {
@@ -169,7 +214,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .model-ui__key-input {
@@ -178,67 +223,57 @@ body {
 
 .model-ui__key-status {
   min-width: 56px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .msg--error {
-  color: #b00020;
+  color: var(--danger);
 }
 
 /* 応答は成功したが履歴保存だけ失敗した場合の控えめな注記。 */
 .msg--unsaved {
-  border-left: 2px solid #d9a441;
+  border-left: 2px solid var(--warning);
   padding-left: 6px;
 }
 
 /* ===== カスタムキャラクター作成フォーム ===== */
 .character-editor {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .editor__input {
-  padding: 8px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
+  font-size: var(--text-base);
 }
 
 .editor__file {
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .editor__disclosure {
   margin: 0;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .editor__save {
   align-self: flex-start;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
 }
 
 .editor__message {
   margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .editor__message--error {
-  color: #b00020;
+  color: var(--danger);
 }
 
 /* レイヤービジュアルエディター（フェーズ2） */
@@ -246,26 +281,26 @@ body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #e6e0d8;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .visual-editor__preview {
   width: 96px;
   height: 96px;
-  background: #fff;
-  border: 1px solid #e6e0d8;
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .visual-editor__field {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 /* ===== キャラクターウィンドウ（character ウィンドウ・透明背景） ===== */
@@ -301,9 +336,11 @@ body {
   position: absolute;
   top: 8px;
   max-width: 90%;
-  padding: 6px 10px;
-  background: #fff;
-  border-radius: 10px;
-  font-size: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-bubble);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-card);
 }
