@@ -7,6 +7,7 @@
 import { Window } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import type { CharacterSchema } from "./character-validator";
+import { applyTheme, type Theme } from "./theme";
 
 const CHARACTER_CHANGED_EVENT = "character:changed";
 
@@ -46,4 +47,9 @@ export function updateCharacterDisplay(schema: CharacterSchema): void {
 // main ウィンドウからのアクティブキャラクター変更を受信して表示を更新する。
 void listen<CharacterSchema>(CHARACTER_CHANGED_EVENT, (event) => {
   updateCharacterDisplay(event.payload);
+});
+
+// main ウィンドウでのテーマ切替をリアルタイムで反映する（W-1）。
+void listen<Theme>("theme:changed", (event) => {
+  applyTheme(event.payload);
 });
