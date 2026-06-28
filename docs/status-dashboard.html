@@ -4,267 +4,172 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mitatete 開発ダッシュボード</title>
-    <style>
-      :root {
-        --bg: #faf8f4;
-        --card: #fff;
-        --fg: #2b2622;
-        --muted: #8a817a;
-        --line: #e6e0d8;
-        --accent: #b08968;
-        --ok: #2e7d52;
-        --warn: #d9a441;
-        --bad: #b00020;
-        --blue: #3a6ea5;
-        --new: #2f6f9f;
-        --new-bg: #eaf3fa;
-        --p: #6a8caf;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font-family:
+    <!-- CSS フレームワーク: Tailwind CSS v4（ブラウザ版・ゼロビルド）。閲覧時はネット接続が必要。 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-bg: #faf8f4;
+        --color-card: #ffffff;
+        --color-fg: #2b2622;
+        --color-muted: #8a817a;
+        --color-line: #e6e0d8;
+        --color-accent: #b08968;
+        --color-ok: #2e7d52;
+        --color-warn: #d9a441;
+        --color-bad: #b00020;
+        --color-info: #3a6ea5;
+        --color-upd: #2f6f9f;
+        --color-updbg: #eaf3fa;
+        --font-sans:
           system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-        line-height: 1.65;
       }
-      .wrap {
-        max-width: 1040px;
-        margin: 0 auto;
-        padding: 24px 20px 64px;
-      }
-      header h1 {
-        font-size: 23px;
-        margin: 0 0 3px;
-      }
-      header .sub {
-        color: var(--muted);
-        font-size: 13px;
-      }
-      header .sub b {
-        color: var(--fg);
-      }
-      h2 {
-        font-size: 16px;
-        margin: 34px 0 12px;
-        padding-bottom: 6px;
-        border-bottom: 2px solid var(--accent);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      h2 .note {
-        font-size: 12px;
-        font-weight: 400;
-        color: var(--muted);
-      }
-      .grid {
-        display: grid;
-        gap: 12px;
-      }
-      .cols-2 {
-        grid-template-columns: 1fr 1fr;
-      }
-      .cols-3 {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      @media (max-width: 720px) {
-        .cols-2,
-        .cols-3 {
-          grid-template-columns: 1fr;
+
+      @layer base {
+        body {
+          @apply bg-bg text-fg font-sans;
+          line-height: 1.65;
+        }
+        h1 {
+          @apply text-[23px] font-bold;
+        }
+        h2 {
+          @apply mt-8 mb-3 flex flex-wrap items-center gap-2 pb-1.5 text-base font-semibold;
+          border-bottom: 2px solid var(--color-accent);
+        }
+        h3 {
+          @apply m-0 mb-2 flex flex-wrap items-center gap-1.5 text-sm font-bold;
+        }
+        code {
+          @apply rounded px-1 text-xs;
+          background: #f0ece5;
+        }
+        table {
+          @apply w-full text-[13px];
+          border-collapse: collapse;
+        }
+        th {
+          @apply text-left font-semibold text-muted;
+          padding: 6px 8px;
+          border-bottom: 1px solid var(--color-line);
+        }
+        td {
+          @apply text-left;
+          padding: 6px 8px;
+          border-bottom: 1px solid var(--color-line);
         }
       }
-      .card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 14px 16px;
-      }
-      .card h3 {
-        margin: 0 0 8px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-      /* この版で更新された箇所を視覚的に強調（左に青帯） */
-      .is-updated {
-        border-left: 4px solid var(--new);
-        background: linear-gradient(90deg, var(--new-bg), var(--card) 60%);
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-      th,
-      td {
-        text-align: left;
-        padding: 6px 8px;
-        border-bottom: 1px solid var(--line);
-      }
-      th {
-        color: var(--muted);
-        font-weight: 600;
-      }
-      .badge {
-        display: inline-block;
-        font-size: 11px;
-        padding: 1px 8px;
-        border-radius: 999px;
-        color: #fff;
-        white-space: nowrap;
-      }
-      .b-ok {
-        background: var(--ok);
-      }
-      .b-warn {
-        background: var(--warn);
-        color: #3a2c00;
-      }
-      .b-bad {
-        background: var(--bad);
-      }
-      .b-mute {
-        background: var(--muted);
-      }
-      .b-blue {
-        background: var(--blue);
-      }
-      /* 「この版で更新」を示すピル */
-      .b-upd {
-        background: var(--new);
-        font-weight: 600;
-      }
-      .bar {
-        height: 8px;
-        background: var(--line);
-        border-radius: 999px;
-        overflow: hidden;
-      }
-      .bar > span {
-        display: block;
-        height: 100%;
-        background: var(--accent);
-      }
-      .kpi {
-        font-size: 26px;
-        font-weight: 700;
-      }
-      .kpi small {
-        font-size: 12px;
-        color: var(--muted);
-        font-weight: 400;
-      }
-      /* 更新ハイライトのバナー */
-      .changelog {
-        background: var(--new-bg);
-        border: 1px solid #cfe2f0;
-        border-radius: 10px;
-        padding: 14px 16px;
-        margin-top: 16px;
-      }
-      .changelog h2 {
-        border: none;
-        margin: 0 0 8px;
-        padding: 0;
-        color: var(--new);
-      }
-      .changelog ul {
-        margin: 0;
-        padding-left: 18px;
-        font-size: 13px;
-      }
-      .changelog li {
-        margin: 3px 0;
-      }
-      .changelog .prev {
-        margin-top: 10px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-      /* バッジ凡例 */
-      .legend {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        font-size: 12px;
-        color: var(--muted);
-        align-items: center;
-      }
-      .legend span {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .pdca {
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .pdca .steps {
-        flex: 1;
-        min-width: 280px;
-      }
-      .step {
-        display: flex;
-        gap: 8px;
-        padding: 5px 0;
-        font-size: 13px;
-      }
-      .step b {
-        display: inline-block;
-        min-width: 58px;
-      }
-      .tag {
-        font-size: 12px;
-        color: var(--muted);
-      }
-      ul.tight {
-        margin: 6px 0 0;
-        padding-left: 18px;
-        font-size: 13px;
-      }
-      ul.tight li {
-        margin: 2px 0;
-      }
-      .l-tier {
-        border-left: 4px solid var(--p);
-        padding-left: 10px;
-      }
-      /* 用語集 */
-      dl.glossary {
-        margin: 0;
-        font-size: 13px;
-      }
-      dl.glossary dt {
-        font-weight: 700;
-        margin-top: 10px;
-      }
-      dl.glossary dt:first-child {
-        margin-top: 0;
-      }
-      dl.glossary dd {
-        margin: 2px 0 0;
-        color: #5b534c;
-      }
-      .foot {
-        color: var(--muted);
-        font-size: 12px;
-        margin-top: 28px;
-        border-top: 1px solid var(--line);
-        padding-top: 10px;
-      }
-      code {
-        background: #f0ece5;
-        padding: 0 4px;
-        border-radius: 4px;
-        font-size: 12px;
+
+      @layer components {
+        .wrap {
+          @apply mx-auto max-w-[1040px] px-5 pt-6 pb-16;
+        }
+        .card {
+          @apply rounded-xl bg-card p-4;
+          border: 1px solid var(--color-line);
+        }
+        .card-updated {
+          @apply border-l-4;
+          border-left-color: var(--color-upd);
+          background: linear-gradient(
+            90deg,
+            var(--color-updbg),
+            var(--color-card) 60%
+          );
+        }
+        .badge {
+          @apply inline-block whitespace-nowrap rounded-full px-2 text-[11px] leading-5 text-white;
+        }
+        .badge-ok {
+          @apply bg-ok;
+        }
+        .badge-bad {
+          @apply bg-bad;
+        }
+        .badge-mute {
+          @apply bg-muted;
+        }
+        .badge-info {
+          @apply bg-info;
+        }
+        .badge-warn {
+          @apply bg-warn;
+          color: #3a2c00;
+        }
+        .badge-upd {
+          @apply bg-upd font-semibold;
+        }
+        .note {
+          @apply text-xs font-normal text-muted;
+        }
+        .tag {
+          @apply text-xs text-muted;
+        }
+        .kpi {
+          @apply text-[26px] font-bold;
+        }
+        .kpi small {
+          @apply text-xs font-normal text-muted;
+        }
+        .bar {
+          @apply h-2 overflow-hidden rounded-full bg-line;
+        }
+        .bar > span {
+          @apply block h-full bg-accent;
+        }
+        .legend {
+          @apply flex flex-wrap items-center gap-3.5 text-xs text-muted;
+        }
+        .legend > span {
+          @apply inline-flex items-center gap-1.5;
+        }
+        .changelog {
+          @apply mt-4 rounded-xl p-4;
+          background: var(--color-updbg);
+          border: 1px solid #cfe2f0;
+        }
+        .changelog h2 {
+          @apply m-0 mb-2 border-0 p-0;
+          color: var(--color-upd);
+        }
+        .pdca {
+          @apply flex flex-wrap items-center gap-3.5;
+        }
+        .pdca .steps {
+          @apply min-w-[280px] flex-1;
+        }
+        .step {
+          @apply flex gap-2 py-1 text-[13px];
+        }
+        .step b {
+          @apply inline-block min-w-[58px];
+        }
+        .tight {
+          @apply mt-1.5 list-disc pl-[18px] text-[13px];
+        }
+        .tight li {
+          @apply my-0.5;
+        }
+        .l-tier {
+          @apply pl-2.5;
+          border-left: 4px solid #6a8caf;
+        }
+        .glossary {
+          @apply m-0 text-[13px];
+        }
+        .glossary dt {
+          @apply mt-2.5 font-bold;
+        }
+        .glossary dt:first-child {
+          @apply mt-0;
+        }
+        .glossary dd {
+          @apply mt-0.5 ml-0;
+          color: #5b534c;
+        }
+        .foot {
+          @apply mt-7 pt-2.5 text-xs text-muted;
+          border-top: 1px solid var(--color-line);
+        }
       }
     </style>
   </head>
@@ -272,8 +177,8 @@
     <div class="wrap">
       <header>
         <h1>Mitatete 開発ダッシュボード</h1>
-        <div class="sub">
-          スナップショット: <b>2026-06-28</b> ／ ブランチ
+        <div class="text-[13px] text-muted">
+          スナップショット: <b class="text-fg">2026-06-28</b> ／ ブランチ
           <code>chore/sdlc-bootstrap</code> ／ 進め方:
           計画→実行→確認→改善のくり返し（PDCA）で、AI が下書き・人が承認
         </div>
@@ -282,7 +187,11 @@
       <!-- ===== ① この版の更新（変更点を毎回ここで明示） ===== -->
       <section class="changelog">
         <h2>🔵 この版の更新（2026-06-28）</h2>
-        <ul>
+        <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+          <li>
+            <b>CSS フレームワーク（Tailwind CSS）を導入しました。</b
+            >配色をトークン化し、スタイルを刷新（見た目の意味は維持）。
+          </li>
           <li>
             <b>実アプリの自動テスト（E2E）が動くようになりました。</b
             >アプリを実際に起動して画面が出るかを機械が確認します（<code
@@ -296,7 +205,7 @@
           </li>
           <li>
             <b>更新箇所が一目でわかるようにしました。</b>変わったカードに
-            <span class="badge b-upd">更新 6/28</span>
+            <span class="badge badge-upd">更新 6/28</span>
             を付け、左を青帯で強調しています。
           </li>
           <li>
@@ -313,7 +222,7 @@
             >機能やコンポーネントごとに別の作業者が同時並行で動きます（カードの重なりで表現）。
           </li>
         </ul>
-        <div class="prev">
+        <div class="mt-2.5 text-xs text-muted">
           以降、ダッシュボードを更新するたびに、ここに日付つきで「何が変わったか」を残します（古い版との差分がわかるように）。
         </div>
       </section>
@@ -322,21 +231,23 @@
       <h2>色の意味（凡例）</h2>
       <div class="card">
         <div class="legend">
-          <span><span class="badge b-ok">緑</span> 完了・問題なし</span>
-          <span><span class="badge b-warn">黄</span> 途中・要注意</span>
-          <span><span class="badge b-bad">赤</span> 未着手・最優先</span>
-          <span><span class="badge b-mute">灰</span> これから</span>
-          <span><span class="badge b-upd">青</span> この版で更新した箇所</span>
+          <span><span class="badge badge-ok">緑</span> 完了・問題なし</span>
+          <span><span class="badge badge-warn">黄</span> 途中・要注意</span>
+          <span><span class="badge badge-bad">赤</span> 未着手・最優先</span>
+          <span><span class="badge badge-mute">灰</span> これから</span>
+          <span
+            ><span class="badge badge-upd">青</span> この版で更新した箇所</span
+          >
         </div>
       </div>
 
       <!-- ===== 開発体制（体制図） ===== -->
       <h2>
         開発体制（だれが作り・だれが確認するか）
-        <span class="badge b-upd">更新 6/28</span>
+        <span class="badge badge-upd">更新 6/28</span>
         <span class="note">作る役とチェック役を必ず分ける</span>
       </h2>
-      <div class="card is-updated">
+      <div class="card card-updated">
         <svg
           viewBox="0 0 760 360"
           width="100%"
@@ -642,7 +553,7 @@
             </text>
           </g>
         </svg>
-        <ul class="tight" style="margin-top: 12px">
+        <ul class="tight mt-3">
           <li>
             <b>2つのレーン</b
             >：エンジニアリング（実装）とデザイン。どちらも同じ三役（コンダクター・実施者・レビュアー）。
@@ -670,10 +581,10 @@
       <!-- ===== 外部サービスとの関係 ===== -->
       <h2>
         外部サービスとの関係（GitHub / Claude Design）
-        <span class="badge b-upd">更新 6/28</span>
+        <span class="badge badge-upd">更新 6/28</span>
         <span class="note">どこで作り・どこへ出すか</span>
       </h2>
-      <div class="card is-updated">
+      <div class="card card-updated">
         <svg
           viewBox="0 0 760 250"
           width="100%"
@@ -960,7 +871,7 @@
             />
           </g>
         </svg>
-        <ul class="tight" style="margin-top: 12px">
+        <ul class="tight mt-3">
           <li>
             <b>Claude Design（claude.ai/design）</b
             >：デザインを会話で生成する場所。デザイン実施者が操作し、結果を
@@ -983,7 +894,7 @@
         今の健全性
         <span class="note">（数値は本日コマンドを実行し直して確認）</span>
       </h2>
-      <div class="grid cols-3">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div class="card">
           <div class="kpi">81 <small>Rust テスト 合格</small></div>
           <div class="tag">
@@ -1009,26 +920,30 @@
         テストを自動で回す道具（3種そろいました）
         <span class="note">手で確認していた作業を機械にやらせる</span>
       </h2>
-      <div class="grid cols-3">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div class="card">
-          <h3>画面部品テスト <span class="badge b-ok">導入・確認済</span></h3>
+          <h3>
+            画面部品テスト <span class="badge badge-ok">導入・確認済</span>
+          </h3>
           <div class="tag">
             道具:
             happy-dom。ブラウザを起動せず画面部品の組み立てだけを高速に検査。キャラ編集画面の描画を自動チェック。
           </div>
         </div>
         <div class="card">
-          <h3>出力の固定検査 <span class="badge b-ok">導入・確認済</span></h3>
+          <h3>
+            出力の固定検査 <span class="badge badge-ok">導入・確認済</span>
+          </h3>
           <div class="tag">
             道具: insta。AI
             への指示文の組み立て結果を「お手本」と突き合わせ、意図しない変化を自動検出。
           </div>
         </div>
-        <div class="card is-updated">
+        <div class="card card-updated">
           <h3>
             実アプリ起動テスト
-            <span class="badge b-ok">導入・確認済</span>
-            <span class="badge b-upd">更新 6/28</span>
+            <span class="badge badge-ok">導入・確認済</span>
+            <span class="badge badge-upd">更新 6/28</span>
           </h3>
           <div class="tag">
             道具: tauri-driver ＋
@@ -1060,51 +975,52 @@
             <td>仕様確定</td>
             <td>全23項目</td>
             <td>Rust 56</td>
-            <td><span class="badge b-ok">完了</span></td>
+            <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
             <td>キャラ表示（character-layer）</td>
             <td>仕様確定</td>
             <td>全18項目</td>
             <td>画面側 54</td>
-            <td><span class="badge b-ok">完了</span></td>
+            <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
             <td>モデル切替・対話（model-router）</td>
             <td>タスク化済</td>
             <td>全18 ＋ 汎用生成コマンド</td>
             <td>Rust 22 / 画面側 6</td>
-            <td><span class="badge b-ok">完了</span></td>
+            <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
             <td>観察日記（diary-engine）</td>
             <td>タスク化済</td>
             <td>未着手（前提は解消済）</td>
             <td>—</td>
-            <td><span class="badge b-warn">仕様のみ</span></td>
+            <td><span class="badge badge-warn">仕様のみ</span></td>
           </tr>
         </table>
       </div>
 
       <!-- ===== マイルストーン ===== -->
       <h2>節目（M1→M5）<span class="note">作りたいものへの到達段階</span></h2>
-      <div class="grid cols-2">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div class="card">
           <h3>
-            M1 アプリが起動し2つの窓が出る <span class="badge b-ok">達成</span>
+            M1 アプリが起動し2つの窓が出る
+            <span class="badge badge-ok">達成</span>
           </h3>
           <div class="bar"><span style="width: 100%"></span></div>
         </div>
         <div class="card">
           <h3>
-            M2 キャラ選択が画面に反映 <span class="badge b-ok">確認済</span>
+            M2 キャラ選択が画面に反映 <span class="badge badge-ok">確認済</span>
           </h3>
           <div class="bar"><span style="width: 100%"></span></div>
           <div class="tag">実機ログでキャラ窓の描画を確認済み</div>
         </div>
         <div class="card">
           <h3>
-            M3 モデルと実際に会話 <span class="badge b-warn">あと一歩</span>
+            M3 モデルと実際に会話 <span class="badge badge-warn">あと一歩</span>
           </h3>
           <div class="bar"><span style="width: 70%"></span></div>
           <div class="tag">
@@ -1114,7 +1030,7 @@
         <div class="card">
           <h3>
             M4 観察日記 / M5 クラウド同期
-            <span class="badge b-mute">これから</span>
+            <span class="badge badge-mute">これから</span>
           </h3>
           <div class="bar"><span style="width: 15%"></span></div>
           <div class="tag">日記機能 / Google ドライブ連携の本番資格情報</div>
@@ -1201,8 +1117,8 @@
           </text>
         </svg>
         <div class="steps">
-          <div class="card" style="margin-bottom: 10px">
-            <h3>例① 品質の点検 <span class="badge b-ok">完了</span></h3>
+          <div class="card mb-2.5">
+            <h3>例① 品質の点検 <span class="badge badge-ok">完了</span></h3>
             <div class="step">
               <b>計画</b
               ><span>プロダクトを点検・検証・記録する計画を立てる</span>
@@ -1223,12 +1139,14 @@
               <b>改善</b
               ><span
                 >3件を修正 → 再テストで
-                <span class="badge b-ok">全合格</span></span
+                <span class="badge badge-ok">全合格</span></span
               >
             </div>
           </div>
           <div class="card">
-            <h3>例② 作業の任せ方の試行 <span class="badge b-ok">完了</span></h3>
+            <h3>
+              例② 作業の任せ方の試行 <span class="badge badge-ok">完了</span>
+            </h3>
             <div class="step">
               <b>計画</b
               ><span>新コマンドの実装を別の作業役（AI）に任せてみる</span>
@@ -1240,7 +1158,8 @@
             <div class="step">
               <b>確認</b
               ><span
-                >別のチェック役が <span class="badge b-ok">合格</span> 判定。
+                >別のチェック役が
+                <span class="badge badge-ok">合格</span> 判定。
                 取りまとめ役も80件のテストを自分で実行し直して確認</span
               >
             </div>
@@ -1258,7 +1177,7 @@
           >段階を上げるほど自動、下げるほど人が関与</span
         >
       </h2>
-      <div class="grid cols-3">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div class="card l-tier">
           <h3>段階1: 報告だけ</h3>
           <div class="tag">
@@ -1266,7 +1185,7 @@
           </div>
         </div>
         <div class="card l-tier">
-          <h3>段階2: 補助 <span class="badge b-blue">いまここ</span></h3>
+          <h3>段階2: 補助 <span class="badge badge-info">いまここ</span></h3>
           <div class="tag">
             作る役とチェックする役を分けて修正。本体への取り込み・公開は人が判断。
           </div>
@@ -1278,7 +1197,7 @@
           </div>
         </div>
       </div>
-      <div class="card" style="margin-top: 12px">
+      <div class="card mt-3">
         <h3>暴走を防ぐ仕組み</h3>
         <ul class="tight">
           <li>
@@ -1304,9 +1223,9 @@
 
       <!-- ===== 次アクション ===== -->
       <h2>次にやること</h2>
-      <div class="grid cols-2">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div class="card">
-          <h3>優先 <span class="badge b-bad">高</span></h3>
+          <h3>優先 <span class="badge badge-bad">高</span></h3>
           <ul class="tight">
             <li>
               テスト自動化の道具3種 —
@@ -1319,7 +1238,7 @@
           </ul>
         </div>
         <div class="card">
-          <h3>見守り <span class="badge b-warn">中</span></h3>
+          <h3>見守り <span class="badge badge-warn">中</span></h3>
           <ul class="tight">
             <li>M3 の実機確認（本物の API キーが必要）</li>
             <li>OpenAI の上限指定（将来モデル別に分岐）</li>
@@ -1335,11 +1254,16 @@
           >③ふだんの言葉で言い換え</span
         >
       </h2>
-      <div class="grid cols-2">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div class="card">
           <dl class="glossary">
             <dt>Tauri（タウリ）</dt>
             <dd>Web 技術でパソコン用アプリを作る仕組み。本アプリの土台。</dd>
+            <dt>Tailwind CSS（テイルウインド）</dt>
+            <dd>
+              短いクラス名を組み合わせて見た目を作る CSS
+              フレームワーク。このダッシュボードで採用。
+            </dd>
             <dt>spec（スペック）</dt>
             <dd>機能ごとの仕様書。要件→設計→タスクの順に固めていく。</dd>
             <dt>E2E テスト</dt>
@@ -1382,8 +1306,7 @@
         体制の正式版: <code>.kiro/steering/orchestration.md</code> ／
         詳しい記録:
         <code>.claude/reports/2026-06-27-product-state-and-handoff.md</code> ／
-        この HTML は外部依存なしで完結。VS Code
-        のプレビューかブラウザで開けます。
+        スタイルは Tailwind CSS（CDN）を利用。閲覧時はネット接続が必要です。
       </div>
     </div>
   </body>
