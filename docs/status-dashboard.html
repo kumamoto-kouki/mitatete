@@ -917,6 +917,89 @@
         <span class="note">— チーム・体制・進め方・用語</span>
       </h2>
 
+      <!-- ===== 運用の実行状況（運用マネージャー 橘） ===== -->
+      <details class="fold" open>
+        <summary>
+          運用の実行状況（👩🏼‍💼 橘・運用マネージャー）
+          <span class="note">報告: 橘 → 👨🏼‍💼 神谷 → あなた（PO 承認）</span>
+        </summary>
+        <div class="fold-body card card-updated">
+          <div class="mb-3 text-xs text-muted">
+            運用の健全性を 👩🏼‍💼
+            橘（運用マネージャー）が台帳化・監視し、神谷（統括）が PO
+            へ報告します。受理判断は各レビュアー＋神谷、最終承認は
+            あなた（PO）。事故は人でなく<b>系の弱さ</b>として記録（blameless）。
+          </div>
+
+          <!-- サマリ KPI -->
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <div class="kpi !text-3xl text-accent">8</div>
+              <div class="tag">委譲（実装）</div>
+            </div>
+            <div>
+              <div class="kpi !text-3xl text-ok">7</div>
+              <div class="tag">受理（＋直対応 R1）</div>
+            </div>
+            <div>
+              <div class="kpi !text-3xl text-warn">2</div>
+              <div class="tag">破棄（古ベース）</div>
+            </div>
+            <div>
+              <div class="kpi !text-3xl text-info">6</div>
+              <div class="tag">独立レビュー</div>
+            </div>
+          </div>
+
+          <!-- 事故 → 是正（系の修正・効力確認） -->
+          <div class="mt-4 text-sm font-bold">事故 → 是正（系の修正）</div>
+          <table class="mt-2">
+            <tr>
+              <th>事故（系の弱さ）</th>
+              <th>是正</th>
+              <th>効力</th>
+            </tr>
+            <tr>
+              <td>worktree が古いベース ×3</td>
+              <td>ベース是正ガード（git merge）</td>
+              <td>✅ 再発なし（A3/D1/A4/E2）</td>
+            </tr>
+            <tr>
+              <td>エージェントが安全ガード弱体化（A2）</td>
+              <td>差し戻し＋「.claude 不可侵」</td>
+              <td>✅ 以後 settings 不変</td>
+            </tr>
+            <tr>
+              <td>git add -A で worktree 誤取込（D1）</td>
+              <td>.gitignore＋統合は明示 add</td>
+              <td>✅ 再発なし</td>
+            </tr>
+            <tr>
+              <td>vitest が worktree を二重カウント ×2</td>
+              <td>vitest exclude</td>
+              <td>✅ 解消</td>
+            </tr>
+          </table>
+
+          <!-- レビュー判定の内訳 -->
+          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+            <span
+              ><b>レビュー判定</b>：APPROVED 1（D1）／PASS 1（A4）／条件付きPASS
+              4（A・A2・A3・C）</span
+            >
+          </div>
+
+          <!-- 運用相談の窓口 -->
+          <div
+            class="mt-3 rounded-lg bg-[#f4efe7] px-3 py-2 text-xs text-muted"
+          >
+            <b>💬 運用相談の窓口</b>：進め方の迷い・ガードに当たった等は 👩🏼‍💼
+            橘へ。信用を支える運用原則（P1〜P6）に照らして整えます（判断を下すのでなく、正規の道を一緒に探す）。改善は橘が
+            神谷へ起案。
+          </div>
+        </div>
+      </details>
+
       <!-- ===== 凡例 ===== -->
       <h2>色の意味（凡例）</h2>
       <div class="card">
@@ -1011,10 +1094,23 @@
             >
               <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
               <div class="min-w-0">
-                <div class="text-[13px] font-bold">神谷（かみや）</div>
+                <div class="text-[13px] font-bold">神谷(かみや)</div>
                 <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
                 <div class="mt-0.5 text-[11px] text-muted">
-                  専門: 計画分解・委譲設計・証拠ベースの受理
+                  専門: 計画分解・委譲設計・証拠ベースの受理・PO へ報告
+                </div>
+              </div>
+            </div>
+            <!-- 橘 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💼</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">橘（たちばな）</div>
+                <div class="text-xs text-[#6f4e37]">運用マネージャー</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 運用の実行状況の台帳管理・運用相談の窓口・改善起案
                 </div>
               </div>
             </div>
