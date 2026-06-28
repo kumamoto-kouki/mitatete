@@ -363,8 +363,9 @@
         <!-- 現在＋レーン凡例（1行で要点） -->
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
-            <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-warn"></span>
-            🧩 林（実装）が D1（観察日記 ON/OFF）を実装中 → 🛡️ 守屋（レビュー）
+            <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-info"></span>
+            🧩 林（実装）が D1（観察日記 ON/OFF・142テスト）を実装、🛡️
+            守屋（エンジニアレビュー）がレビュー中
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -400,6 +401,16 @@
             >
               🔨 進行中
             </div>
+            <div class="p-2 text-center text-[11px] text-muted">—</div>
+          </div>
+          <!-- レビュー中 -->
+          <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
+            <div
+              class="px-3 py-1.5 text-xs font-bold"
+              style="background: #e9f0f7; color: #2c5680"
+            >
+              🔍 レビュー中
+            </div>
             <div class="space-y-1.5 p-2">
               <div
                 class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -418,16 +429,6 @@
                 >
               </div>
             </div>
-          </div>
-          <!-- レビュー中 -->
-          <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
-            <div
-              class="px-3 py-1.5 text-xs font-bold"
-              style="background: #e9f0f7; color: #2c5680"
-            >
-              🔍 レビュー中
-            </div>
-            <div class="p-2 text-center text-[11px] text-muted">—</div>
           </div>
           <!-- 完了・受理 -->
           <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
