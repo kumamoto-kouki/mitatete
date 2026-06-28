@@ -1,0 +1,28 @@
+/* ============================================================
+   Mitatete Design Tokens — Shadow & Focus（方向A: 広めでやわらかい）
+   ============================================================ */
+:root {
+  --shadow-sm: 0 1px 3px rgba(70, 52, 36, 0.06);
+  --shadow-card: 0 2px 10px rgba(70, 52, 36, 0.07);
+  --shadow-md: 0 6px 18px rgba(70, 52, 36, 0.1);
+  --shadow-lg: 0 14px 36px rgba(70, 52, 36, 0.12);
+
+  /* フォーカスリング（可視・WCAG）: 外側ハロー */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--ring) 42%, transparent);
+}
+
+[data-theme="dark"] {
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.46);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.32);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.46);
+  }
+}

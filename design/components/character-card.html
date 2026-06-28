@@ -1,0 +1,341 @@
+<!-- @dsCard group="Components" viewport="780x620" name="Character Card / Display" subtitle="アバター＋名前＋ひとこと性格＋選択状態 / キャラクター窓表示" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Character</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 760px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+      .group-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 12px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 248px;
+        gap: 28px;
+        align-items: start;
+      }
+      @media (max-width: 720px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ===== soft flat avatar（差し替え前提のプレースホルダ） ===== */
+      .mtt-avt {
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .mtt-avt--brown {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .mtt-avt--green {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+      .mtt-avt--blue {
+        background: var(--info-soft);
+        color: var(--info);
+      }
+      .mtt-avt svg {
+        width: 48%;
+        height: 48%;
+      }
+
+      /* ===== character select card ===== */
+      .mtt-chars {
+        display: grid;
+        gap: 10px;
+      }
+      .mtt-char {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        width: 100%;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        box-shadow: var(--shadow-sm);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
+      }
+      .mtt-char:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-card);
+      }
+      .mtt-char:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+      .mtt-char.is-selected {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .mtt-char .mtt-avt {
+        width: 46px;
+        height: 46px;
+        box-shadow: var(--shadow-sm);
+      }
+      .mtt-char__body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .mtt-char__name {
+        font-family: var(--font-display);
+        font-size: var(--text-md);
+        font-weight: 700;
+      }
+      .mtt-char__trait {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+      .mtt-char__pick {
+        margin-left: auto;
+        flex: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1.5px solid var(--border-strong);
+        color: transparent;
+      }
+      .mtt-char.is-selected .mtt-char__pick {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .mtt-char__pick svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* ===== character window display ===== */
+      .mtt-charwin {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 26px 22px 20px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .mtt-charwin .mtt-avt {
+        width: 116px;
+        height: 116px;
+        box-shadow: var(--shadow-card);
+        margin-bottom: 6px;
+      }
+      .mtt-charwin__name {
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: 700;
+      }
+      .mtt-charwin__status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .mtt-charwin__status .live {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+      .mtt-charwin__model {
+        margin-top: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: var(--accent-soft);
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+      }
+      .mtt-charwin__ai {
+        margin-top: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--info-ink);
+      }
+      .mtt-charwin__ai svg {
+        width: 13px;
+        height: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Character</p>
+          <span class="board-sub"
+            >アバターは差し替え前提のプレースホルダ（やわらかいフラット）</span
+          >
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <div class="layout">
+        <div>
+          <p class="group-label">キャラクター選択</p>
+          <div class="mtt-chars" id="chars">
+            <button class="mtt-char is-selected">
+              <span class="mtt-avt mtt-avt--brown"
+                ><i data-lucide="sparkles"></i
+              ></span>
+              <span class="mtt-char__body">
+                <span class="mtt-char__name">クロ</span>
+                <span class="mtt-char__trait">落ち着いて聞き上手 · Claude</span>
+              </span>
+              <span class="mtt-char__pick"><i data-lucide="check"></i></span>
+            </button>
+            <button class="mtt-char">
+              <span class="mtt-avt mtt-avt--green"
+                ><i data-lucide="sprout"></i
+              ></span>
+              <span class="mtt-char__body">
+                <span class="mtt-char__name">ジー</span>
+                <span class="mtt-char__trait">好奇心おうせい · GPT</span>
+              </span>
+              <span class="mtt-char__pick"><i data-lucide="check"></i></span>
+            </button>
+            <button class="mtt-char">
+              <span class="mtt-avt mtt-avt--blue"
+                ><i data-lucide="moon-star"></i
+              ></span>
+              <span class="mtt-char__body">
+                <span class="mtt-char__name">ふたば</span>
+                <span class="mtt-char__trait">物知りで気さく · Gemini</span>
+              </span>
+              <span class="mtt-char__pick"><i data-lucide="check"></i></span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">キャラクター窓</p>
+          <div class="mtt-charwin">
+            <span class="mtt-avt mtt-avt--brown"
+              ><i data-lucide="sparkles"></i
+            ></span>
+            <div class="mtt-charwin__name">クロ</div>
+            <div class="mtt-charwin__status">
+              <span class="live"></span>オンライン · 話せます
+            </div>
+            <div class="mtt-charwin__model">Claude / Anthropic</div>
+            <div class="mtt-charwin__ai">
+              <i data-lucide="info"></i>AI を見立てたキャラクターです
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const chars = document.getElementById("chars");
+      chars.addEventListener("click", (e) => {
+        const c = e.target.closest(".mtt-char");
+        if (!c) return;
+        chars
+          .querySelectorAll(".mtt-char")
+          .forEach((m) => m.classList.remove("is-selected"));
+        c.classList.add("is-selected");
+      });
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

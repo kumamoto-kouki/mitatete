@@ -1,0 +1,284 @@
+<!-- @dsCard group="Components" viewport="780x520" name="Model Select" subtitle="複数モデルをカードで選択 / 選択中・hover・無効を明示" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Model Select</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 720px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .panel-title {
+        font-size: var(--text-sm);
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        margin: 0 0 12px;
+      }
+
+      /* ===== component: model card ===== */
+      .mtt-models {
+        display: grid;
+        gap: 12px;
+      }
+      .mtt-model {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        text-align: left;
+        width: 100%;
+        font: inherit;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        box-shadow: var(--shadow-sm);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
+      }
+      .mtt-model:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-card);
+      }
+      .mtt-model:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+      .mtt-model.is-selected {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .mtt-model:disabled,
+      .mtt-model.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        box-shadow: none;
+      }
+
+      .mtt-model__icon {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 20px;
+        background: var(--surface-2);
+        color: var(--accent-ink);
+      }
+      .mtt-model.is-selected .mtt-model__icon {
+        background: var(--surface);
+      }
+      .mtt-model__body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+      }
+      .mtt-model__name {
+        font-size: var(--text-md);
+        font-weight: 700;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .mtt-model__provider {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: var(--surface-2);
+        padding: 1px 7px;
+        border-radius: var(--radius-pill);
+      }
+      .mtt-model.is-selected .mtt-model__provider {
+        background: var(--surface);
+      }
+      .mtt-model__desc {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.45;
+      }
+      .mtt-model__check {
+        margin-left: auto;
+        flex: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1.5px solid var(--border-strong);
+        color: transparent;
+      }
+      .mtt-model.is-selected .mtt-model__check {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .mtt-model__check svg {
+        width: 15px;
+        height: 15px;
+      }
+      .mtt-model__tag {
+        margin-left: auto;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Model Select</p>
+          <span class="board-sub">どのモデルと話すか — 選択状態を明示</span>
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <p class="panel-title">モデルを選ぶ</p>
+      <div class="mtt-models" id="models">
+        <button class="mtt-model is-selected">
+          <span class="mtt-model__icon">C</span>
+          <span class="mtt-model__body">
+            <span class="mtt-model__name"
+              >Claude <span class="mtt-model__provider">Anthropic</span></span
+            >
+            <span class="mtt-model__desc"
+              >落ち着いて寄り添う。長い相談ごと向き。</span
+            >
+          </span>
+          <span class="mtt-model__check"><i data-lucide="check"></i></span>
+        </button>
+
+        <button class="mtt-model">
+          <span class="mtt-model__icon">G</span>
+          <span class="mtt-model__body">
+            <span class="mtt-model__name"
+              >GPT <span class="mtt-model__provider">OpenAI</span></span
+            >
+            <span class="mtt-model__desc"
+              >機転がきいて手早い。アイデア出し向き。</span
+            >
+          </span>
+          <span class="mtt-model__check"><i data-lucide="check"></i></span>
+        </button>
+
+        <button class="mtt-model">
+          <span class="mtt-model__icon">G</span>
+          <span class="mtt-model__body">
+            <span class="mtt-model__name"
+              >Gemini <span class="mtt-model__provider">Google</span></span
+            >
+            <span class="mtt-model__desc"
+              >幅広く物知り。調べものの相棒に。</span
+            >
+          </span>
+          <span class="mtt-model__check"><i data-lucide="check"></i></span>
+        </button>
+
+        <button class="mtt-model is-disabled" disabled>
+          <span class="mtt-model__icon">L</span>
+          <span class="mtt-model__body">
+            <span class="mtt-model__name"
+              >Local LLM
+              <span class="mtt-model__provider">on-device</span></span
+            >
+            <span class="mtt-model__desc">準備中 — まだ接続できません。</span>
+          </span>
+          <span class="mtt-model__tag">利用不可</span>
+        </button>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const models = document.getElementById("models");
+      models.addEventListener("click", (e) => {
+        const card = e.target.closest(".mtt-model");
+        if (!card || card.disabled) return;
+        models
+          .querySelectorAll(".mtt-model")
+          .forEach((m) => m.classList.remove("is-selected"));
+        card.classList.add("is-selected");
+      });
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,284 @@
+<!-- @dsCard group="Components" viewport="780x600" name="Input" subtitle="通常 / focus / disabled / 送信中(loading) ＋ 文字数" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Input</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 600px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+      .group-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 10px;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      /* ===== component: composer input ===== */
+      .mtt-field {
+        position: relative;
+      }
+      .mtt-input {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 8px 8px 8px 16px;
+        box-shadow: var(--shadow-sm);
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .mtt-input__ta {
+        flex: 1;
+        border: 0;
+        outline: none;
+        resize: none;
+        background: transparent;
+        font-family: var(--font-base);
+        font-size: var(--text-base);
+        line-height: 1.6;
+        color: var(--text);
+        padding: 7px 0;
+        max-height: 120px;
+        min-width: 0;
+      }
+      .mtt-input__ta::placeholder {
+        color: var(--text-subtle);
+      }
+      .mtt-input.is-focus {
+        border-color: var(--accent);
+        box-shadow: var(--focus-ring);
+      }
+      .mtt-input.is-disabled {
+        background: var(--surface-2);
+        border-color: var(--border);
+        opacity: 0.7;
+      }
+      .mtt-input.is-disabled .mtt-input__ta {
+        color: var(--text-muted);
+      }
+
+      .mtt-send {
+        flex: none;
+        width: 38px;
+        height: 38px;
+        border-radius: var(--radius-md);
+        border: 0;
+        cursor: pointer;
+        background: var(--accent-strong);
+        color: var(--on-accent);
+        display: grid;
+        place-items: center;
+        transition: background 0.15s;
+      }
+      .mtt-send:hover {
+        background: var(--accent-strong-hover);
+      }
+      .mtt-send:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      .mtt-send svg {
+        width: 18px;
+        height: 18px;
+      }
+      .mtt-send__spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid color-mix(in srgb, var(--on-accent) 40%, transparent);
+        border-top-color: var(--on-accent);
+        animation: mtt-spin 0.7s linear infinite;
+      }
+      @keyframes mtt-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .mtt-field__foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 4px 0;
+        font-size: 12.5px;
+        color: var(--text-muted);
+      }
+      .mtt-field__hint {
+        color: var(--text-subtle);
+      }
+      .mtt-field__count {
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+      }
+      .mtt-field__count.is-over {
+        color: var(--danger);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Input</p>
+          <span class="board-sub">メッセージ入力欄 — 4状態</span>
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <div class="stack">
+        <div>
+          <p class="group-label">通常</p>
+          <div class="mtt-field">
+            <div class="mtt-input">
+              <textarea
+                class="mtt-input__ta"
+                rows="1"
+                placeholder="メッセージを入力…"
+              ></textarea>
+              <button class="mtt-send"><i data-lucide="arrow-up"></i></button>
+            </div>
+            <div class="mtt-field__foot">
+              <span class="mtt-field__hint"
+                >Enter で送信 · Shift+Enter で改行</span
+              ><span class="mtt-field__count">0 / 2000</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">Focus ＋ 文字数</p>
+          <div class="mtt-field">
+            <div class="mtt-input is-focus">
+              <textarea class="mtt-input__ta" rows="1">
+明日の面談、何を準備すればいい？</textarea
+              >
+              <button class="mtt-send"><i data-lucide="arrow-up"></i></button>
+            </div>
+            <div class="mtt-field__foot">
+              <span class="mtt-field__hint">Enter で送信</span
+              ><span class="mtt-field__count">16 / 2000</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">送信中（loading）</p>
+          <div class="mtt-field">
+            <div class="mtt-input">
+              <textarea class="mtt-input__ta" rows="1" disabled>
+明日の面談、何を準備すればいい？</textarea
+              >
+              <button class="mtt-send" disabled>
+                <span class="mtt-send__spinner"></span>
+              </button>
+            </div>
+            <div class="mtt-field__foot">
+              <span class="mtt-field__hint">クロ が考えています…</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">無効（disabled）</p>
+          <div class="mtt-field">
+            <div class="mtt-input is-disabled">
+              <textarea
+                class="mtt-input__ta"
+                rows="1"
+                placeholder="モデル未選択 — 先にキャラクターを選んでください"
+                disabled
+              ></textarea>
+              <button class="mtt-send" disabled>
+                <i data-lucide="arrow-up"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

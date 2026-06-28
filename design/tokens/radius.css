@@ -1,0 +1,11 @@
+/* ============================================================
+   Mitatete Design Tokens — Radius（角丸 / 方向A: 大きめでやわらか）
+   ============================================================ */
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --radius-bubble: 18px; /* チャットバブル */
+}

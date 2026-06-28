@@ -1,0 +1,297 @@
+<!-- @dsCard group="Components" viewport="780x560" name="Button" subtitle="primary / secondary / ghost × hover・focus・disabled" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Button</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: 96px repeat(4, 1fr);
+        gap: 14px 18px;
+        align-items: center;
+      }
+      .col-h {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        text-align: center;
+      }
+      .row-h {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .cell {
+        display: flex;
+        justify-content: center;
+      }
+
+      /* ===== component: button ===== */
+      .mtt-btn {
+        font-family: var(--font-base);
+        font-weight: var(--weight-bold);
+        font-size: var(--text-base);
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s,
+          box-shadow 0.15s,
+          transform 0.05s;
+      }
+      .mtt-btn svg {
+        width: 17px;
+        height: 17px;
+      }
+      .mtt-btn:active {
+        transform: translateY(1px);
+      }
+      .mtt-btn:disabled,
+      .mtt-btn.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+        box-shadow: none;
+      }
+
+      .mtt-btn--primary {
+        background: var(--accent-strong);
+        color: var(--on-accent);
+      }
+      .mtt-btn--primary:hover,
+      .mtt-btn--primary.is-hover {
+        background: var(--accent-strong-hover);
+      }
+      .mtt-btn--primary:focus-visible,
+      .mtt-btn--primary.is-focus {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .mtt-btn--secondary {
+        background: var(--surface);
+        color: var(--accent-ink);
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-sm);
+      }
+      .mtt-btn--secondary:hover,
+      .mtt-btn--secondary.is-hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+      }
+      .mtt-btn--secondary:focus-visible,
+      .mtt-btn--secondary.is-focus {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .mtt-btn--ghost {
+        background: transparent;
+        color: var(--accent-ink);
+      }
+      .mtt-btn--ghost:hover,
+      .mtt-btn--ghost.is-hover {
+        background: var(--accent-soft);
+      }
+      .mtt-btn--ghost:focus-visible,
+      .mtt-btn--ghost.is-focus {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
+
+      .extra {
+        margin-top: 26px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .extra .group-label {
+        width: 100%;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 4px;
+      }
+      .mtt-btn--sm {
+        padding: 7px 13px;
+        font-size: var(--text-sm);
+        border-radius: var(--radius-xs);
+      }
+      .mtt-btn--lg {
+        padding: 14px 22px;
+        font-size: var(--text-md);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Button</p>
+          <span class="board-sub"
+            >primary / secondary / ghost — トークン参照のみ</span
+          >
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <div class="matrix">
+        <div></div>
+        <div class="col-h">Default</div>
+        <div class="col-h">Hover</div>
+        <div class="col-h">Focus</div>
+        <div class="col-h">Disabled</div>
+
+        <div class="row-h">Primary</div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--primary">
+            <i data-lucide="send"></i>送信
+          </button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--primary is-hover">
+            <i data-lucide="send"></i>送信
+          </button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--primary is-focus">
+            <i data-lucide="send"></i>送信
+          </button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--primary" disabled>
+            <i data-lucide="send"></i>送信
+          </button>
+        </div>
+
+        <div class="row-h">Secondary</div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--secondary">モデルを変更</button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--secondary is-hover">
+            モデルを変更
+          </button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--secondary is-focus">
+            モデルを変更
+          </button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--secondary" disabled>
+            モデルを変更
+          </button>
+        </div>
+
+        <div class="row-h">Ghost</div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--ghost">キャンセル</button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--ghost is-hover">キャンセル</button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--ghost is-focus">キャンセル</button>
+        </div>
+        <div class="cell">
+          <button class="mtt-btn mtt-btn--ghost" disabled>キャンセル</button>
+        </div>
+      </div>
+
+      <div class="extra">
+        <p class="group-label">Size</p>
+        <button class="mtt-btn mtt-btn--primary mtt-btn--sm">Small</button>
+        <button class="mtt-btn mtt-btn--primary">Medium</button>
+        <button class="mtt-btn mtt-btn--primary mtt-btn--lg">Large</button>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>
