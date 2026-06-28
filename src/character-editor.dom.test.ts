@@ -303,6 +303,90 @@ describe("initCharacterEditor — 編集モード（E2）", () => {
     expect(cancelButton.hidden).toBe(true);
   });
 
+  it("アップロード画像のキャラを編集して名前だけ変えても、元のビジュアルが失われない（L1 データ損失ガード）", async () => {
+    const originalVisual = "data:image/png;base64,ORIGINAL_UPLOAD";
+    const schema = {
+      id: "upload-char",
+      name: "画像キャラ",
+      tone: "口調。",
+      visual: originalVisual,
+      aiDisclosure: "私はAIアシスタントです。人間ではありません。",
+      isPreset: false,
+      diaryEnabled: false,
+      visualConfig: {
+        mode: "upload" as const,
+        uploadedImagePath: originalVisual,
+      },
+      principleDefaults: {
+        固有性を与える: 3,
+        信頼から始める: 3,
+        一貫性を守る: 3,
+        余白を持つ: 3,
+        距離感を大切にする: 3,
+        行動で示す: 3,
+        多様な向き合い方を認める: 3,
+      },
+    };
+
+    const populate = (root as unknown as Record<string, unknown>)["populateEditor"] as (s: unknown) => void;
+    populate(schema);
+
+    // 名前だけ変更（ビジュアルには触らない）。
+    const nameInput = root.querySelector<HTMLInputElement>(".editor__input")!;
+    nameInput.value = "改名キャラ";
+
+    const form = root.querySelector<HTMLFormElement>("form")!;
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 0));
+
+    // 元のアップロード画像が visual に保持されていること（既定アバターへ化けない）。
+    expect(invokeMock).toHaveBeenCalledWith(
+      "save_character",
+      expect.objectContaining({
+        data: expect.objectContaining({ id: "upload-char", visual: originalVisual }),
+      })
+    );
+  });
+
+  it("visualConfig 無し・visual 指定ありのキャラを編集して保存すると、元の visual を保持する（L1）", async () => {
+    const originalVisual = "data:image/svg+xml,PRESERVED";
+    const schema = {
+      id: "novc-char",
+      name: "保持キャラ",
+      tone: "口調。",
+      visual: originalVisual,
+      aiDisclosure: "私はAIアシスタントです。人間ではありません。",
+      isPreset: false,
+      diaryEnabled: false,
+      principleDefaults: {
+        固有性を与える: 3,
+        信頼から始める: 3,
+        一貫性を守る: 3,
+        余白を持つ: 3,
+        距離感を大切にする: 3,
+        行動で示す: 3,
+        多様な向き合い方を認める: 3,
+      },
+    };
+
+    const populate = (root as unknown as Record<string, unknown>)["populateEditor"] as (s: unknown) => void;
+    populate(schema);
+
+    const toneInput = root.querySelector<HTMLTextAreaElement>("textarea.editor__input")!;
+    toneInput.value = "更新した口調。";
+
+    const form = root.querySelector<HTMLFormElement>("form")!;
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      "save_character",
+      expect.objectContaining({
+        data: expect.objectContaining({ id: "novc-char", visual: originalVisual }),
+      })
+    );
+  });
+
   it("キャンセルボタンで新規モードへ戻る", () => {
     const schema = {
       id: "cancel-test-id",

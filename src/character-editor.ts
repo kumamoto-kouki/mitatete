@@ -23,6 +23,9 @@ import {
   svgToDataUri,
 } from "./character-visual-editor";
 
+// VisualConfig からテンプレートパラメータ型を導出する（visual-editor の内部型に依存しない）。
+type TemplateParams = NonNullable<VisualConfig["templateParams"]>;
+
 // 内蔵デフォルトアバター（ビジュアル未設定時に自動適用、要件 2.4）。外部アセットに依存しない SVG。
 export const DEFAULT_AVATAR =
   "data:image/svg+xml;utf8," +
@@ -139,7 +142,34 @@ export function initCharacterEditor(): void {
   // 8.1: レイヤー構造ビジュアルエディター（テンプレート）。リアルタイムプレビュー＋VisualConfig 収集。
   const visualEditorContainer = document.createElement("div");
   visualEditorContainer.className = "visual-editor";
-  const getTemplateConfig = initVisualEditor(visualEditorContainer);
+
+  // 編集セッションのビジュアル出所を明示管理する（L1: 編集保存で元アバターが失われる／既定テンプレに化けるのを防ぐ）。
+  // 'preserve'=元 visual を保持 / 'template'=テンプレ編集を採用 / 'upload'=新規アップロードを採用。
+  let editVisualMode: "preserve" | "template" | "upload" = "template";
+  let editingOriginalVisual: string | undefined;
+  let editingOriginalVisualConfig: VisualConfig | undefined;
+  // initVisualEditor は初期化時に refresh()→onChange を1度呼ぶため、その分は dirty 扱いしない。
+  let allowTemplateDirty = false;
+  const onVisualChange = (): void => {
+    // ユーザーがテンプレを操作したらテンプレ採用に切り替える（初期化時の refresh は除外）。
+    if (allowTemplateDirty) editVisualMode = "template";
+  };
+  let getTemplateConfig = initVisualEditor(
+    visualEditorContainer,
+    undefined,
+    onVisualChange
+  );
+  allowTemplateDirty = true;
+  // 既存パラメータでビジュアルエディターを貼り直す（編集時の復元・新規時のリセットに使う）。
+  const remountVisualEditor = (initial?: TemplateParams): void => {
+    allowTemplateDirty = false;
+    getTemplateConfig = initVisualEditor(
+      visualEditorContainer,
+      initial,
+      onVisualChange
+    );
+    allowTemplateDirty = true;
+  };
 
   // 8.2: 自作画像アップロード。同意取得後に upload の VisualConfig へ差し替える。
   let uploadConfig: VisualConfig | undefined;
@@ -158,6 +188,7 @@ export function initCharacterEditor(): void {
     );
     if (result?.mode === "upload") {
       uploadConfig = result;
+      editVisualMode = "upload"; // 編集セッションでは新規アップロードを採用する。
       showMessage("画像を取り込みました（保存時に反映されます）。", false);
     } else {
       // 同意拒否・非対応形式：取り込みをキャンセルし、選択をリセットする。
@@ -236,6 +267,11 @@ export function initCharacterEditor(): void {
     form.reset();
     diaryCheckbox.checked = false;
     uploadConfig = undefined;
+    // 編集セッションのビジュアル状態を新規用に戻す（前回編集の残りを消す）。
+    editingOriginalVisual = undefined;
+    editingOriginalVisualConfig = undefined;
+    editVisualMode = "template";
+    remountVisualEditor();
     modeLabel.hidden = true;
     cancelButton.hidden = true;
     saveButton.textContent = "保存";
@@ -259,27 +295,27 @@ export function initCharacterEditor(): void {
       let schema: CharacterSchema;
       if (editingId !== null) {
         // 編集モード: 元 id を保持して上書き save（新規 id を振らない）。
-        // buildCustomCharacter は validate 内で crypto.randomUUID() を呼ぶため、
-        // 元 id を持つ候補を直接 validate して save する。
-        const fromConfig = input.visualConfig
-          ? (() => {
-              if (
-                input.visualConfig!.mode === "template" &&
-                input.visualConfig!.templateParams
-              ) {
-                return svgToDataUri(buildVisualSvg(input.visualConfig!.templateParams));
-              }
-              if (input.visualConfig!.mode === "upload") {
-                return input.visualConfig!.uploadedImagePath;
-              }
-              return undefined;
-            })()
-          : undefined;
-        const visual =
-          fromConfig ??
-          (input.visual && input.visual.trim() !== ""
-            ? input.visual
-            : DEFAULT_AVATAR);
+        // ビジュアルは editVisualMode で出所を確定する（L1: 触っていなければ元 visual を保持）。
+        // 空文字は無効ビジュアルとみなし DEFAULT_AVATAR にフォールバックする。
+        const keepOrDefault = (v: string | undefined): string =>
+          v && v.trim() !== "" ? v : DEFAULT_AVATAR;
+        let visual: string;
+        let visualConfigForSchema: VisualConfig | undefined;
+        if (editVisualMode === "upload" && uploadConfig) {
+          visualConfigForSchema = uploadConfig;
+          visual =
+            uploadConfig.uploadedImagePath ?? keepOrDefault(editingOriginalVisual);
+        } else if (editVisualMode === "template") {
+          const cfg = getTemplateConfig();
+          visualConfigForSchema = cfg;
+          visual = cfg.templateParams
+            ? svgToDataUri(buildVisualSvg(cfg.templateParams))
+            : keepOrDefault(editingOriginalVisual);
+        } else {
+          // preserve: ユーザーがビジュアルに触れていない → 元の visual / visualConfig を保持する。
+          visual = keepOrDefault(editingOriginalVisual);
+          visualConfigForSchema = editingOriginalVisualConfig;
+        }
         schema = CharacterValidator.validate({
           id: editingId,
           name: input.name,
@@ -287,7 +323,9 @@ export function initCharacterEditor(): void {
           visual,
           isPreset: false,
           diaryEnabled: input.diaryEnabled ?? false,
-          ...(input.visualConfig ? { visualConfig: input.visualConfig } : {}),
+          ...(visualConfigForSchema
+            ? { visualConfig: visualConfigForSchema }
+            : {}),
         });
         await CharacterStore.save(schema);
       } else {
@@ -313,6 +351,21 @@ export function initCharacterEditor(): void {
       toneInput.value = schema.tone;
       diaryCheckbox.checked = schema.diaryEnabled;
       uploadConfig = undefined;
+      // ビジュアルを復元する（L1）。元の visual / visualConfig を覚え、保存時に保持できるようにする。
+      editingOriginalVisual = schema.visual;
+      editingOriginalVisualConfig = schema.visualConfig;
+      if (
+        schema.visualConfig?.mode === "template" &&
+        schema.visualConfig.templateParams
+      ) {
+        // テンプレ生成だったキャラ: エディターを元パラメータで貼り直し、テンプレ採用にする。
+        remountVisualEditor(schema.visualConfig.templateParams);
+        editVisualMode = "template";
+      } else {
+        // アップロード画像／visualConfig 無し: エディターは既定へ戻し、触らない限り元 visual を保持する。
+        remountVisualEditor();
+        editVisualMode = "preserve";
+      }
       modeLabel.hidden = false;
       modeLabel.textContent = `編集モード: ${schema.name}`;
       cancelButton.hidden = false;
