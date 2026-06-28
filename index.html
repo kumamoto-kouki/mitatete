@@ -4,12 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mitatete</title>
+    <!-- FOUC 防止: 最初のペイント前にテーマを確定（CSP 'self' 準拠の外部JS） -->
+    <script src="/theme-init.js"></script>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <main id="app" class="chat">
       <header class="chat__header">
         <h1 class="chat__title">Mitatete</h1>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="ライト/ダークテーマを切り替え"
+          title="テーマを切り替え"
+        >
+          <span
+            class="theme-toggle__icon theme-toggle__icon--light"
+            aria-hidden="true"
+            ><i data-lucide="sun"></i
+          ></span>
+          <span
+            class="theme-toggle__icon theme-toggle__icon--dark"
+            aria-hidden="true"
+            ><i data-lucide="moon"></i
+          ></span>
+          <span class="theme-toggle__label">テーマ</span>
+        </button>
       </header>
 
       <!-- 原則8（固定）: AIであることを常時明示する — mtt-ai-banner 体裁 -->

@@ -12,6 +12,8 @@ import {
   Sparkles,
   Check,
   BookOpen,
+  Sun,
+  Moon,
 } from "lucide";
 
 /**
@@ -29,6 +31,8 @@ export function initIcons(): void {
       Sparkles,
       Check,
       BookOpen,
+      Sun,
+      Moon,
     },
   });
 }

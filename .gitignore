@@ -20,3 +20,6 @@ dist/
 
 # オーケストレーション進捗ログ（ローカル観測専用）
 .orchestration/
+
+# 委譲エージェントのローカル worktree（追跡しない）
+.claude/worktrees/

@@ -14,6 +14,35 @@ const sendIcon = document.querySelector<HTMLSpanElement>("#send-icon");
 const composerInputWrap = document.querySelector<HTMLDivElement>("#composer-input-wrap");
 const disclosureIcon = document.querySelector<HTMLSpanElement>("#disclosure-icon");
 
+// ─── テーマ切替（ライト/ダーク） ────────────────────────────────────────────────
+const THEME_STORAGE_KEY = "mitatete-theme";
+type Theme = "light" | "dark";
+
+/** localStorage から読み込んだ値、または既定の "light" を返す */
+function loadTheme(): Theme {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  return stored === "dark" ? "dark" : "light";
+}
+
+/** data-theme をセットし localStorage に保存する */
+function applyTheme(theme: Theme): void {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  const toggle = document.querySelector<HTMLButtonElement>("#theme-toggle");
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+  }
+}
+
+// 起動時に確定したテーマを適用（OS のダーク追従に流されないよう明示）
+applyTheme(loadTheme());
+
+// トグルクリックでライト/ダークを切り替える
+document.querySelector<HTMLButtonElement>("#theme-toggle")?.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") as Theme;
+  applyTheme(current === "dark" ? "light" : "dark");
+});
+
 // このセッションの対話履歴（送信時に send_message へ渡す）。
 const conversation: ChatTurn[] = [];
 
