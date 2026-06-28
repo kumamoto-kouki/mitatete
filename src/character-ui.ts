@@ -392,9 +392,11 @@ export async function initCharacterUI(
       }
     );
 
-  // store 変更（init/save/setActive）のたびにセレクターとカスタムリストを再描画する。
-  CharacterStore.subscribe(renderCurrentSwitcher);
-  CharacterStore.subscribe(renderCurrentCustomList);
+  // コレクション変更（init/save/delete/setActive）のたびにセレクターとカスタムリストを再描画する。
+  // subscribe ではなく subscribeChange を使うのは、非アクティブなカスタムキャラの編集・削除でも
+  // 一覧へ反映する必要があるため（アクティブ一致時しか発火しない notify では取りこぼす・M1）。
+  CharacterStore.subscribeChange(renderCurrentSwitcher);
+  CharacterStore.subscribeChange(renderCurrentCustomList);
 
   await CharacterStore.init();
 

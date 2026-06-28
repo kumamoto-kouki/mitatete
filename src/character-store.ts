@@ -31,6 +31,9 @@ const DEFAULT_CHARACTER: CharacterSchema = CharacterValidator.validate({
 
 type Listener = (schema: CharacterSchema) => void;
 
+/** コレクション（保持集合の追加/編集/削除）変更を伝える購読者。ペイロードを取らない。 */
+type ChangeListener = () => void;
+
 /** load_characters 失敗などをUIへ伝えるためのエラーハンドラ（UIファイルへ依存しない軽量フック）。 */
 type ErrorHandler = (error: unknown) => void;
 
@@ -38,7 +41,11 @@ type ErrorHandler = (error: unknown) => void;
 // id → CharacterSchema。getAll() の列挙順を安定させるため Map を使用する。
 const characters = new Map<string, CharacterSchema>();
 let activeId: string | null = null;
+// 「アクティブが変わった」購読者（原則エンジン・クロスウィンドウ放送）。アクティブ Schema を受け取る。
 const listeners = new Set<Listener>();
+// 「コレクションが変わった」購読者（一覧・セレクター描画）。アクティブ一致と無関係に発火する。
+// notify() とチャネルを分けるのは、非アクティブなキャラの編集/削除でも一覧は再描画が要るため（M1 根本対応）。
+const changeListeners = new Set<ChangeListener>();
 let errorHandler: ErrorHandler = (error) => console.error(error);
 
 /** 現在のアクティブキャラクターを全購読者へ通知する。アクティブ未設定なら何もしない。 */
@@ -48,6 +55,13 @@ function notify(): void {
   if (active === undefined) return;
   for (const listener of listeners) {
     listener(active);
+  }
+}
+
+/** コレクション変更を全購読者へ通知する（アクティブの有無に依存しない）。 */
+function notifyChange(): void {
+  for (const listener of changeListeners) {
+    listener();
   }
 }
 
@@ -127,6 +141,7 @@ export const CharacterStore = {
       applyDefault();
     }
     notify();
+    notifyChange();
   },
 
   /** 現在のアクティブキャラクターを返す。未設定なら null。 */
@@ -152,6 +167,7 @@ export const CharacterStore = {
     }
     activeId = id;
     notify();
+    notifyChange(); // 選択ハイライトの更新のため一覧側にも知らせる。
     // 「最後に使用したキャラクター」として永続化する（次回起動時の復元用、要件5.2）。
     await persistLastActive(id);
   },
@@ -168,7 +184,8 @@ export const CharacterStore = {
       data: validated,
     });
     characters.set(validated.id, validated);
-    if (activeId === validated.id) notify();
+    if (activeId === validated.id) notify(); // アクティブ自身の内容が変わったときのみ active 購読者へ。
+    notifyChange(); // 追加・編集はアクティブ非一致でも一覧へ反映が要る（M1 根本対応）。
   },
 
   /** カスタムキャラクターを削除する。(要件5.x) アクティブだった場合はデフォルトへ縮退する。 */
@@ -181,8 +198,9 @@ export const CharacterStore = {
       } else {
         activeId = characters.keys().next().value ?? null;
       }
-      notify();
+      notify(); // アクティブが消えてアクティブが移ったときのみ active 購読者へ。
     }
+    notifyChange(); // 非アクティブの削除でも一覧から消えるよう常に発火する（M1 根本対応）。
   },
 
   /**
@@ -195,6 +213,20 @@ export const CharacterStore = {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
+    };
+  },
+
+  /**
+   * コレクション（保持集合）の変更を購読する。init/setActive/save/delete のたびに発火する。
+   * 一覧・セレクター描画が使用する。アクティブ変更に限らないため、非アクティブなキャラの
+   * 編集・削除でも再描画される（subscribe との違い）。
+   *
+   * @returns 購読を解除する関数
+   */
+  subscribeChange(listener: ChangeListener): () => void {
+    changeListeners.add(listener);
+    return () => {
+      changeListeners.delete(listener);
     };
   },
 

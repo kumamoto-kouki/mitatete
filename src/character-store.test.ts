@@ -164,6 +164,116 @@ describe("CharacterStore", () => {
     });
   });
 
+  describe("subscribeChange() によるコレクション通知 (M1 根本対応)", () => {
+    it("非アクティブなキャラを save するとコレクション購読者だけが発火する（アクティブ購読者は呼ばれない）", async () => {
+      invokeMock.mockResolvedValueOnce([]); // init: 空→デフォルトがアクティブ
+      await CharacterStore.init();
+
+      const activeListener = vi.fn();
+      const changeListener = vi.fn();
+      const unsubA = CharacterStore.subscribe(activeListener);
+      const unsubC = CharacterStore.subscribeChange(changeListener);
+
+      invokeMock.mockResolvedValueOnce(undefined); // save_character
+      await CharacterStore.save(makeSchema({ id: "char-b", name: "新規" }));
+
+      // アクティブはデフォルトのまま＝アクティブ購読者は鳴らない。
+      expect(activeListener).not.toHaveBeenCalled();
+      // 一覧は更新が要る＝コレクション購読者は鳴り、保持集合へ反映される。
+      expect(changeListener).toHaveBeenCalledTimes(1);
+      expect(CharacterStore.getAll().some((c) => c.id === "char-b")).toBe(true);
+
+      unsubA();
+      unsubC();
+    });
+
+    it("アクティブなキャラを save するとアクティブ・コレクション両方の購読者が発火する", async () => {
+      invokeMock.mockResolvedValueOnce([
+        JSON.stringify(makeSchema({ id: "char-a", name: "A" })),
+      ]);
+      invokeMock.mockResolvedValueOnce({}); // readLastActive → 先頭(char-a)へ
+      await CharacterStore.init();
+
+      const activeListener = vi.fn();
+      const changeListener = vi.fn();
+      CharacterStore.subscribe(activeListener);
+      CharacterStore.subscribeChange(changeListener);
+
+      invokeMock.mockResolvedValueOnce(undefined); // save_character
+      await CharacterStore.save(makeSchema({ id: "char-a", name: "編集後" }));
+
+      expect(activeListener).toHaveBeenCalledTimes(1);
+      expect(changeListener).toHaveBeenCalledTimes(1);
+    });
+
+    it("subscribeChange は unsubscribe で解除される", async () => {
+      invokeMock.mockResolvedValueOnce([]);
+      await CharacterStore.init();
+
+      const changeListener = vi.fn();
+      const unsubscribe = CharacterStore.subscribeChange(changeListener);
+
+      invokeMock.mockResolvedValueOnce(undefined);
+      await CharacterStore.save(makeSchema({ id: "char-b" }));
+      expect(changeListener).toHaveBeenCalledTimes(1);
+
+      unsubscribe();
+      invokeMock.mockResolvedValueOnce(undefined);
+      await CharacterStore.save(makeSchema({ id: "char-c" }));
+      expect(changeListener).toHaveBeenCalledTimes(1); // 解除後は呼ばれない
+    });
+  });
+
+  describe("delete() による削除 (M1: 非アクティブ削除でも一覧へ反映)", () => {
+    it("非アクティブなキャラを削除すると集合から消え、コレクション購読者が発火する（アクティブ購読者は呼ばれない）", async () => {
+      invokeMock.mockResolvedValueOnce([]); // init: デフォルトがアクティブ
+      await CharacterStore.init();
+      invokeMock.mockResolvedValueOnce(undefined); // save char-b（非アクティブ）
+      await CharacterStore.save(makeSchema({ id: "char-b", name: "B" }));
+
+      const activeListener = vi.fn();
+      const changeListener = vi.fn();
+      CharacterStore.subscribe(activeListener);
+      CharacterStore.subscribeChange(changeListener);
+
+      invokeMock.mockResolvedValueOnce(undefined); // delete_character
+      await CharacterStore.delete("char-b");
+
+      expect(invokeMock).toHaveBeenLastCalledWith("delete_character", {
+        name: "char-b",
+      });
+      expect(activeListener).not.toHaveBeenCalled();
+      expect(changeListener).toHaveBeenCalledTimes(1);
+      expect(CharacterStore.getAll().some((c) => c.id === "char-b")).toBe(false);
+    });
+
+    it("アクティブなキャラを削除するとアクティブが移り、両購読者が発火する", async () => {
+      // ルーティングモック: load_characters→read_settings(初期)→delete_character→read/save_settings(setActive永続化)
+      invokeMock.mockImplementation((cmd: string) => {
+        if (cmd === "load_characters") {
+          return Promise.resolve([
+            JSON.stringify(makeSchema({ id: "char-a", name: "A" })),
+            JSON.stringify(makeSchema({ id: "char-b", name: "B" })),
+          ]);
+        }
+        if (cmd === "read_settings") return Promise.resolve({});
+        return Promise.resolve(undefined);
+      });
+      await CharacterStore.init(); // active = char-a（先頭）
+
+      const activeListener = vi.fn();
+      const changeListener = vi.fn();
+      CharacterStore.subscribe(activeListener);
+      CharacterStore.subscribeChange(changeListener);
+
+      await CharacterStore.delete("char-a");
+
+      expect(activeListener).toHaveBeenCalledTimes(1); // char-b へ移った通知
+      expect(changeListener).toHaveBeenCalledTimes(1);
+      expect(CharacterStore.getActive()?.id).toBe("char-b");
+    });
+  });
+
   describe("不変条件: aiDisclosure (要件 3.3)", () => {
     it("getActive() の aiDisclosure は常に AI_DISCLOSURE と一致する", async () => {
       // aiDisclosure を改ざんした JSON を復元しても、固定文言で上書きされること。
