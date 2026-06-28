@@ -31,7 +31,8 @@ Wave 2（並行可）:            model-router         diary-engine
 - 各ワーカーは自 worktree のブランチ `feat/<feature>` で作業し、`src-tauri/` `src/` 等の共有ファイル衝突を物理的に回避する。
 - 完了 → コンダクターが `kiro-review` でレビュー → pass のみ main へ merge → worktree 撤去。
 - **同一ファイルを編集する feature は同 wave に入れない**。spec フェーズは `.kiro/specs/<feature>/` がディレクトリ分離されるため worktree 不要。
-- 実装エージェントへ渡すプロンプトには毎回明記する：起動直後 `pwd` で worktree を確認／指定ブランチ以外に commit しない／**push しない**（コンダクター/ユーザーが一元化）／テスト緑で区切る／完了報告に「変更・テスト結果・未完の懸念」を含める。
+- 実装エージェントへ渡すプロンプトには毎回明記する：起動直後 `pwd` で worktree を確認／**起点ブランチを明示**（次項参照）／指定 `feat/<feature>` 以外に commit しない／**push しない・メインへ merge しない**／テスト緑で区切る／完了報告に「pwd・変更ファイル・テスト/build の実出力・コミットしたブランチ/hash・未完の懸念」を含める。
+- **worktree の起点ブランチは明示せよ（試行知見 2026-06-27）**：`Agent` の `isolation:"worktree"` はコンダクターの現在ブランチを自動で引き継がず、別ベース（リポジトリ既定など）から worktree を作ることがある。実際 generate_text 試行で worktree が `chore/sdlc-bootstrap` ではなく古いベースから作られ、エージェントが手作業で起点を張り直した。**プロンプトで「`<作業ブランチ>` を起点に `feat/<feature>` を作って作業せよ」と明示**し、起動時に対象ファイルの存在を確認させる。
 
 ## 実装委譲の規律（さぼり・肩代わり・隠蔽の防止）
 
@@ -92,4 +93,7 @@ Wave 2（並行可）:            model-router         diary-engine
 
 - **コミット／ローカルマージはコンダクターが行う**。worker は自 `feat/<feature>` ブランチにコミットし、wave/マイルストーン境界でコンダクターがレビューして `main` へローカルマージする。コミットは意味のある単位で、trailer に `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` を付ける。デフォルトブランチ上では先にブランチを切る。
 - **push（外部公開）は人間が実行する**。コンダクターは push せず、「コミット済み・push 可能」状態を報告する。最終公開判断は人間が保持する。
-- **subagent / worker への指示には「git の add / commit / push を行わない（生成・編集のみ）」を必ず明記する**。コミットはコンダクターが一元的に行う。（2026-06-27、spec移行 subagent が自律的に `git add -A && git commit` を実行し履歴を汚した事故の反省。`git reset --soft` で再構成した。）
+- **コミット分担（試行で明確化, 2026-06-27）**:
+  - **worktree 隔離の実装エージェント**は自 `feat/<feature>` ブランチへ**コミットしてよい**（worktree フローの正規手順）。ただし **push しない・メイン作業ディレクトリやメインブランチへ merge しない**。統合（レビュー後の merge）はコンダクターが行う。
+  - **非 worktree の subagent（spec 生成・調査・レビュー等）には「git の add / commit / push を行わない（生成・編集のみ）」を必ず明記する**。（2026-06-27、spec移行 subagent が自律的に `git add -A && git commit` し履歴を汚した事故の反省。`git reset --soft` で再構成した。）
+- **push（外部公開）は人間が実行する**は不変。
