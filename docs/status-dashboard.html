@@ -383,128 +383,6 @@
           <span><span class="badge badge-mute">次</span> 後続で着手</span>
         </div>
 
-        <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
-        <div class="mb-3 text-xs font-bold text-muted">
-          チーム（あなた＋担当ペルソナ）
-        </div>
-        <div
-          class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          <!-- あなた（人間・プロダクトオーナー） -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-[#fbf3e9] p-2.5 ring-2 ring-accent"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">🧑🏻‍💼</span>
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5 text-[13px] font-bold">
-                あなた
-                <span class="badge badge-warn">人間</span>
-              </div>
-              <div class="text-xs text-[#6f4e37]">
-                プロダクトオーナー / 意思決定者
-              </div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門:
-                大方針・優先順位・各フェーズ承認・公開（push）判断・要件の最終決定
-              </div>
-            </div>
-          </div>
-          <!-- 神谷 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">神谷（かみや）</div>
-              <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: 計画分解・委譲設計・証拠ベースの受理
-              </div>
-            </div>
-          </div>
-          <!-- 桜井 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍🎨</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">桜井（さくらい）</div>
-              <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: デザインシステム・UI ビジュアル・トークン設計・a11y
-              </div>
-            </div>
-          </div>
-          <!-- 望月 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♀️</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">望月（もちづき）</div>
-              <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: コントラスト・状態網羅・原則8 の視覚監査
-              </div>
-            </div>
-          </div>
-          <!-- 工藤 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💻</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">工藤（くどう）</div>
-              <div class="text-xs text-[#6f4e37]">
-                実装エンジニア（Rust/Tauri）
-              </div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: trait シーム設計・TDD・バックエンド
-              </div>
-            </div>
-          </div>
-          <!-- 林 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💻</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">林（はやし）</div>
-              <div class="text-xs text-[#6f4e37]">
-                実装エンジニア（TypeScript）
-              </div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: フロント状態管理・Tauri 配線・DOM テスト
-              </div>
-            </div>
-          </div>
-          <!-- 守屋 -->
-          <div
-            class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
-          >
-            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♂️</span>
-            <div class="min-w-0">
-              <div class="text-[13px] font-bold">守屋（もりや）</div>
-              <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
-              <div class="mt-0.5 text-[11px] text-muted">
-                専門: 敵対的レビュー・証拠再実行・回帰/セキュリティ確認
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- チームの約束（心理的安全性） -->
-        <div
-          class="mb-4 rounded-xl bg-[#e9f0ea] px-4 py-3 text-[12.5px] ring-1 ring-[#cfe2d6]"
-        >
-          <b>💬 チームの約束 — 心理的安全性</b>
-          <div class="mt-1 text-muted">
-            このチームは心理的安全性を常に担保しています。失敗・不明点・反対意見を安心して出せ、レビューは<b>人格ではなく成果物</b>に向けます。「分からない」「やり直したい」と言える率直さと、互いへの敬意を両立し、円滑なコミュニケーションを保ちます（🕵🏼‍♂️
-            守屋の指摘は 👨🏼‍💻 工藤
-            を責めるためでなく、品質を一緒に上げるためのものです）。
-          </div>
-        </div>
-
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <!-- デザイン・レーン -->
           <div class="rounded-xl p-3 ring-1 ring-line/70">
@@ -593,14 +471,6 @@
               失敗経路テスト追加（守屋の指摘・次スプリント）。
             </div>
           </div>
-        </div>
-
-        <div class="mt-3 text-[11px] text-muted">
-          ※
-          <b>🧑🏻‍💼 あなたは実在の人間</b
-          >（プロダクトオーナー＝大方針・承認・公開判断）。担当名（👨🏼‍💼 神谷・👩🏼‍🎨
-          桜井・🕵🏼‍♀️ 望月・👨🏼‍💻 工藤・👩🏼‍💻 林・🕵🏼‍♂️ 守屋）は AI
-          エージェントの役割ペルソナです（実在の個人ではありません）。
         </div>
       </div>
 
@@ -905,6 +775,136 @@
           <span class="note">作る役とチェック役を必ず分ける</span>
         </summary>
         <div class="fold-body card card-updated">
+          <!-- チーム名簿（擬人化ペルソナ＋専門性） -->
+          <div class="mb-3 text-xs font-bold text-muted">
+            チーム（あなた＋担当ペルソナ）
+          </div>
+          <div
+            class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <!-- あなた（人間・プロダクトオーナー） -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-[#fbf3e9] p-2.5 ring-2 ring-accent"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">🧑🏻‍💼</span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  あなた
+                  <span class="badge badge-warn">人間</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">
+                  プロダクトオーナー / 意思決定者
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門:
+                  大方針・優先順位・各フェーズ承認・公開（push）判断・要件の最終決定
+                </div>
+              </div>
+            </div>
+            <!-- 神谷 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">神谷（かみや）</div>
+                <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 計画分解・委譲設計・証拠ベースの受理
+                </div>
+              </div>
+            </div>
+            <!-- 桜井 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍🎨</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">桜井（さくらい）</div>
+                <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: デザインシステム・UI ビジュアル・トークン設計・a11y
+                </div>
+              </div>
+            </div>
+            <!-- 望月 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♀️</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">望月（もちづき）</div>
+                <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: コントラスト・状態網羅・原則8 の視覚監査
+                </div>
+              </div>
+            </div>
+            <!-- 工藤 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💻</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">工藤（くどう）</div>
+                <div class="text-xs text-[#6f4e37]">
+                  実装エンジニア（Rust/Tauri）
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: trait シーム設計・TDD・バックエンド
+                </div>
+              </div>
+            </div>
+            <!-- 林 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💻</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">林（はやし）</div>
+                <div class="text-xs text-[#6f4e37]">
+                  実装エンジニア（TypeScript）
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: フロント状態管理・Tauri 配線・DOM テスト
+                </div>
+              </div>
+            </div>
+            <!-- 守屋 -->
+            <div
+              class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♂️</span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-bold">守屋（もりや）</div>
+                <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 敵対的レビュー・証拠再実行・回帰/セキュリティ確認
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- チームの約束（心理的安全性） -->
+          <div
+            class="mb-4 rounded-xl bg-[#e9f0ea] px-4 py-3 text-[12.5px] ring-1 ring-[#cfe2d6]"
+          >
+            <b>💬 チームの約束 — 心理的安全性</b>
+            <div class="mt-1 text-muted">
+              このチームは心理的安全性を常に担保しています。失敗・不明点・反対意見を安心して出せ、レビューは<b>人格ではなく成果物</b>に向けます。「分からない」「やり直したい」と言える率直さと、互いへの敬意を両立し、円滑なコミュニケーションを保ちます（🕵🏼‍♂️
+              守屋の指摘は 👨🏼‍💻 工藤
+              を責めるためでなく、品質を一緒に上げるためのものです）。
+            </div>
+          </div>
+
+          <div class="mt-3 text-[11px] text-muted">
+            ※
+            <b>🧑🏻‍💼 あなたは実在の人間</b
+            >（プロダクトオーナー＝大方針・承認・公開判断）。担当名（👨🏼‍💼 神谷・👩🏼‍🎨
+            桜井・🕵🏼‍♀️ 望月・👨🏼‍💻 工藤・👩🏼‍💻 林・🕵🏼‍♂️ 守屋）は AI
+            エージェントの役割ペルソナです（実在の個人ではありません）。
+          </div>
+
           <svg
             viewBox="0 0 760 360"
             width="100%"
