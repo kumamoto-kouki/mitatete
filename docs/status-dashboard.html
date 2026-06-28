@@ -363,8 +363,9 @@
         <!-- 現在＋レーン凡例（1行で要点） -->
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
-            <span class="h-2.5 w-2.5 rounded-full bg-ok"></span>
-            進行中タスクなし（D1 観察日記 ON/OFF を受理・統合）
+            <span class="h-2.5 w-2.5 animate-pulse rounded-full bg-warn"></span>
+            🎨 桜井（実装）が A4（テーマのライブ同期＋テスト整理）を実装中 → 🕵🏼‍♀️
+            望月（レビュー）
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -400,7 +401,24 @@
             >
               🔨 進行中
             </div>
-            <div class="p-2 text-center text-[11px] text-muted">—</div>
+            <div class="space-y-1.5 p-2">
+              <div
+                class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="テーマのライブ同期(character窓)＋theme テスト二重化解消 / 桜井(実装)→望月(レビュー)"
+              >
+                <span
+                  class="grid h-6 w-7 flex-none place-items-center rounded-md text-[11px] font-bold text-white"
+                  style="background: #b08968"
+                  >A4</span
+                >
+                <span class="min-w-0 flex-1 text-[11.5px] font-semibold"
+                  >テーマ同期</span
+                >
+                <span class="text-[11px]" title="桜井(実装)→望月(レビュー)"
+                  >👩🏼‍🎨🕵🏼‍♀️</span
+                >
+              </div>
+            </div>
           </div>
           <!-- レビュー中 -->
           <div class="overflow-hidden rounded-xl ring-1 ring-line/70">
