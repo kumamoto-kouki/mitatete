@@ -1,0 +1,9 @@
+/* ============================================================
+   Mitatete Design System — global entry
+   消費側はこの1ファイルを link する。中身は @import のみ。
+   ============================================================ */
+@import "tokens/typography.css";
+@import "tokens/colors.css";
+@import "tokens/spacing.css";
+@import "tokens/radius.css";
+@import "tokens/shadow.css";

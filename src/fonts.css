@@ -1,0 +1,20 @@
+/* ============================================================
+   Zen Maru Gothic（見出し用・ローカル同梱・オフライン可）
+   出所: Google Fonts。fonttools でサブセット（日本語UI向け範囲・
+   weight 400/700）→ woff2 化して src/assets/fonts/ に同梱。
+   外部 CDN に依存しない（CSP: font-src 'self'）。
+   ============================================================ */
+@font-face {
+  font-family: "Zen Maru Gothic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/ZenMaruGothic-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Zen Maru Gothic";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/ZenMaruGothic-700.woff2") format("woff2");
+}

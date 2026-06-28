@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, configDefaults } from "vitest/config";
 
 // Tauri v2 + vanilla TypeScript（フレームワークなし）。
 // main（チャットUI）と character（透明ウィンドウ）の 2 ページ構成。
@@ -18,5 +18,10 @@ export default defineConfig({
         character: "character.html",
       },
     },
+  },
+  test: {
+    // 委譲エージェントの worktree（.claude/worktrees/**）を走査しない。
+    // 残置 worktree のテストが二重カウントされる事故を防ぐ（実運用の教訓）。
+    exclude: [...configDefaults.exclude, "**/.claude/**", "e2e/**"],
   },
 });

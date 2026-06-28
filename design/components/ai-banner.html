@@ -1,0 +1,259 @@
+<!-- @dsCard group="Components" viewport="780x600" name="AI Disclosure Banner" subtitle="原則8・会話画面上部の常設バナー（落ち着いた情報色の帯）" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — AI Disclosure Banner</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 720px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+      .group-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 24px 0 12px;
+      }
+      .group-label:first-of-type {
+        margin-top: 0;
+      }
+
+      /* ===== component: AI disclosure banner ===== */
+      .mtt-ai-banner {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        background: var(--info-soft);
+        border: 1px solid color-mix(in srgb, var(--info) 32%, transparent);
+        color: var(--info-ink);
+        border-radius: var(--radius-md);
+        padding: 11px 14px;
+      }
+      .mtt-ai-banner__icon {
+        flex: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--info) 16%, transparent);
+        color: var(--info);
+      }
+      .mtt-ai-banner__icon svg {
+        width: 17px;
+        height: 17px;
+      }
+      .mtt-ai-banner__text {
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      .mtt-ai-banner__text b {
+        font-weight: 700;
+      }
+      .mtt-ai-banner__text span {
+        color: color-mix(in srgb, var(--info-ink) 78%, transparent);
+      }
+
+      /* compact (single line, e.g. 省スペース時) */
+      .mtt-ai-banner--compact {
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        gap: 9px;
+      }
+      .mtt-ai-banner--compact .mtt-ai-banner__icon {
+        width: 22px;
+        height: 22px;
+      }
+      .mtt-ai-banner--compact .mtt-ai-banner__icon svg {
+        width: 13px;
+        height: 13px;
+      }
+      .mtt-ai-banner--compact .mtt-ai-banner__text {
+        font-size: 13px;
+      }
+
+      /* placement demo: チャット窓の上部に常設 */
+      .demo-window {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background: var(--bg);
+        box-shadow: var(--shadow-card);
+        max-width: 480px;
+      }
+      .demo-titlebar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .demo-titlebar .dotrow {
+        display: flex;
+        gap: 6px;
+      }
+      .demo-titlebar .d {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--border-strong);
+      }
+      .demo-titlebar .name {
+        font-size: 14px;
+        font-weight: 700;
+        margin-left: 4px;
+      }
+      .demo-pad {
+        padding: 12px;
+      }
+      .demo-chat-line {
+        font-size: 14px;
+        color: var(--text-muted);
+        padding: 14px 6px 4px;
+      }
+      .note {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin: 10px 2px 0;
+      }
+      .note b {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">AI 開示バナー</p>
+          <span class="board-sub">原則8 — 常設・装飾で消さない機能要素</span>
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <p class="group-label">標準</p>
+      <div class="mtt-ai-banner">
+        <span class="mtt-ai-banner__icon"><i data-lucide="info"></i></span>
+        <div class="mtt-ai-banner__text">
+          <b>これは AI による応答です。</b>
+          <span>人の発言ではありません。</span>
+        </div>
+      </div>
+
+      <p class="group-label">モデル明示つき</p>
+      <div class="mtt-ai-banner">
+        <span class="mtt-ai-banner__icon"><i data-lucide="info"></i></span>
+        <div class="mtt-ai-banner__text">
+          <b>これは AI（Claude / Anthropic）による応答です。</b>
+          <span>性格づけは「見立て」です。</span>
+        </div>
+      </div>
+
+      <p class="group-label">コンパクト（省スペース）</p>
+      <div class="mtt-ai-banner mtt-ai-banner--compact">
+        <span class="mtt-ai-banner__icon"><i data-lucide="info"></i></span>
+        <div class="mtt-ai-banner__text"><b>AI による応答です</b></div>
+      </div>
+
+      <p class="group-label">配置 — 会話画面上部に常設</p>
+      <div class="demo-window">
+        <div class="demo-titlebar">
+          <span class="dotrow"
+            ><span class="d"></span><span class="d"></span
+            ><span class="d"></span
+          ></span>
+          <span class="name">クロ と話す</span>
+        </div>
+        <div class="demo-pad">
+          <div class="mtt-ai-banner mtt-ai-banner--compact">
+            <span class="mtt-ai-banner__icon"><i data-lucide="info"></i></span>
+            <div class="mtt-ai-banner__text">
+              <b>AI による応答です</b> <span>— 人のフリはしません</span>
+            </div>
+          </div>
+          <div class="demo-chat-line">…ここに会話が続きます</div>
+        </div>
+      </div>
+
+      <p class="note">
+        <b>原則:</b> バナーは会話画面で常時表示。親しみある擬人化と、AI
+        であることの誠実な明示を両立させる。色は情報色（青系）で落ち着かせ、控えめだが必ず視認できる。
+      </p>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

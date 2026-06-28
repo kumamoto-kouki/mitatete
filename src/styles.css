@@ -1,23 +1,24 @@
+@import "./tokens.css";
+
+/* 旧来の別名（既存クラスが参照していた変数をトークンへ橋渡し） */
 :root {
-  --bg: #faf8f4;
-  --fg: #2b2622;
-  --muted: #8a817a;
-  --accent: #b08968;
+  --fg: var(--text);
+  --muted: var(--text-muted);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Hiragino Kaku Gothic ProN",
-    "Noto Sans JP",
-    sans-serif;
-  color: var(--fg);
+  font-family: var(--font-base);
+  font-size: var(--text-sm);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ===== チャットUI（main ウィンドウ） ===== */
@@ -29,193 +30,938 @@ body {
 }
 
 .chat__header {
-  padding: 12px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .chat__title {
   margin: 0;
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
 }
 
+/* ===== 原則8 AI 開示バナー ===== */
+/* .chat__disclosure は mtt-ai-banner + mtt-ai-banner--compact クラスと共用 */
 .chat__disclosure {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--muted);
+  /* flex-shrink: 0 で常時表示を保証（スクロールで隠れない） */
+  flex-shrink: 0;
 }
 
+/* ===== component: AI disclosure banner ===== */
+.mtt-ai-banner {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--info-soft);
+  border: 1px solid color-mix(in srgb, var(--info) 32%, transparent);
+  color: var(--info-ink);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+}
+
+.mtt-ai-banner__icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--info) 16%, transparent);
+  color: var(--info);
+}
+
+.mtt-ai-banner__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mtt-ai-banner__text {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.mtt-ai-banner__text b {
+  font-weight: 700;
+}
+
+.mtt-ai-banner__text span {
+  color: color-mix(in srgb, var(--info-ink) 78%, transparent);
+}
+
+/* compact（省スペース・ヘッダー直下常設用） */
+.mtt-ai-banner--compact {
+  padding: 8px 12px;
+  border-radius: 0;
+  /* ヘッダー直下はボーダーなし角丸でフラットに */
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  gap: 9px;
+}
+
+.mtt-ai-banner--compact .mtt-ai-banner__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.mtt-ai-banner--compact .mtt-ai-banner__icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mtt-ai-banner--compact .mtt-ai-banner__text {
+  font-size: 13px;
+}
+
+/* ===== チャットメッセージ一覧 ===== */
 .chat__messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 空状態（会話なし） */
+.chat__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 8px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.chat__empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  margin-bottom: 4px;
+}
+
+.chat__empty-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.chat__empty-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  margin: 0;
+}
+
+.chat__empty-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 28ch;
+  margin: 0;
+}
+
+/* ===== component: chat bubble (mtt-msg / mtt-bubble) ===== */
+.mtt-msg {
+  display: flex;
+  gap: 10px;
+  max-width: 84%;
+}
+
+.mtt-msg--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.mtt-msg--assistant {
+  align-self: flex-start;
+}
+
+.mtt-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-card);
+}
+
+.mtt-avatar--ai {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.mtt-avatar--me {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.mtt-avatar svg {
+  width: 19px;
+  height: 19px;
+}
+
+.mtt-bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.mtt-msg--user .mtt-bubble-wrap {
+  align-items: flex-end;
+}
+
+.mtt-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  padding: 0 2px;
+}
+
+/* 必須: AI ラベル（原則8） */
+.mtt-ai-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--info-ink);
+  background: var(--info-soft);
+  border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.mtt-ai-label svg {
+  width: 11px;
+  height: 11px;
+}
+
+.mtt-bubble {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  padding: 11px 15px;
+  border-radius: var(--radius-bubble);
+}
+
+.mtt-bubble--ai {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-top-left-radius: 5px;
+  box-shadow: var(--shadow-card);
+}
+
+.mtt-bubble--me {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-top-right-radius: 5px;
+}
+
+/* エラー・未保存状態 */
+.mtt-bubble.msg--error,
+.msg--error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-top-left-radius: 5px;
+}
+
+.mtt-bubble.msg--unsaved,
+.msg--unsaved {
+  border-left: 3px solid var(--warning);
+}
+
+/* タイピングインジケーター */
+.mtt-typing {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.mtt-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  animation: mtt-bounce 1.2s infinite ease-in-out;
+}
+
+.mtt-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.mtt-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes mtt-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* ===== 入力エリア ===== */
+.chat__composer-wrap {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
 }
 
 .chat__composer {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #e6e0d8;
+  /* フォームはラッパーとして機能。mtt-field を使う */
 }
 
-.chat__input {
+/* ===== component: composer input (mtt-field / mtt-input) ===== */
+.mtt-field {
+  position: relative;
+}
+
+.mtt-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 8px 8px 8px 16px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.mtt-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-input__ta {
   flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 14px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: var(--font-base);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text);
+  padding: 7px 0;
+  max-height: 120px;
+  min-width: 0;
+}
+
+.mtt-input__ta::placeholder {
+  color: var(--text-subtle);
+}
+
+.mtt-input.is-disabled {
+  background: var(--surface-2);
+  border-color: var(--border);
+  opacity: 0.7;
+}
+
+.mtt-input.is-disabled .mtt-input__ta {
+  color: var(--text-muted);
+}
+
+/* 送信ボタン（input 内埋め込み） */
+.mtt-send {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: 0;
+  cursor: pointer;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  transition: background 0.15s;
+}
+
+.mtt-send:hover {
+  background: var(--accent-strong-hover);
+}
+
+.mtt-send:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.mtt-send svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mtt-send__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--on-accent) 40%, transparent);
+  border-top-color: var(--on-accent);
+  animation: mtt-spin 0.7s linear infinite;
+}
+
+@keyframes mtt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mtt-field__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 4px 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.mtt-field__hint {
+  /* B-1: 12.5px の小文字は WCAG AA 4.5:1 が必要。text-subtle(3.60:1) は不可 →
+     text-muted(#6f675f, 5.24:1 on --bg) に。望月レビュー B-1。 */
+  color: var(--text-muted);
+}
+
+/* 後方互換エイリアス（旧クラス名 → mtt- に転送） */
+.chat__input {
+  /* mtt-input__ta と共用 */
 }
 
 .chat__send {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  /* mtt-send と共用 */
+}
+
+/* ===== ボタン（mtt-btn） ===== */
+.mtt-btn {
+  font-family: var(--font-base);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
   cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.05s;
+}
+
+.mtt-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mtt-btn:active {
+  transform: translateY(1px);
+}
+
+.mtt-btn:disabled,
+.mtt-btn.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.mtt-btn--primary {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.mtt-btn--primary:hover {
+  background: var(--accent-strong-hover);
+}
+
+.mtt-btn--primary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-btn--secondary {
+  background: var(--surface);
+  color: var(--accent-ink);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.mtt-btn--secondary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.mtt-btn--secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-btn--ghost {
+  background: transparent;
+  color: var(--accent-ink);
+}
+
+.mtt-btn--ghost:hover {
+  background: var(--accent-soft);
+}
+
+.mtt-btn--ghost:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* editor__save はプライマリボタン体裁 */
+.editor__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-family: var(--font-base);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+  align-self: flex-start;
+}
+
+.editor__save:hover {
+  background: var(--accent-strong-hover);
+}
+
+.editor__save:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* ===== キャラクター選択パネル（プリセット一覧） ===== */
 .character-panel {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .character-panel__message {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: #b00020;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--danger);
 }
 
 .character-panel__empty {
   margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .character-switcher {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
-.character-switcher__select {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 13px;
-  background: #fff;
-}
-
+/* ===== component: character cards (mtt-char) ===== */
 .character-panel__list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* キャラクター選択カード（mtt-char 体裁） */
 .character-panel__item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  font: inherit;
   text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.character-panel__item:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.character-panel__item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .character-panel__item.is-selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: var(--accent-soft);
 }
 
 .character-panel__name {
-  font-size: 13px;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .character-panel__tone {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ===== モデル選択・API キー設定（mtt-model 体裁） ===== */
+.model-ui {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.model-ui__keys {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.model-ui__key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+}
+
+.model-ui__key-status {
+  min-width: 56px;
+  color: var(--text-muted);
+}
+
+/* モデル選択カード体裁 */
+.mtt-model {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background 0.15s;
+}
+
+.mtt-model:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.mtt-model:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.mtt-model.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mtt-model:disabled,
+.mtt-model.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.mtt-model__icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  background: var(--surface-2);
+  color: var(--accent-ink);
+}
+
+.mtt-model.is-selected .mtt-model__icon {
+  background: var(--surface);
+}
+
+.mtt-model__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mtt-model__name {
+  font-size: var(--text-md);
+  font-weight: 700;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mtt-model__provider {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.mtt-model.is-selected .mtt-model__provider {
+  background: var(--surface);
+}
+
+.mtt-model__desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.mtt-model__check {
+  margin-left: auto;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+}
+
+.mtt-model.is-selected .mtt-model__check {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.mtt-model__check svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* 既存 model-ui__ セレクターを mtt- 体裁の入力として継承 */
+.character-switcher__select,
+.model-ui__select,
+.model-ui__model,
+.model-ui__key-input,
+.editor__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-base);
+  font-size: var(--text-sm);
+}
+
+.character-switcher__select:focus-visible,
+.model-ui__select:focus-visible,
+.model-ui__model:focus-visible,
+.model-ui__key-input:focus-visible,
+.editor__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
 }
 
 /* ===== カスタムキャラクター作成フォーム ===== */
 .character-editor {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e6e0d8;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .editor__input {
-  padding: 8px 10px;
-  border: 1px solid #d8d0c6;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
+  font-size: var(--text-base);
 }
 
 .editor__file {
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .editor__disclosure {
   margin: 0;
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.editor__save {
-  align-self: flex-start;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .editor__message {
   margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .editor__message--error {
-  color: #b00020;
+  color: var(--danger);
 }
 
-/* レイヤービジュアルエディター（フェーズ2） */
+/* レイヤービジュアルエディター */
 .visual-editor {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #e6e0d8;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .visual-editor__preview {
   width: 96px;
   height: 96px;
-  background: #fff;
-  border: 1px solid #e6e0d8;
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .visual-editor__field {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ===== 観察日記パネル ===== */
+.diary-panel {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.diary-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.diary-panel__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+/* 生成ボタン（セカンダリ体裁） */
+.diary-panel__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent-ink);
+  font-family: var(--font-base);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+  align-self: flex-start;
+}
+
+.diary-panel__btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.diary-panel__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.diary-panel__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.diary-panel__notice {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  min-height: 1.4em;
+}
+
+.diary-panel__content {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.diary-panel__content:empty {
+  display: none;
 }
 
 /* ===== キャラクターウィンドウ（character ウィンドウ・透明背景） ===== */
@@ -251,9 +997,11 @@ body {
   position: absolute;
   top: 8px;
   max-width: 90%;
-  padding: 6px 10px;
-  background: #fff;
-  border-radius: 10px;
-  font-size: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-bubble);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-card);
 }

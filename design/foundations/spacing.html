@@ -1,0 +1,244 @@
+<!-- @dsCard group="Foundations" viewport="780x420" name="Spacing · Radius · Shadow" subtitle="4pxベースの余白 / 角丸 / やわらかい影" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Spacing / Radius / Shadow</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 28px;
+      }
+      @media (max-width: 760px) {
+        .cols {
+          grid-template-columns: 1fr;
+        }
+      }
+      .group-label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 14px;
+      }
+
+      .sp-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 9px;
+      }
+      .sp-bar {
+        height: 14px;
+        background: var(--accent);
+        border-radius: 3px;
+      }
+      .sp-tk {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .rad-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .rad-box {
+        width: 52px;
+        height: 38px;
+        background: var(--accent-soft);
+        border: 1.5px solid var(--accent);
+        flex: none;
+      }
+      .rad-tk {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .sh-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .sh-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 12px 14px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Spacing · Radius · Shadow</p>
+          <span class="board-sub"
+            >余白は4pxベース / 角丸は大きめ / 影はやわらかい</span
+          >
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <div class="cols">
+        <div>
+          <p class="group-label">Spacing</p>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 4px"></div>
+            <span class="sp-tk">--space-1 · 4</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 8px"></div>
+            <span class="sp-tk">--space-2 · 8</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 12px"></div>
+            <span class="sp-tk">--space-3 · 12</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 16px"></div>
+            <span class="sp-tk">--space-4 · 16</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 24px"></div>
+            <span class="sp-tk">--space-6 · 24</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 32px"></div>
+            <span class="sp-tk">--space-8 · 32</span>
+          </div>
+          <div class="sp-row">
+            <div class="sp-bar" style="width: 48px"></div>
+            <span class="sp-tk">--space-12 · 48</span>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">Radius</p>
+          <div class="rad-row">
+            <div class="rad-box" style="border-radius: var(--radius-xs)"></div>
+            <span class="rad-tk">--radius-xs · 6</span>
+          </div>
+          <div class="rad-row">
+            <div class="rad-box" style="border-radius: var(--radius-sm)"></div>
+            <span class="rad-tk">--radius-sm · 10</span>
+          </div>
+          <div class="rad-row">
+            <div class="rad-box" style="border-radius: var(--radius-md)"></div>
+            <span class="rad-tk">--radius-md · 16</span>
+          </div>
+          <div class="rad-row">
+            <div class="rad-box" style="border-radius: var(--radius-lg)"></div>
+            <span class="rad-tk">--radius-lg · 22</span>
+          </div>
+          <div class="rad-row">
+            <div
+              class="rad-box"
+              style="border-radius: var(--radius-bubble)"
+            ></div>
+            <span class="rad-tk">--radius-bubble · 18</span>
+          </div>
+        </div>
+
+        <div>
+          <p class="group-label">Shadow</p>
+          <div class="sh-stack">
+            <div class="sh-box" style="box-shadow: var(--shadow-sm)">
+              --shadow-sm
+            </div>
+            <div class="sh-box" style="box-shadow: var(--shadow-card)">
+              --shadow-card
+            </div>
+            <div class="sh-box" style="box-shadow: var(--shadow-md)">
+              --shadow-md
+            </div>
+            <div class="sh-box" style="box-shadow: var(--shadow-lg)">
+              --shadow-lg
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

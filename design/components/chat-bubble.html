@@ -1,0 +1,290 @@
+<!-- @dsCard group="Components" viewport="780x620" name="Chat Bubble" subtitle="ユーザー発話 / AI発話（必ず「AI」ラベル付き）/ 入力中" -->
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitatete — Chat Bubble</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-base);
+        -webkit-font-smoothing: antialiased;
+      }
+      .board {
+        padding: 26px 30px 34px;
+        max-width: 640px;
+      }
+      .board-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .board-title {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .board-sub {
+        font-size: 14px;
+        color: var(--text-muted);
+      }
+      .theme-toggle {
+        margin-left: auto;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 7px 12px;
+        border-radius: var(--radius-pill);
+        box-shadow: var(--shadow-sm);
+      }
+      .theme-toggle svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      /* ===== component: chat ===== */
+      .mtt-chat {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .mtt-msg {
+        display: flex;
+        gap: 10px;
+        max-width: 84%;
+      }
+      .mtt-msg--user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+      }
+      .mtt-avatar {
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        box-shadow: var(--shadow-card);
+      }
+      .mtt-avatar--ai {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+      }
+      .mtt-avatar--me {
+        background: var(--surface-2);
+        color: var(--text-muted);
+      }
+      .mtt-avatar svg {
+        width: 19px;
+        height: 19px;
+      }
+      .mtt-bubble-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+      }
+      .mtt-msg--user .mtt-bubble-wrap {
+        align-items: flex-end;
+      }
+      .mtt-meta {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12.5px;
+        padding: 0 2px;
+      }
+      .mtt-meta__who {
+        font-weight: 700;
+        color: var(--text);
+      }
+      .mtt-meta__time {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      /* 必須: AI ラベル */
+      .mtt-ai-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--info-ink);
+        background: var(--info-soft);
+        border: 1px solid color-mix(in srgb, var(--info) 30%, transparent);
+        padding: 2px 7px;
+        border-radius: var(--radius-pill);
+      }
+      .mtt-ai-label svg {
+        width: 11px;
+        height: 11px;
+      }
+
+      .mtt-bubble {
+        font-size: var(--text-base);
+        line-height: var(--leading-relaxed);
+        padding: 11px 15px;
+        border-radius: var(--radius-bubble);
+      }
+      .mtt-bubble--ai {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-top-left-radius: 5px;
+        box-shadow: var(--shadow-card);
+      }
+      .mtt-bubble--me {
+        background: var(--accent-soft);
+        color: var(--accent-ink);
+        border-top-right-radius: 5px;
+      }
+
+      /* typing indicator */
+      .mtt-typing {
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        padding: 14px 16px;
+      }
+      .mtt-typing span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-subtle);
+        animation: mtt-bounce 1.2s infinite ease-in-out;
+      }
+      .mtt-typing span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .mtt-typing span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      @keyframes mtt-bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.5;
+        }
+        40% {
+          transform: translateY(-4px);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div class="board-head">
+        <div>
+          <p class="board-title">Chat Bubble</p>
+          <span class="board-sub"
+            >AI発話には小さな「AI」ラベルを必ず添える</span
+          >
+        </div>
+        <button class="theme-toggle" id="tt">
+          <i data-lucide="moon"></i><span>ダーク</span>
+        </button>
+      </div>
+
+      <div class="mtt-chat">
+        <div class="mtt-msg mtt-msg--user">
+          <div class="mtt-avatar mtt-avatar--me">
+            <i data-lucide="user"></i>
+          </div>
+          <div class="mtt-bubble-wrap">
+            <div class="mtt-meta">
+              <span class="mtt-meta__time">21:04</span>
+            </div>
+            <div class="mtt-bubble mtt-bubble--me">
+              今日のプレゼン、緊張してうまく眠れなかった…
+            </div>
+          </div>
+        </div>
+
+        <div class="mtt-msg mtt-msg--ai">
+          <div class="mtt-avatar mtt-avatar--ai">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <div class="mtt-bubble-wrap">
+            <div class="mtt-meta">
+              <span class="mtt-meta__who">クロ</span>
+              <span class="mtt-ai-label"><i data-lucide="bot"></i>AI</span>
+              <span class="mtt-meta__time">21:04</span>
+            </div>
+            <div class="mtt-bubble mtt-bubble--ai">
+              それは気を張りますね。よければ、いちばん不安な場面を一緒に整理してみませんか。話すだけでも少し軽くなるはずです。
+            </div>
+          </div>
+        </div>
+
+        <div class="mtt-msg mtt-msg--user">
+          <div class="mtt-avatar mtt-avatar--me">
+            <i data-lucide="user"></i>
+          </div>
+          <div class="mtt-bubble-wrap">
+            <div class="mtt-bubble mtt-bubble--me">質疑応答が怖いんだ。</div>
+          </div>
+        </div>
+
+        <div class="mtt-msg mtt-msg--ai">
+          <div class="mtt-avatar mtt-avatar--ai">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <div class="mtt-bubble-wrap">
+            <div class="mtt-meta">
+              <span class="mtt-meta__who">クロ</span>
+              <span class="mtt-ai-label"><i data-lucide="bot"></i>AI</span>
+            </div>
+            <div class="mtt-bubble mtt-bubble--ai mtt-typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+      const tt = document.getElementById("tt");
+      tt.addEventListener("click", () => {
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "light" : "dark"
+        );
+        tt.innerHTML = dark
+          ? '<i data-lucide="moon"></i><span>ダーク</span>'
+          : '<i data-lucide="sun"></i><span>ライト</span>';
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

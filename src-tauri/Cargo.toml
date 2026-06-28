@@ -35,3 +35,6 @@ oauth2 = "5.0"
 # OS キーチェーン（OAuth トークンのセキュア保存用）
 # デフォルト features（v1 + プラットフォーム別ストア）でクロスプラットフォームをカバー
 keyring = "4"
+
+[dev-dependencies]
+insta = "1.48.0"

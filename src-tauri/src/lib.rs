@@ -1,6 +1,8 @@
 // Mitatete バックエンドのエントリポイント。
 // ウィンドウ（チャットUI / キャラクターウィンドウ）は tauri.conf.json で定義する。
 
+pub mod key_manager;
+pub mod model_router;
 pub mod storage;
 
 use storage::{
@@ -45,6 +47,19 @@ pub fn run() {
             let app_storage: AppStorage = StorageManager::new(local, oauth, gdrive);
             app.manage(app_storage);
 
+            // model-router: API キーストア（key_manager コマンド用）とモデルルーターを登録する。
+            // 既定モデルは Claude（claude-opus-4-8）。ユーザー操作で切替（自動変更しない）。
+            app.manage(key_manager::KeyringKeyStore::new());
+            let model_router: model_router::AppModelRouter = model_router::ModelRouter::new(
+                model_router::ReqwestHttpClient,
+                key_manager::KeyringKeyStore::new(),
+                model_router::ModelSelection {
+                    provider: model_router::Provider::Claude,
+                    model: model_router::DEFAULT_CLAUDE_MODEL.to_string(),
+                },
+            );
+            app.manage(model_router);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -59,6 +74,12 @@ pub fn run() {
             storage::get_auth_status,
             storage::start_oauth,
             storage::revoke_auth,
+            key_manager::set_api_key,
+            key_manager::get_api_key_status,
+            model_router::send_message,
+            model_router::generate_text,
+            model_router::set_active_model,
+            model_router::get_active_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

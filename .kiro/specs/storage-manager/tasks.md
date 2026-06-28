@@ -2,7 +2,7 @@
 
 ## タスク一覧
 
-- [ ] 1. 基盤: ローカルファイルシステム初期化と依存クレートのセットアップ
+- [x] 1. 基盤: ローカルファイルシステム初期化と依存クレートのセットアップ
 - [x] 1.1 Cargo.toml に必要な依存クレートを追加する
   - `tokio`（非同期ランタイム）、`serde` / `serde_json`（JSON）、`reqwest`（HTTP クライアント）、OAuth・GDrive 用クレートを追加する
   - `Cargo.toml` でビルドが通ることを確認する
@@ -17,7 +17,7 @@
   - _Requirements: 1.1_
   - _Boundary: LocalFileSystem_
 
-- [ ] 2. コア: LocalFileSystem — ファイル読み書き実装
+- [x] 2. コア: LocalFileSystem — ファイル読み書き実装
 - [x] 2.1 (P) 対話履歴の保存・読み込みを実装する
   - `~/.mitatete/history/YYYY-MM-DD.json` への書き込みと読み込みを実装する
   - ファイルパスは受け取った日付文字列から LocalFileSystem 内部で構築し、外部から任意パスを受け付けない
@@ -48,7 +48,7 @@
   - _Requirements: 1.5, 1.6, 5.1_
   - _Boundary: LocalFileSystem_
 
-- [ ] 3. コア: OAuthManager — OAuth 2.0 認証フロー実装
+- [x] 3. コア: OAuthManager — OAuth 2.0 認証フロー実装
 - [x] 3.1 OAuth 2.0 認証フローの開始と完了処理を実装する
   - Google OAuth 2.0 認可エンドポイントへのリダイレクトと、コールバックでの認可コード受け取りを実装する
   - 取得したアクセストークン・リフレッシュトークンを OS キーチェーン（Tauri keyring / stronghold）のみに保存する
@@ -72,7 +72,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   - _Boundary: OAuthManager_
 
-- [ ] 4. コア: GDriveClient — Google Drive API クライアント実装
+- [x] 4. コア: GDriveClient — Google Drive API クライアント実装
 - [x] 4.1 GDriveClient の基本アップロード処理を実装する
   - OAuthManager からトークンを取得し、Google Drive API v3 を用いてファイルをアップロードする
   - `mitatete/` フォルダが GDrive に存在しない場合は作成してからアップロードする
@@ -88,7 +88,7 @@
   - _Requirements: 5.2, 5.3, 5.4_
   - _Boundary: GDriveClient_
 
-- [ ] 5. 統合: StorageManager — ローカルとGDriveの調整
+- [x] 5. 統合: StorageManager — ローカルとGDriveの調整
 - [x] 5.1 StorageManager を実装し、LocalFileSystem と GDriveClient を調整する
   - 保存要求を受け取り、ローカルへの書き込みを先行して行う
   - 承認済みの場合のみ GDriveClient に非同期でアップロードを委譲する
@@ -98,7 +98,7 @@
   - _Boundary: StorageManager_
   - _Depends: 2.1, 2.2, 2.3, 2.4, 4.1_
 
-- [ ] 6. 統合: Tauriコマンドの定義と main.rs への登録
+- [x] 6. 統合: Tauriコマンドの定義と main.rs への登録
 - [x] 6.1 全ストレージ操作を Tauri コマンドとして公開する
   - `save_history`・`read_history`・`save_settings`・`read_settings`・`save_character`・`save_diary` の Tauri コマンドを定義する
   - `get_auth_status`・`start_oauth`・`revoke_auth` の Tauri コマンドを定義する
@@ -108,7 +108,7 @@
   - _Boundary: Tauri コマンド境界, StorageManager_
   - _Depends: 5.1, 3.1, 3.2, 3.3_
 
-- [ ] 7. 検証: エラーハンドリングとエッジケース
+- [x] 7. 検証: エラーハンドリングとエッジケース
 - [x] 7.1 ローカル書き込み失敗時のエラー返却を検証する
   - ディスク容量不足・権限エラーなどのシミュレーションでエラーが正しくフロントエンドに返ることを確認する
   - _Requirements: 5.1_
