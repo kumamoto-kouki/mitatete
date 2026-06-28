@@ -889,6 +889,15 @@
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
             <b
+              >体制図に候補ペルソナ（未投入）と「フェーズ別
+              投入計画図」を追加しました。</b
+            >これから投入する役（🔐 セキュリティ監査・⚡ パフォーマンス監査・✍️
+            ライター）と、これまで投入すべきだった役（🧭 設計・🧪
+            QA＝後追いで凌いだ系の弱さ・blameless）を破線チップで明示。1枚に収めず
+            Discovery→引き継ぎの6フェーズ別に「いつ誰が動くか」を表現（橘は全期間横断）。運用パネルは進捗報告部へ移設済み。
+          </li>
+          <li>
+            <b
               >👩🏼‍💼
               橘（運用マネージャー）が「役割カタログ＋投入計画」と「レビュー観点チェックリスト」を
               steering に整備しました。</b
@@ -1605,6 +1614,261 @@
               公開は人間。
             </li>
           </ul>
+
+          <!-- ───── 候補ペルソナ（未投入＝事前カタログ） ───── -->
+          <div class="mt-6 mb-3 text-xs font-bold text-muted">
+            候補ペルソナ（まだ投入していない・カタログから計画投入する）
+            <span class="note">正本: <code>role-catalog.md</code></span>
+          </div>
+          <div
+            class="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted"
+          >
+            <span
+              ><span class="badge badge-warn">▰</span>
+              これまで投入すべきだった（後追いで凌いだ＝系の弱さ・blameless）</span
+            >
+            <span
+              ><span class="badge badge-info">▱</span> これから投入する</span
+            >
+          </div>
+          <div
+            class="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <!-- 設計（アーキテクト） -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#c9a36a] bg-[#fbf7f0] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >🧭</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  設計（アーキテクト）
+                  <span class="badge badge-warn">投入すべきだった</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">着手前の設計判断</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: UX・データモデル・I/F の事前設計。E2/D2
+                  で即興判断した反省点。投入の目安: 新 spec／大機能の着手前。
+                </div>
+              </div>
+            </div>
+            <!-- QA／テストエンジニア -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#c9a36a] bg-[#fbf7f0] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >🧪</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  QA／テストエンジニア
+                  <span class="badge badge-warn">投入すべきだった</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">テスト戦略・カバレッジ</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門:
+                  テスト設計・カバレッジ。現状はレビュアーが兼務。投入の目安:
+                  複雑機能・回帰多発時。
+                </div>
+              </div>
+            </div>
+            <!-- セキュリティ監査 -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >🔐</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  セキュリティ監査
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">脆弱性・脅威分析</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 脆弱性・脅威分析。投入の目安: 外部
+                  I/O・認証・公開（push/リリース）前。
+                </div>
+              </div>
+            </div>
+            <!-- パフォーマンス監査 -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >⚡</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  パフォーマンス監査
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">
+                  起動／レンダー／バンドル
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: 起動・描画・バンドルサイズ。投入の目安:
+                  パフォ問題発生時・リリース前。
+                </div>
+              </div>
+            </div>
+            <!-- テクニカルライター -->
+            <div
+              class="flex gap-2.5 rounded-xl border border-dashed border-[#7fa8cc] bg-[#f4f8fc] p-2.5"
+            >
+              <span class="text-2xl leading-none opacity-70" aria-hidden="true"
+                >✍️</span
+              >
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-[13px] font-bold">
+                  テクニカルライター
+                  <span class="badge badge-info">これから</span>
+                </div>
+                <div class="text-xs text-[#6f4e37]">引き継ぎ／文書整備</div>
+                <div class="mt-0.5 text-[11px] text-muted">
+                  専門: reports・引き継ぎ・ユーザー文書。投入の目安:
+                  引き継ぎ・ドキュメント整備フェーズ。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ───── フェーズ別 投入計画図（1枚に収まらないためフェーズ別に表現） ───── -->
+          <div class="mt-6 mb-1 text-xs font-bold text-muted">
+            フェーズ別 投入計画図（いつ誰が動くか）
+          </div>
+          <div class="mb-3 text-[11px] text-muted">
+            実線チップ＝配役済（現役）／破線チップ＝候補（未投入）。橘（運用）は全期間を横断。
+          </div>
+          <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <!-- ① Discovery/要件 -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">① Discovery／要件</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full bg-[#fbf3e9] px-2 py-0.5 ring-1 ring-accent"
+                  >🧑🏻‍💼 PO</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👨🏼‍💼 神谷</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#c9a36a] px-2 py-0.5 text-muted"
+                  >🧭 設計</span
+                >
+              </div>
+            </div>
+            <!-- ② 設計 -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">② 設計</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#c9a36a] px-2 py-0.5 text-muted"
+                  >🧭 設計（主）</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >🕵🏼‍♀️ 望月</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >🕵🏼‍♂️ 守屋</span
+                >
+              </div>
+            </div>
+            <!-- ③ 実装 -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">③ 実装</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👨🏼‍💻 工藤</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👩🏼‍💻 林</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👩🏼‍🎨 桜井</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#c9a36a] px-2 py-0.5 text-muted"
+                  >🧪 QA</span
+                >
+              </div>
+            </div>
+            <!-- ④ レビュー/受理 -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">④ レビュー／受理</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >🕵🏼‍♀️ 望月</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >🕵🏼‍♂️ 守屋</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👨🏼‍💼 神谷</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#7fa8cc] px-2 py-0.5 text-muted"
+                  >🔐 セキュリティ</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#7fa8cc] px-2 py-0.5 text-muted"
+                  >⚡ パフォ</span
+                >
+              </div>
+            </div>
+            <!-- ⑤ 公開前 -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">⑤ 公開（push）前</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👨🏼‍💼 神谷</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-[#fbf3e9] px-2 py-0.5 ring-1 ring-accent"
+                  >🧑🏻‍💼 PO</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#7fa8cc] px-2 py-0.5 text-muted"
+                  >🔐 セキュリティ監査</span
+                >
+              </div>
+            </div>
+            <!-- ⑥ 引き継ぎ -->
+            <div class="rounded-xl bg-card p-3 ring-1 ring-line/60">
+              <div class="mb-1.5 text-[12px] font-bold">⑥ 引き継ぎ</div>
+              <div class="flex flex-wrap gap-1.5 text-[11px]">
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👩🏼‍💼 橘</span
+                >
+                <span
+                  class="inline-flex rounded-full bg-card px-2 py-0.5 ring-1 ring-line/60"
+                  >👨🏼‍💼 神谷</span
+                >
+                <span
+                  class="inline-flex rounded-full border border-dashed border-[#7fa8cc] px-2 py-0.5 text-muted"
+                  >✍️ ライター</span
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            class="mt-2.5 rounded-lg bg-[#e9f0ea] px-3 py-2 text-[11px] text-muted ring-1 ring-[#cfe2d6]"
+          >
+            <b>横断（全期間）</b>：👩🏼‍💼
+            橘（運用マネージャー）＝運用状況の管理・相談窓口。フェーズに依らず常時。
+          </div>
         </div>
       </details>
 
