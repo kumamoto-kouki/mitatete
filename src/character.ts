@@ -45,11 +45,21 @@ export function updateCharacterDisplay(schema: CharacterSchema): void {
 }
 
 // main ウィンドウからのアクティブキャラクター変更を受信して表示を更新する。
-void listen<CharacterSchema>(CHARACTER_CHANGED_EVENT, (event) => {
-  updateCharacterDisplay(event.payload);
-});
+const unlistenCharacter = listen<CharacterSchema>(
+  CHARACTER_CHANGED_EVENT,
+  (event) => {
+    updateCharacterDisplay(event.payload);
+  },
+);
 
 // main ウィンドウでのテーマ切替をリアルタイムで反映する（W-1）。
-void listen<Theme>("theme:changed", (event) => {
+const unlistenTheme = listen<Theme>("theme:changed", (event) => {
   applyTheme(event.payload);
+});
+
+// R1（望月レビュー繰越）: ウィンドウクローズ時に listen を解除し、Tauri の
+// イベントテーブルへリスナーが残留し続けるのを防ぐ。
+window.addEventListener("beforeunload", () => {
+  void unlistenCharacter.then((un) => un());
+  void unlistenTheme.then((un) => un());
 });
