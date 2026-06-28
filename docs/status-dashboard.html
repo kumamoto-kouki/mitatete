@@ -210,6 +210,13 @@
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b
+              >ペルソナを人物の絵文字にし、名前と性別・肌トーンを一致させました。</b
+            >また C（観察日記 diary-engine）を独立レビュー（健・条件付きPASS）→
+            必須是正 →
+            証拠再実行で<b>受理・統合</b>しました（フロント105・Rust81・型0）。
+          </li>
+          <li>
             <b>ペルソナを絵文字で擬人化し、専門性とチーム文化を明示しました。</b
             >各担当に絵文字アバターと得意分野（専門性）を付与。<b>心理的安全性</b>を担保し、レビューは人格でなく成果物に向ける「チームの約束」を掲示。
           </li>
@@ -299,14 +306,12 @@
         <div
           class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
         >
+          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
+          <b>直近:</b>
           <span
-            class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-warn"
-          ></span>
-          <b>いま:</b>
-          <span
-            >拓 が C（diary-engine）の実装を上げ、健
-            が<b>レビュー中</b>。A（リスタイル・彩）は C
-            の受理後に着手します。</span
+            >C（diary-engine）を<b>受理・統合</b>（拓 実装 → 健 条件付きPASS →
+            司 が必須是正＋証拠再実行で受理）。次は
+            A（リスタイル・彩）に着手できます。</span
           >
         </div>
 
@@ -328,7 +333,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">🧭</span>
+            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💼</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">司（つかさ）</div>
               <div class="text-xs text-[#6f4e37]">統括コンダクター</div>
@@ -341,7 +346,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">🎨</span>
+            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍🎨</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">彩（あや）</div>
               <div class="text-xs text-[#6f4e37]">デザイン実施者</div>
@@ -354,7 +359,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">🔍</span>
+            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♀️</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">澪（みお）</div>
               <div class="text-xs text-[#6f4e37]">デザイン・レビュアー</div>
@@ -367,7 +372,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">⚙️</span>
+            <span class="text-2xl leading-none" aria-hidden="true">👨🏼‍💻</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">拓（たく）</div>
               <div class="text-xs text-[#6f4e37]">
@@ -382,7 +387,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">🧩</span>
+            <span class="text-2xl leading-none" aria-hidden="true">👩🏼‍💻</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">玲（れい）</div>
               <div class="text-xs text-[#6f4e37]">
@@ -397,7 +402,7 @@
           <div
             class="flex gap-2.5 rounded-xl bg-card p-2.5 ring-1 ring-line/60"
           >
-            <span class="text-2xl leading-none" aria-hidden="true">🛡️</span>
+            <span class="text-2xl leading-none" aria-hidden="true">🕵🏼‍♂️</span>
             <div class="min-w-0">
               <div class="text-[13px] font-bold">健（けん）</div>
               <div class="text-xs text-[#6f4e37]">エンジニア・レビュアー</div>
@@ -457,7 +462,7 @@
                   UI を mtt- 体裁へリスタイル
                 </div>
                 <div class="text-xs text-muted">
-                  <b>彩</b> が担当予定（レビュー: 澪）。C の受理後に着手。
+                  <b>彩</b> が担当（レビュー: 澪）。C 受理済みのため着手可。
                 </div>
               </div>
               <span class="badge badge-mute">次</span>
@@ -488,14 +493,15 @@
                   diary-engine（観察日記）実装
                 </div>
                 <div class="text-xs text-muted">
-                  <b>拓</b> が実装（worktree・<code>feat/diary-engine</code>）→
-                  <b>健</b> がレビュー中。受理後に 司 が統合。
+                  <b>拓</b> 実装 → <b>健</b> 条件付きPASS → <b>司</b>
+                  統合・受理。フロント105・Rust81・型0・build OK。
                 </div>
               </div>
-              <span class="badge badge-warn">レビュー中</span>
+              <span class="badge badge-ok">完了</span>
             </div>
             <div class="mt-2 text-xs text-muted">
-              受理は各レビュアー＋ 司 に集約（作る役は複数並行・受理は一本化）。
+              繰越（Watch List）: 感情制約アサーション強化・read_history
+              失敗経路テスト追加（健の指摘・次スプリント）。
             </div>
           </div>
         </div>
