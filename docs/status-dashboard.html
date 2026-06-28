@@ -210,6 +210,11 @@
         <h2>🔵 この版の更新（2026-06-28）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b>作業ボードと見出しフォントの同梱を追加しました。</b
+            >「いま誰が何を」のボードを新設。見出しフォント Zen Maru Gothic
+            を軽量化してアプリに同梱（オフライン可・外部 CDN 非依存）。
+          </li>
+          <li>
             <b>Tailwind CSS でデザインを刷新しました。</b
             >ヒーロー見出し・影とホバーで浮くカード・大きめの丸み・縦バー見出し・色つき数値など、ライブラリの機能で見た目を更新。
           </li>
@@ -285,13 +290,11 @@
         <div
           class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
         >
+          <span class="inline-flex h-2.5 w-2.5 rounded-full bg-ok"></span>
+          <b>直近完了:</b>
           <span
-            class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-warn"
-          ></span>
-          <b>いま動いているもの:</b>
-          <span
-            >B（フォント/アイコン＋CSP・<b>進行中</b>）と
-            C（diary-engine・<b>並行で着手</b>）。A は B の完了待ち。</span
+            >B（フォント同梱＋CSP）<b>完了</b>。次に A（リスタイル）と
+            C（diary-engine）を2レーン<b>並行で着手</b>します（未開始）。</span
           >
         </div>
 
@@ -327,10 +330,11 @@
                   フォント/アイコンのバンドル＋CSP
                 </div>
                 <div class="text-xs text-muted">
-                  担当: コンダクター直（小・低リスク）
+                  担当: コンダクター直。Zen Maru Gothic を woff2 同梱・CSP
+                  font-src 'self'。オフライン可。
                 </div>
               </div>
-              <span class="badge badge-warn">進行中</span>
+              <span class="badge badge-ok">完了</span>
             </div>
             <!-- A -->
             <div
@@ -345,10 +349,10 @@
                   UI を mtt- 体裁へリスタイル
                 </div>
                 <div class="text-xs text-muted">
-                  担当: デザイン実施者（B 完了後に着手）
+                  担当: デザイン実施者（B 完了 → 次に着手）
                 </div>
               </div>
-              <span class="badge badge-mute">待ち</span>
+              <span class="badge badge-info">次・並行</span>
             </div>
           </div>
 
@@ -376,10 +380,10 @@
                   diary-engine（観察日記）実装
                 </div>
                 <div class="text-xs text-muted">
-                  担当: 実装エージェント（worktree・並行）
+                  担当: 実装エージェント（worktree・次に並行着手）
                 </div>
               </div>
-              <span class="badge badge-info">並行</span>
+              <span class="badge badge-info">次・並行</span>
             </div>
             <div class="mt-2 text-xs text-muted">
               受理はコンダクターと各レビュアーへ集約（作る役は複数並行・受理は一本化）。

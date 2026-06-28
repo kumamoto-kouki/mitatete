@@ -1,9 +1,10 @@
+@import "./fonts.css";
+
 /* ============================================================
    Mitatete アプリ用デザイントークン
    出所: design/tokens/*（claude.ai/design 生成）。
-   差分: 外部フォント @import（Zen Maru Gothic）はアプリの CSP/
-   オフライン制約のため除外。ローカルバンドル後に追加する。
-   見出しフォントは未バンドル時 system へフォールバックする。
+   見出しフォント Zen Maru Gothic はローカル同梱（src/fonts.css・
+   src/assets/fonts/）。外部 CDN には依存しない。
    ============================================================ */
 
 /* ===== Color : primitives ===== */
