@@ -274,6 +274,120 @@
         </div>
       </div>
 
+      <!-- ===== 作業ボード（いま誰が何を） ===== -->
+      <h2>
+        作業ボード（いま誰が何を持っているか）
+        <span class="badge badge-upd">更新 6/28</span>
+        <span class="note">進行に応じて更新</span>
+      </h2>
+      <div class="card card-updated">
+        <!-- 現在の状況バナー -->
+        <div
+          class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#f4efe7] px-4 py-3 text-[13px]"
+        >
+          <span
+            class="inline-flex h-2.5 w-2.5 animate-pulse rounded-full bg-warn"
+          ></span>
+          <b>いま動いているもの:</b>
+          <span
+            >B（フォント/アイコン＋CSP・<b>進行中</b>）と
+            C（diary-engine・<b>並行で着手</b>）。A は B の完了待ち。</span
+          >
+        </div>
+
+        <!-- 凡例（状態） -->
+        <div class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+          <span><span class="badge badge-warn">進行中</span> 作業中</span>
+          <span><span class="badge badge-info">並行</span> 別レーンで同時</span>
+          <span
+            ><span class="badge badge-mute">待ち</span> 前工程の完了待ち</span
+          >
+          <span><span class="badge badge-ok">完了</span> 受理済み</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <!-- デザイン・レーン -->
+          <div class="rounded-xl p-3 ring-1 ring-line/70">
+            <div
+              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
+            >
+              <span class="h-3 w-3 rounded-full bg-accent"></span>
+              デザイン・レーン
+            </div>
+            <!-- B -->
+            <div
+              class="mb-2 flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f0e6da] font-bold text-[#6f4e37]"
+                >B</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">
+                  フォント/アイコンのバンドル＋CSP
+                </div>
+                <div class="text-xs text-muted">
+                  担当: コンダクター直（小・低リスク）
+                </div>
+              </div>
+              <span class="badge badge-warn">進行中</span>
+            </div>
+            <!-- A -->
+            <div
+              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#f4efe7] font-bold text-muted"
+                >A</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">
+                  UI を mtt- 体裁へリスタイル
+                </div>
+                <div class="text-xs text-muted">
+                  担当: デザイン実施者（B 完了後に着手）
+                </div>
+              </div>
+              <span class="badge badge-mute">待ち</span>
+            </div>
+          </div>
+
+          <!-- エンジニアリング・レーン -->
+          <div class="rounded-xl p-3 ring-1 ring-line/70">
+            <div
+              class="mb-2 flex items-center gap-2 text-sm font-bold text-[#6f4e37]"
+            >
+              <span
+                class="h-3 w-3 rounded-full"
+                style="background: #6a8caf"
+              ></span>
+              エンジニアリング・レーン
+            </div>
+            <!-- C -->
+            <div
+              class="flex items-center gap-3 rounded-lg bg-card p-2.5 ring-1 ring-line/60"
+            >
+              <span
+                class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-[#e9f0f7] font-bold text-[#2c5680]"
+                >C</span
+              >
+              <div class="min-w-0 flex-1">
+                <div class="text-[13px] font-bold">
+                  diary-engine（観察日記）実装
+                </div>
+                <div class="text-xs text-muted">
+                  担当: 実装エージェント（worktree・並行）
+                </div>
+              </div>
+              <span class="badge badge-info">並行</span>
+            </div>
+            <div class="mt-2 text-xs text-muted">
+              受理はコンダクターと各レビュアーへ集約（作る役は複数並行・受理は一本化）。
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== 開発体制（体制図） ===== -->
       <h2>
         開発体制（だれが作り・だれが確認するか）
