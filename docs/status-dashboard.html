@@ -404,24 +404,6 @@
               ⏳ 待ち
             </div>
             <div class="space-y-1.5 p-2">
-              <!-- M3 実機（人手） -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="M3 モデルと実対話のサインオフ（実APIキーが必要＝人手）"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >M3</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >🔒 実機対話</span
-                >
-                <span
-                  class="flex-none rounded bg-[#f4efe7] px-1.5 text-[10px] font-bold text-muted"
-                  >~2h</span
-                >
-              </div>
               <!-- M5 GDrive（人手） -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -468,11 +450,25 @@
             >
               🔨 進行中
             </div>
-            <div class="p-2 text-[10px] leading-relaxed text-muted">
-              <div class="mb-1 text-center">—</div>
-              <b>誰かが着手したらカードをここへ移す</b
-              >（実装中の可視化）。実装完了＋コミットで「レビュー中（受理待ち）」へ。WIP
-              は絞る（同時着手を増やしすぎない）。
+            <div class="space-y-1.5 p-2">
+              <!-- M3 実機対話（PO 検証中） -->
+              <div
+                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="M3 モデルと実対話のサインオフ。実装済(model-router/chat)・実APIキーで PO が実機検証中（pnpm tauri dev）"
+              >
+                <span
+                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >M3</span
+                >
+                <span class="min-w-0 flex-1 text-[11px] font-semibold"
+                  >🔒 実機対話</span
+                >
+                <span class="text-[10px]" title="PO 実機検証">🧑🏻‍💼</span>
+              </div>
+              <div class="px-1 pt-0.5 text-[10px] text-muted">
+                着手したカードはここへ（新ルール）。M3 は PO が実機検証中。
+              </div>
             </div>
           </div>
           <!-- レビュー中 -->
