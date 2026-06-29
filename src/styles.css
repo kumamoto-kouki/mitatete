@@ -1326,6 +1326,13 @@ body {
   font-size: 1.15rem;
 }
 
+.mtt-avt__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .mtt-avt--brown {
   background: var(--accent-soft);
   color: var(--accent-ink);
