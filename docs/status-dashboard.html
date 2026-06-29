@@ -364,8 +364,8 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
             <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
-            繰越5件（K1〜K5）を 🛡️
-            守屋の独立レビューで受理・完了（必須是正なし）
+            D2（カードの実アバター画像）を 🕵🏼‍♀️
+            望月の独立レビューで受理・完了（桜井 worktree 実装・178テスト緑）
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -404,24 +404,6 @@
               ⏳ 待ち
             </div>
             <div class="space-y-1.5 p-2">
-              <!-- D2 アバター画像 -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="アバター画像の差し替え（CharacterSchema 画像パス＋UI）/ デザイン"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #b08968"
-                  >D2</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >アバター画像</span
-                >
-                <span
-                  class="flex-none rounded bg-[#f4efe7] px-1.5 text-[10px] font-bold text-muted"
-                  >~4h</span
-                >
-              </div>
               <!-- M3 実機（人手） -->
               <div
                 class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -488,8 +470,9 @@
             </div>
             <div class="p-2 text-[10px] leading-relaxed text-muted">
               <div class="mb-1 text-center">—</div>
-              タスクは1件ずつ着手→実装→コミットし、直ちに「レビュー中（受理待ち）」へ送るため、この列は普段は空です（仕掛り在庫を持たない＝WIP
-              を絞る運用）。
+              <b>誰かが着手したらカードをここへ移す</b
+              >（実装中の可視化）。実装完了＋コミットで「レビュー中（受理待ち）」へ。WIP
+              は絞る（同時着手を増やしすぎない）。
             </div>
           </div>
           <!-- レビュー中 -->
@@ -511,6 +494,23 @@
               ✅ 完了・受理
             </div>
             <div class="space-y-1.5 p-2">
+              <!-- D2 アバター画像 -->
+              <div
+                class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="カードに実アバター画像(createAvatar＋onerror頭文字フォールバック)。三浦采配→桜井(実装・worktree)→望月 APPROVED(独立レビュー・必須是正なし)。178テスト緑"
+              >
+                <span
+                  class="grid h-6 w-7 flex-none place-items-center rounded-md text-[11px] font-bold text-white"
+                  style="background: #b08968"
+                  >D2</span
+                >
+                <span class="min-w-0 flex-1 text-[11.5px] font-semibold"
+                  >アバター画像</span
+                >
+                <span class="text-[11px]" title="桜井(実装)→望月 APPROVED"
+                  >👩🏼‍🎨🕵🏼‍♀️</span
+                >
+              </div>
               <!-- K1〜K5 繰越5件 -->
               <div
                 class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -762,8 +762,8 @@
           <tr>
             <td>キャラ表示（character-layer）</td>
             <td>仕様確定</td>
-            <td>全18項目＋繰越K1〜K5</td>
-            <td>画面側 72</td>
+            <td>全18項目＋繰越K1〜K5＋D2</td>
+            <td>画面側 77</td>
             <td><span class="badge badge-ok">完了</span></td>
           </tr>
           <tr>
@@ -796,7 +796,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="kpi text-info">173 <small>画面側テスト 合格</small></div>
+          <div class="kpi text-info">178 <small>画面側テスト 合格</small></div>
           <div class="tag">
             画面側（TypeScript）の自動テスト。型チェック0エラー・ビルド成功。
           </div>
@@ -978,6 +978,14 @@
         <h2>🔵 この版の更新（2026-06-29）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b>D2（カードに実アバター画像）を実装・受理・統合しました。</b>規律A
+            に沿い<b>デザインレーンへ委譲</b>（🧑🏼‍🎨 三浦 采配 → 👩🏼‍🎨 桜井 worktree
+            実装 → 🕵🏼‍♀️ 望月 独立レビュー APPROVED）。<code>createAvatar</code>
+            共通ヘルパー＋<code>onerror</code>頭文字フォールバック（プリセット画像未配置でも
+            404 非ブロッキング）。画面側 173→178・統合ブランチへ merge＋worktree
+            撤去。<b>状態遷移トリガー</b>に「着手→🔨進行中」を追加（運用）。
+          </li>
+          <li>
             <b
               >worktree のマージ／撤去タイミングを締め直し、diary-engine
               の状態不整合を是正しました。</b
@@ -1000,23 +1008,23 @@
             >・<b>🧑🏼‍🎨 三浦（デザイン・リーダー）</b
             >を新設。統括は采配権限を各リーダーへ委譲し計画・受理に専念、リーダーは采配専念で実装者(工藤/林/桜井)へ割り当て。各リーダーは神谷・橘と密に連携。
           </li>
-          <li>
-            <b
-              >繰越5件（K1〜K5）を 🛡️
-              守屋の独立レビューで受理・完了し、レビュー滞留の再発防止策を追加しました（PO
-              承認）。</b
-            >守屋が証拠再生成（画面側173・tsc0・build OK・原則8 差分ゼロ）で
-            <b>APPROVED・必須是正なし</b
-            >。滞留の原因は<b>統括が実装を5件積み上げつつ独立レビューを回す契機が未定義</b>だったこと（仕組みの弱さ・blameless）→
-            <b>レビュー中 WIP 上限＝3</b
-            >を設け、橘が「レビュー滞留」を開示の健全性で監視する。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b
+                >繰越5件（K1〜K5）を 🛡️
+                守屋の独立レビューで受理・完了し、レビュー滞留の再発防止策を追加しました（PO
+                承認）。</b
+              >守屋が証拠再生成（画面側173・tsc0・build OK・原則8 差分ゼロ）で
+              <b>APPROVED・必須是正なし</b
+              >。滞留の原因は<b>統括が実装を5件積み上げつつ独立レビューを回す契機が未定義</b>だったこと（仕組みの弱さ・blameless）→
+              <b>レビュー中 WIP 上限＝3</b
+              >を設け、橘が「レビュー滞留」を開示の健全性で監視する。
+            </li>
             <li>
               <b>K5（switcher 全隠し）を実装しました。</b
               >切り替え対象が1件以下のときはスイッチャーを要素ごと隠す（選択肢1つでの切り替えは無意味＋空要素の余白も出さない）。回帰テスト5本追加・画面側173。実装＝👨🏼‍💼
