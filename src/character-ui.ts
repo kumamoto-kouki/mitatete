@@ -70,6 +70,34 @@ function avatarColor(id: string): string {
 }
 
 /**
+ * キャラクターアバター span を生成する共通ヘルパー。
+ *
+ * - schema.visual が非空文字列なら img を内包し、onerror で頭文字へフォールバックする。
+ * - schema.visual が空なら従来どおり頭文字テキストのみ。
+ */
+function createAvatar(schema: CharacterSchema): HTMLSpanElement {
+  const avt = document.createElement("span");
+  avt.className = `mtt-avt ${avatarColor(schema.id)}`;
+  avt.setAttribute("aria-hidden", "true");
+
+  if (schema.visual && schema.visual.trim() !== "") {
+    const img = document.createElement("img");
+    img.className = "mtt-avt__img";
+    img.src = schema.visual;
+    img.alt = schema.name;
+    img.addEventListener("error", () => {
+      img.remove();
+      avt.textContent = schema.name.charAt(0);
+    });
+    avt.appendChild(img);
+  } else {
+    avt.textContent = schema.name.charAt(0);
+  }
+
+  return avt;
+}
+
+/**
  * プリセット一覧を container に描画する。(要件 1.1, 1.4)
  *
  * 各項目はクリック可能で、選択時に onSelect(preset) を発火する。選択状態（.is-selected）は
@@ -110,11 +138,7 @@ export function renderPresetList(
     if (preset.id === activeId) button.classList.add("is-selected");
 
     // アバター
-    const avt = document.createElement("span");
-    avt.className = `mtt-avt ${avatarColor(preset.id)}`;
-    avt.setAttribute("aria-hidden", "true");
-    // プレースホルダー: 名前頭文字
-    avt.textContent = preset.name.charAt(0);
+    const avt = createAvatar(preset);
 
     // ボディ
     const body = document.createElement("span");
@@ -278,10 +302,7 @@ export function renderCustomList(
     if (schema.id === activeId) card.classList.add("is-selected");
 
     // アバター
-    const avt = document.createElement("span");
-    avt.className = `mtt-avt ${avatarColor(schema.id)}`;
-    avt.setAttribute("aria-hidden", "true");
-    avt.textContent = schema.name.charAt(0);
+    const avt = createAvatar(schema);
 
     // ボディ
     const body = document.createElement("span");
