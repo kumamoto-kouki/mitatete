@@ -308,9 +308,9 @@
               <td>M3 モデルと実対話</td>
               <td>4/5</td>
               <td>14h</td>
-              <td>75%</td>
-              <td>10.5h</td>
-              <td>3.5h</td>
+              <td>100%</td>
+              <td>14.0h</td>
+              <td>0h</td>
             </tr>
             <tr>
               <td>M4 観察日記</td>
@@ -340,9 +340,9 @@
               <td><b>合計</b></td>
               <td>—</td>
               <td><b>60h</b></td>
-              <td><b>79%</b></td>
-              <td><b>47.2h</b></td>
-              <td><b>12.8h</b></td>
+              <td><b>85%</b></td>
+              <td><b>50.7h</b></td>
+              <td><b>9.3h</b></td>
             </tr>
           </table>
           <div class="mt-2 text-[11px] text-muted">
@@ -364,8 +364,9 @@
         <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <span class="inline-flex items-center gap-1.5 text-[13px] font-bold">
             <span class="h-2.5 w-2.5 rounded-full bg-info"></span>
-            D2（カードの実アバター画像）を 🕵🏼‍♀️
-            望月の独立レビューで受理・完了（桜井 worktree 実装・178テスト緑）
+            M3（モデルと実対話）を 🧑🏻‍💼 PO
+            サインオフで達成（実装完了・テスト緑が裏付け／実機実APIは PO
+            判断）。直前に D2 受理・完了
           </span>
           <span class="text-xs text-muted">凡例:</span>
           <span class="inline-flex items-center gap-1 text-xs text-muted"
@@ -450,25 +451,11 @@
             >
               🔨 進行中
             </div>
-            <div class="space-y-1.5 p-2">
-              <!-- M3 実機対話（PO 検証中） -->
-              <div
-                class="flex items-center gap-1.5 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
-                title="M3 モデルと実対話のサインオフ。実装済(model-router/chat)・実APIキーで PO が実機検証中（pnpm tauri dev）"
-              >
-                <span
-                  class="grid h-5 w-6 flex-none place-items-center rounded text-[10px] font-bold text-white"
-                  style="background: #6a8caf"
-                  >M3</span
-                >
-                <span class="min-w-0 flex-1 text-[11px] font-semibold"
-                  >🔒 実機対話</span
-                >
-                <span class="text-[10px]" title="PO 実機検証">🧑🏻‍💼</span>
-              </div>
-              <div class="px-1 pt-0.5 text-[10px] text-muted">
-                着手したカードはここへ（新ルール）。M3 は PO が実機検証中。
-              </div>
+            <div class="p-2 text-[10px] leading-relaxed text-muted">
+              <div class="mb-1 text-center">—</div>
+              <b>誰かが着手したらカードをここへ移す</b
+              >（実装中の可視化）。実装完了＋コミットで「レビュー中（受理待ち）」へ。WIP
+              は絞る（同時着手を増やしすぎない）。
             </div>
           </div>
           <!-- レビュー中 -->
@@ -490,6 +477,21 @@
               ✅ 完了・受理
             </div>
             <div class="space-y-1.5 p-2">
+              <!-- M3 実機対話（PO サインオフ） -->
+              <div
+                class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
+                title="M3 モデルと実対話のサインオフ。実装完了(model-router/chat)＋自動テスト緑が裏付け。実機・実APIの実対話確認は PO 判断でサインオフ(実証ログは本セッション未取得)"
+              >
+                <span
+                  class="grid h-6 w-7 flex-none place-items-center rounded-md text-[11px] font-bold text-white"
+                  style="background: #6a8caf"
+                  >M3</span
+                >
+                <span class="min-w-0 flex-1 text-[11.5px] font-semibold"
+                  >実機対話（PO サインオフ）</span
+                >
+                <span class="text-[11px]" title="PO サインオフ">🧑🏻‍💼</span>
+              </div>
               <!-- D2 アバター画像 -->
               <div
                 class="flex items-center gap-2 rounded-lg bg-card p-1.5 ring-1 ring-line/60"
@@ -713,11 +715,14 @@
         </div>
         <div class="card">
           <h3>
-            M3 モデルと実際に会話 <span class="badge badge-warn">あと一歩</span>
+            M3 モデルと実際に会話
+            <span class="badge badge-ok">達成（PO サインオフ）</span>
           </h3>
-          <div class="bar"><span style="width: 70%"></span></div>
+          <div class="bar"><span style="width: 100%"></span></div>
           <div class="tag">
-            実装は完了。本物の API キー＋目視確認が残り（人の作業待ち）
+            実装完了＋自動テスト緑が裏付け。実機・実APIの実対話は
+            <b>PO 判断でサインオフ</b
+            >（実証ログは本セッション未取得・必要なら後日 API キーで実証可）。
           </div>
         </div>
         <div class="card">
@@ -974,6 +979,16 @@
         <h2>🔵 この版の更新（2026-06-29）</h2>
         <ul class="list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
           <li>
+            <b>M3（モデルと実対話）を 🧑🏻‍💼 PO サインオフで達成にしました。</b
+            >実装は完了済（model-router/chat・自動テスト緑が裏付け）。<b
+              >実機・実APIの実対話確認は PO 判断でサインオフ</b
+            >（開示: 実証ログは本セッション未取得・必要なら後日 API
+            キーで実証可）。節目M3
+            70%→100%・見積もり全体79%→85%・「着手→🔨進行中」ルールを M3
+            で初適用。Anthropic は Max プランから API
+            キーは出ず別途従量課金が必要、という整理も実施。
+          </li>
+          <li>
             <b>D2（カードに実アバター画像）を実装・受理・統合しました。</b>規律A
             に沿い<b>デザインレーンへ委譲</b>（🧑🏼‍🎨 三浦 采配 → 👩🏼‍🎨 桜井 worktree
             実装 → 🕵🏼‍♀️ 望月 独立レビュー APPROVED）。<code>createAvatar</code>
@@ -993,23 +1008,23 @@
               配線済）</b
             >と判明し、spec表「仕様のみ」→<b>完了</b>・節目M4・見積もりを整合（残りは実機生成確認＝人手）。
           </li>
-          <li>
-            <b
-              >各レーンに采配リーダーを新設し、統括は実装に着手しない体制にしました（PO
-              承認・規律A 遵守）。</b
-            >統括（神谷）が K1〜K5
-            を直接実装していたのは規律A（委譲原則）逸脱で、worktree
-            並行開発の期待に反する反省から、<b
-              >🧑🏼‍💼 遠藤（エンジニアリング・リーダー）</b
-            >・<b>🧑🏼‍🎨 三浦（デザイン・リーダー）</b
-            >を新設。統括は采配権限を各リーダーへ委譲し計画・受理に専念、リーダーは采配専念で実装者(工藤/林/桜井)へ割り当て。各リーダーは神谷・橘と密に連携。
-          </li>
         </ul>
         <details class="mt-2">
           <summary class="cursor-pointer text-xs font-semibold text-muted">
             これまでの更新履歴（クリックで展開）
           </summary>
           <ul class="mt-2 list-disc pl-[18px] text-[13px] [&>li]:my-0.5">
+            <li>
+              <b
+                >各レーンに采配リーダーを新設し、統括は実装に着手しない体制にしました（PO
+                承認・規律A 遵守）。</b
+              >統括（神谷）が K1〜K5
+              を直接実装していたのは規律A（委譲原則）逸脱で、worktree
+              並行開発の期待に反する反省から、<b
+                >🧑🏼‍💼 遠藤（エンジニアリング・リーダー）</b
+              >・<b>🧑🏼‍🎨 三浦（デザイン・リーダー）</b
+              >を新設。統括は采配権限を各リーダーへ委譲し計画・受理に専念、リーダーは采配専念で実装者(工藤/林/桜井)へ割り当て。各リーダーは神谷・橘と密に連携。
+            </li>
             <li>
               <b
                 >繰越5件（K1〜K5）を 🛡️
